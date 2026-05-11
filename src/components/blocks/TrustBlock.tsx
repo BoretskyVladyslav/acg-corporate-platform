@@ -72,6 +72,7 @@ export default function TrustBlock({
 }: TrustBlockProps) {
   return (
     <section
+      id="trust"
       aria-labelledby="trust-heading"
       className="bg-acg-light text-foreground"
     >

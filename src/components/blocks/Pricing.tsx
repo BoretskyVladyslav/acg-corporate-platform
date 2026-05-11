@@ -196,6 +196,7 @@ export default function Pricing({
 }: PricingProps) {
   return (
     <section
+      id="pricing"
       aria-labelledby="pricing-heading"
       className="bg-acg-light text-foreground"
     >

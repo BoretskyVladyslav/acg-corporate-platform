@@ -19,8 +19,8 @@ export default function Home() {
         <Pricing />
         <Advantages />
         <TrustBlock />
-        <LeadCaptureForm />
         <FAQ />
+        <LeadCaptureForm />
       </main>
     </div>
   );

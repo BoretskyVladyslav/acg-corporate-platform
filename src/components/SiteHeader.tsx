@@ -9,7 +9,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import type { MouseEvent } from "react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLenis } from "@/src/components/SmoothScrolling";
 
 /** Offset for fixed floating pill: top-6 (~24px) + pill height + зазор до контенту */
@@ -24,9 +32,10 @@ function anchorFromHash(hash: string) {
 const NAV: { href: string; label: string }[] = [
   { href: "#about", label: "Про нас" },
   { href: "#services-heading", label: "Послуги" },
-  { href: "#pricing-heading", label: "Тарифи" },
-  { href: "#advantages-heading", label: "Переваги" },
-  { href: "#faq-heading", label: "FAQ" },
+  { href: "#pricing", label: "Тарифи" },
+  { href: "#advantages", label: "Переваги" },
+  { href: "#trust", label: "Відгуки" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 /** Кількість анімованих рядків у мобільному меню: NAV + CTA */
@@ -47,16 +56,30 @@ const MOBILE_MENU_EASE = [0.22, 1, 0.36, 1] as const;
 const SPY_SECTION_IDS: string[] = [
   "about",
   "services-heading",
-  "pricing-heading",
-  "advantages-heading",
+  "pricing",
+  "advantages",
+  "trust",
+  "faq",
   "contact",
-  "faq-heading",
 ];
 
 const linkClass =
-  "text-sm font-medium text-foreground/80 transition-colors hover:text-acg-blue px-4 py-2 whitespace-nowrap rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80";
+  "relative text-sm font-medium text-foreground/80 transition-colors hover:text-acg-blue px-4 py-2 whitespace-nowrap rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80";
 
-const linkActiveClass = "text-acg-blue font-semibold";
+/** Активний пункт десктопу: текст на синій пігулці */
+const linkActiveClass =
+  "!text-white hover:!text-white font-semibold drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]";
+
+/** Активний пункт мобільного меню (світлий фон — без білого тексту) */
+const mobileLinkActiveClass = "text-acg-blue font-semibold !no-underline";
+
+/** Spring config for the sliding pill — snappy but smooth */
+const PILL_SPRING = {
+  type: "spring" as const,
+  stiffness: 420,
+  damping: 34,
+  mass: 0.75,
+};
 
 const mobileNavLinkClass =
   "block w-full text-2xl font-medium text-foreground py-4 border-b border-foreground/5 transition-colors hover:text-acg-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 focus-visible:ring-offset-2 rounded-none";
@@ -67,14 +90,16 @@ const mobileCtaClass =
 const ctaClass =
   "inline-flex shrink-0 items-center justify-center rounded-full bg-acg-red px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 lg:px-6 lg:py-2.5";
 
-const ctaActiveClass =
-  "ring-2 ring-acg-blue/45 ring-offset-2 ring-offset-white/90 shadow-md shadow-acg-blue/15";
-
 const glassPill =
   "pointer-events-auto w-full max-w-5xl rounded-full border border-white/20 bg-white/70 px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.06)] backdrop-blur-md lg:px-6 lg:py-3";
 
 const burgerClass =
   "pointer-events-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/40 text-foreground transition-colors hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 lg:hidden";
+
+/** Пігулка активного пункту лише на `lg+` (центр наві + CTA) */
+const navMeetsLgQuery = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(min-width: 1024px)").matches;
 
 export default function SiteHeader() {
   const lenis = useLenis();
@@ -83,6 +108,91 @@ export default function SiteHeader() {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileMenuId = useId();
+
+  // Sliding pill: координати від лівого-верхнього кута `<nav>` (разом із CTA)
+  const navShellRef = useRef<HTMLElement | null>(null);
+  const ctaRef = useRef<HTMLAnchorElement | null>(null);
+  const navLinkRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const [pillRect, setPillRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  const measurePill = useCallback(() => {
+    if (!activeSectionId || !navShellRef.current) {
+      setPillRect(null);
+      return;
+    }
+    if (!navMeetsLgQuery()) {
+      setPillRect(null);
+      return;
+    }
+
+    const navEl = navShellRef.current;
+    const cs = getComputedStyle(navEl);
+    if (cs.display === "none") {
+      setPillRect(null);
+      return;
+    }
+
+    const targetEl: HTMLElement | null =
+      activeSectionId === "contact"
+        ? ctaRef.current
+        : navLinkRefs.current.get(activeSectionId) ?? null;
+
+    if (!targetEl) {
+      setPillRect(null);
+      return;
+    }
+
+    const navRect = navEl.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+    if (navRect.width <= 0 || targetRect.width <= 0) {
+      setPillRect(null);
+      return;
+    }
+
+    setPillRect({
+      x: targetRect.left - navRect.left,
+      y: targetRect.top - navRect.top,
+      width: targetRect.width,
+      height: targetRect.height,
+    });
+  }, [activeSectionId]);
+
+  // Re-measure whenever active section changes or on resize / layout
+  useLayoutEffect(() => {
+    measurePill();
+  }, [measurePill]);
+
+  useLayoutEffect(() => {
+    const el = navShellRef.current;
+    if (typeof window === "undefined") return;
+
+    let raf = 0;
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => measurePill());
+    };
+
+    window.addEventListener("resize", scheduleMeasure, { passive: true });
+
+    let ro: ResizeObserver | null = null;
+    if (el && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(scheduleMeasure);
+      ro.observe(el);
+    }
+
+    scheduleMeasure();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", scheduleMeasure);
+      ro?.disconnect();
+    };
+  }, [measurePill]);
 
   const overlayVariants = useMemo(
     () => ({
@@ -153,21 +263,30 @@ export default function SiteHeader() {
   const openMobile = useCallback(() => setMobileOpen(true), []);
 
   useEffect(() => {
-    const markerPx = SCROLL_TOP_OFFSET;
-
     const resolveActiveSection = (): string | null => {
-      let current: string | null = null;
-      for (const id of SPY_SECTION_IDS) {
-        const section = document.getElementById(id);
-        if (!section) continue;
-        if (section.getBoundingClientRect().top <= markerPx) current = id;
+      const markerPx = SCROLL_TOP_OFFSET;
+      for (let i = 0; i < SPY_SECTION_IDS.length; i++) {
+        const id = SPY_SECTION_IDS[i];
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        const nextId = SPY_SECTION_IDS[i + 1];
+        const nextEl = nextId ? document.getElementById(nextId) : null;
+        const nextTop = nextEl
+          ? nextEl.getBoundingClientRect().top
+          : Number.POSITIVE_INFINITY;
+        if (top <= markerPx && nextTop > markerPx) {
+          return id;
+        }
       }
-      return current;
+      return null;
     };
 
     const tick = () => {
       const nextActive = resolveActiveSection();
-      setActiveSectionId((prev) => (prev === nextActive ? prev : nextActive));
+      setActiveSectionId((prev) =>
+        prev === nextActive ? prev : nextActive,
+      );
 
       if (lenis) {
         setScrollProgress(Math.min(1, Math.max(0, lenis.progress)));
@@ -299,12 +418,30 @@ export default function SiteHeader() {
         </div>
 
         <nav
+          ref={navShellRef}
           aria-label="Головна навігація"
           className={`${glassPill} relative flex w-full items-center justify-between gap-3`}
         >
+          {pillRect ? (
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-0 z-0 hidden rounded-full bg-acg-blue lg:block"
+              initial={false}
+              animate={{
+                x: pillRect.x,
+                y: pillRect.y,
+                width: pillRect.width,
+                height: pillRect.height,
+                opacity: 1,
+              }}
+              transition={
+                reduceMotionPreferred ? { duration: 0 } : PILL_SPRING
+              }
+            />
+          ) : null}
           <Link
             href="/"
-            className="inline-flex shrink-0 min-w-[120px] self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 rounded-lg"
+            className="relative z-10 inline-flex shrink-0 min-w-[120px] self-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 rounded-lg"
           >
             <Image
               src="/images/logo.svg"
@@ -316,17 +453,21 @@ export default function SiteHeader() {
             />
           </Link>
 
-          {/* Десктоп: посилання по центру */}
-          <div className="absolute left-1/2 hidden -translate-x-1/2 lg:flex lg:items-center lg:justify-center">
+          {/* Десктоп: посилання по центру; sliding pill — на рівні всього nav */}
+          <div className="absolute left-1/2 z-10 hidden -translate-x-1/2 lg:flex lg:items-center lg:justify-center">
             {NAV.map((item) => {
               const id = anchorFromHash(item.href);
               const isActive = activeSectionId === id;
               return (
                 <a
                   key={item.href}
+                  ref={(el) => {
+                    if (el) navLinkRefs.current.set(id, el);
+                    else navLinkRefs.current.delete(id);
+                  }}
                   href={item.href}
                   onClick={(e) => scrollToSectionDesktop(item.href, e)}
-                  className={`${linkClass} ${isActive ? linkActiveClass : ""}`}
+                  className={`${linkClass} ${isActive ? linkActiveClass : ""} relative z-10`}
                   aria-current={isActive ? "location" : undefined}
                 >
                   {item.label}
@@ -335,13 +476,16 @@ export default function SiteHeader() {
             })}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="relative z-10 flex shrink-0 items-center gap-2">
             <a
+              ref={ctaRef}
               href="#contact"
               onClick={(e) => scrollToSectionDesktop("#contact", e)}
-              className={`${ctaClass} ${
-                activeSectionId === "contact" ? ctaActiveClass : ""
-              } max-lg:hidden`}
+              className={`${ctaClass} max-lg:hidden ${
+                activeSectionId === "contact"
+                  ? `${linkActiveClass} bg-transparent! shadow-none ring-0 hover:bg-transparent!`
+                  : ""
+              }`}
               aria-current={
                 activeSectionId === "contact" ? "location" : undefined
               }
@@ -420,7 +564,7 @@ export default function SiteHeader() {
                     animate={itemMotion.animate}
                     exit={itemMotion.exit}
                     onClick={(e) => scrollToSectionAndCloseMobile(item.href, e)}
-                    className={`${mobileNavLinkClass} ${isActive ? linkActiveClass : ""}`}
+                    className={`${mobileNavLinkClass} ${isActive ? mobileLinkActiveClass : ""}`}
                     aria-current={isActive ? "location" : undefined}
                   >
                     {item.label}

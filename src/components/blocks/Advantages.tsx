@@ -34,6 +34,7 @@ const ADVANTAGES_ITEMS: AdvantageItem[] = [
 export default function Advantages() {
   return (
     <section
+      id="advantages"
       aria-labelledby="advantages-heading"
       className="bg-white text-foreground"
     >
