@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ACG Landing
 
-## Getting Started
+Лендінговий сайт компанії **ACG** на [Next.js](https://nextjs.org) з інтеграцією [Sanity](https://www.sanity.io/) для контенту та керування в студії.
 
-First, run the development server:
+## Технології
+
+- **Next.js** 16, **React** 19
+- **TypeScript**
+- **Tailwind CSS** 4
+- **Sanity** (CMS, студія за маршрутом `/studio`)
+- **Framer Motion**, плавний скрол **Lenis**
+- Шрифти через `next/font` (Geist)
+
+## Вимоги
+
+- Node.js з підтримкою версій Next.js/React у цьому репозиторії
+- Менеджер пакетів (за замовчуванням використовується **npm**)
+
+## Налаштування середовища
+
+Створіть файл `.env.local` у корені проєкту та додайте змінні для Sanity:
+
+```env
+NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
+NEXT_PUBLIC_SANITY_DATASET=production
+NEXT_PUBLIC_SANITY_API_VERSION=2026-05-09
+```
+
+`NEXT_PUBLIC_SANITY_API_VERSION` необов’язкова; якщо її немає, використовується значення за замовчуванням з `sanity/env.ts`.
+
+## Запуск
+
+Встановлення залежностей:
+
+```bash
+npm install
+```
+
+Режим розробки (за замовчуванням сервер піднімається на **порт 3002**):
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+У браузері відкрийте [http://localhost:3002](http://localhost:3002).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Інші скрипти
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Команда        | Призначення                    |
+|----------------|--------------------------------|
+| `npm run build` | Продуктовий збір               |
+| `npm run start` | Запуск після збірки            |
+| `npm run lint`  | Перевірка ESLint               |
 
-## Learn More
+Після локального або продакшен-збору Sanity Studio доступна за адресою `/studio` (наприклад, `http://localhost:3002/studio` у dev).
 
-To learn more about Next.js, take a look at the following resources:
+## Документація
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Next.js](https://nextjs.org/docs) — можливості фреймворку та деплой
+- [Sanity](https://www.sanity.io/docs) — схеми, GROQ, студія
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> У цьому репозиторії використовується актуальна гілка Next.js з окремими змінами в API порівняно зі старими гайдами; перед змінами варто перевірити відповідні розділи в `node_modules/next/dist/docs/` (див. також `AGENTS.md`).
 
-## Deploy on Vercel
+## Деплой
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Зручні варіанти для Next.js-додатків описані в [офіційній документації деплою](https://nextjs.org/docs/app/building-your-application/deploying), зокрема платформа Vercel.
