@@ -1,10 +1,13 @@
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+
 export interface TrustQuote {
   quote?: string;
   author?: string;
   role?: string;
 }
-
-import Image from "next/image";
 
 export interface TrustLogo {
   name?: string;
@@ -42,6 +45,24 @@ const defaultLogos: TrustLogo[] = [
   { name: "Клієнт" },
 ];
 
+const cardListVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardItemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
 export default function TrustBlock({
   eyebrow = "Довіра",
   heading = "Відгуки клієнтів",
@@ -54,25 +75,38 @@ export default function TrustBlock({
       aria-labelledby="trust-heading"
       className="bg-acg-light text-foreground"
     >
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <motion.div
+        className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
+      >
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
           {eyebrow}
         </p>
         <h2
           id="trust-heading"
-          className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-acg-blue sm:text-4xl"
+          className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
         >
           {heading}
         </h2>
-        <p className="mt-4 max-w-3xl text-base leading-relaxed text-foreground/75">
+        <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/75">
           {intro}
         </p>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-2">
+        <motion.div
+          className="mt-12 grid gap-8 lg:gap-10 lg:grid-cols-2"
+          variants={cardListVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {quotes.map((q, i) => (
-            <blockquote
+            <motion.blockquote
               key={i}
-              className="rounded-3xl border-transparent bg-white p-6 shadow-lg shadow-acg-blue/5"
+              variants={cardItemVariants}
+              className="rounded-3xl border-transparent bg-white p-8 shadow-lg shadow-acg-blue/5 sm:p-10"
             >
               <p className="text-base leading-relaxed text-foreground/90">
                 “{q.quote}”
@@ -83,18 +117,25 @@ export default function TrustBlock({
                 </cite>
                 {q.role ? <span className="block">{q.role}</span> : null}
               </footer>
-            </blockquote>
+            </motion.blockquote>
           ))}
-        </div>
+        </motion.div>
 
         <div className="mt-14 border-t border-foreground/10 pt-10">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/50">
             Логотипи партнерів
           </p>
-          <ul className="mt-6 flex flex-wrap items-center gap-x-10 gap-y-6">
+          <motion.ul
+            className="mt-6 flex flex-wrap items-center gap-x-10 gap-y-6"
+            variants={cardListVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+          >
             {logos.map((logo, i) => (
-              <li
+              <motion.li
                 key={i}
+                variants={cardItemVariants}
                 className="text-sm font-medium text-foreground/45"
               >
                 {logo.imageUrl ? (
@@ -109,11 +150,11 @@ export default function TrustBlock({
                 ) : (
                   <span>{logo.name}</span>
                 )}
-              </li>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

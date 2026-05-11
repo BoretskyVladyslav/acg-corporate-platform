@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 export interface LeadCaptureFormProps {
   id?: string;
   eyebrow?: string;
@@ -23,26 +27,32 @@ export default function LeadCaptureForm({
       aria-labelledby="lead-form-heading"
       className="border-t border-foreground/10 bg-white text-foreground"
     >
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <motion.div
+        className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
+      >
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
           {eyebrow}
         </p>
         <h2
           id="lead-form-heading"
-          className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-acg-blue sm:text-4xl"
+          className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
         >
           {heading}
         </h2>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-foreground/75">
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-foreground/75">
           {description}
         </p>
 
         <form
-          className="mt-10 max-w-3xl space-y-6 rounded-3xl border-transparent bg-white p-6 shadow-lg shadow-acg-blue/5 sm:p-8"
+          className="mt-10 max-w-3xl space-y-6 rounded-3xl border-transparent bg-white p-8 shadow-lg shadow-acg-blue/5 sm:p-10"
           method="post"
           action={action}
         >
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
             <div>
               <label
                 htmlFor="lead-name"
@@ -91,18 +101,20 @@ export default function LeadCaptureForm({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <button
+            <motion.button
               type="submit"
               className="inline-flex items-center justify-center rounded-full bg-acg-red px-6 py-3 text-sm font-medium text-white hover:bg-red-800"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {submitLabel}
-            </button>
+            </motion.button>
             <p className="text-xs text-foreground/50">
               Інтеграції надсилання заявки буде налаштовано окремо.
             </p>
           </div>
         </form>
-      </div>
+      </motion.div>
     </section>
   );
 }

@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 export interface ServiceItem {
   title?: string;
   description?: string;
@@ -32,6 +36,24 @@ const defaultItems: ServiceItem[] = [
   },
 ];
 
+const cardListVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardItemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
 export default function Services({
   eyebrow = "Послуги",
   heading = "Наші послуги",
@@ -43,24 +65,37 @@ export default function Services({
       aria-labelledby="services-heading"
       className="border-y border-foreground/10 bg-white text-foreground"
     >
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <motion.div
+        className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
+      >
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
           {eyebrow}
         </p>
         <h2
           id="services-heading"
-          className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-acg-blue sm:text-4xl"
+          className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
         >
           {heading}
         </h2>
-        <p className="mt-4 max-w-3xl text-base leading-relaxed text-foreground/75">
+        <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/75">
           {intro}
         </p>
-        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.ul
+          className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10"
+          variants={cardListVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {items.map((item, i) => (
-            <li
+            <motion.li
               key={i}
-              className="rounded-3xl border-transparent bg-white p-6 shadow-lg shadow-acg-blue/5"
+              variants={cardItemVariants}
+              className="rounded-3xl border-transparent bg-white p-8 shadow-lg shadow-acg-blue/5 sm:p-10"
             >
               <h3 className="text-lg font-semibold text-acg-blue">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-foreground/75">
@@ -69,10 +104,10 @@ export default function Services({
               {item.note ? (
                 <p className="mt-4 text-xs text-foreground/50">{item.note}</p>
               ) : null}
-            </li>
+            </motion.li>
           ))}
-        </ul>
-      </div>
+        </motion.ul>
+      </motion.div>
     </section>
   );
 }

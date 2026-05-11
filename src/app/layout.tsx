@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import SmoothScrolling from "@/src/components/SmoothScrolling";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,7 +33,13 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-full flex flex-col bg-background text-foreground font-sans"
       >
-        {children}
+        {/* Intercept Bitdefender extension attribute injections before React hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var o=new MutationObserver(function(m){m.forEach(function(r){if(r.type==='attributes'&&r.attributeName==='bis_skin_checked'){r.target.removeAttribute('bis_skin_checked')}})});o.observe(document.documentElement,{attributes:true,subtree:true,attributeFilter:['bis_skin_checked']});setTimeout(function(){o.disconnect()},5000);document.querySelectorAll('[bis_skin_checked]').forEach(function(e){e.removeAttribute('bis_skin_checked')})})()`,
+          }}
+        />
+        <SmoothScrolling>{children}</SmoothScrolling>
       </body>
     </html>
   );
