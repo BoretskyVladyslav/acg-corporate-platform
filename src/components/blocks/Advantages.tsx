@@ -1,117 +1,84 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BadgeCheck, Shield, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 export interface AdvantageItem {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
 }
 
-export interface AdvantagesProps {
-  eyebrow?: string;
-  heading?: string;
-  intro?: string;
-  items?: AdvantageItem[];
-}
-
-const icons = [Sparkles, Shield, BadgeCheck] as const;
-
-const defaultItems: AdvantageItem[] = [
+const ADVANTAGES_ITEMS: AdvantageItem[] = [
   {
-    title: "Досвідена команда",
+    title: "ПРОЗОРЕ ЦІНОУТВОРЕННЯ",
     description:
-      "Працюємо з ФОП різних груп та надаємо перевірені юридичні та бухгалтерські рішення.",
+      "Вартість послуг визначається відповідно до об'єму роботи в поточному місяці на підставі тарифів, закріплених у договорі. Все прозоро та зрозуміло.",
   },
   {
-    title: "Прозорий процес",
+    title: "ТРИ РІВНЯ КОНТРОЛЮ",
     description:
-      "Чіткі етапи супроводу, передбачувані терміни та зрозуміла комунікація без зайвої бюрократії.",
+      "Проводимо внутрішній аудит, в якому перевіряємо самі себе і унеможливлюємо настання негативних наслідків для вашого підприємства.",
   },
   {
-    title: "Індивідуальний підхід",
+    title: "ОПЕРАТИВНІСТЬ",
     description:
-      "Підбираємо формат співпраці під ваші цілі й масштаб бізнесу, без шаблонних рішень.",
+      "За вами буде закріплений окремий бухгалтер, який оперативно надає відповідь на ваші питання.",
+  },
+  {
+    title: "ЮРИДИЧНИЙ ЗАХИСТ",
+    description:
+      "В нашому штаті працює команда юристів, яка допоможе в вирішенні будь-якої ситуації.",
   },
 ];
 
-const cardListVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const cardItemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
-
-export default function Advantages({
-  eyebrow = "Переваги",
-  heading = "Чому обирають нас",
-  intro = "Наші ключові переваги",
-  items = defaultItems,
-}: AdvantagesProps) {
+export default function Advantages() {
   return (
     <section
       aria-labelledby="advantages-heading"
-      className="border-y border-foreground/10 bg-white text-foreground"
+      className="bg-white text-foreground"
     >
-      <motion.div
-        className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
-      >
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
-          {eyebrow}
-        </p>
-        <h2
-          id="advantages-heading"
-          className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
-        >
-          {heading}
-        </h2>
-        <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/75">
-          {intro}
-        </p>
-        <motion.ul
-          className="mt-12 grid gap-8 sm:grid-cols-3 lg:gap-10"
-          variants={cardListVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          {items.map((item, i) => {
-            const Icon = icons[i % icons.length];
-            return (
-              <motion.li
-                key={i}
-                variants={cardItemVariants}
-                className="flex flex-col gap-3 rounded-3xl border-transparent bg-white p-8 shadow-lg shadow-acg-blue/5 sm:p-10"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-acg-blue/20 bg-acg-blue/5">
-                  <Icon className="h-5 w-5 text-acg-blue" aria-hidden />
-                </div>
-                <h3 className="text-lg font-semibold text-acg-blue">
-                  {item.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-foreground/75">
-                  {item.description}
-                </p>
-              </motion.li>
-            );
-          })}
-        </motion.ul>
-      </motion.div>
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:gap-20">
+        <div className="col-span-1 h-fit pb-12 pt-24 lg:sticky lg:top-24 lg:col-span-5 lg:pb-0 lg:pt-32">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
+            Переваги
+          </p>
+          <h2
+            id="advantages-heading"
+            className="mt-3 bg-gradient-to-b from-[#1a3a63] via-[#245494] to-[#1a3a63] bg-clip-text text-5xl font-black uppercase leading-[0.9] tracking-tighter text-transparent lg:text-7xl"
+          >
+            ЧОМУ НАС ОБИРАЮТЬ ?
+          </h2>
+          <Image
+            src="/images/team-transparent.png"
+            alt="Команда ACG"
+            width={900}
+            height={700}
+            priority
+            className="mt-12 h-auto w-full object-contain [filter:drop-shadow(0_20px_40px_rgba(0,0,0,0.12))]"
+          />
+        </div>
+
+        <div className="col-span-1 flex flex-col pb-24 pt-12 lg:col-span-7 lg:pb-[30vh] lg:pt-[40vh]">
+          {ADVANTAGES_ITEMS.map((item, i) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-[25vh] last:mb-0"
+            >
+              <span className="mb-4 block text-7xl font-bold text-acg-blue/10">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h3 className="text-3xl font-bold text-acg-blue">{item.title}</h3>
+              <p className="mt-4 text-xl leading-relaxed text-foreground/75">
+                {item.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
