@@ -6,10 +6,12 @@ import LeadCaptureForm from "@/src/components/blocks/LeadCaptureForm";
 import Pricing from "@/src/components/blocks/Pricing";
 import Services from "@/src/components/blocks/Services";
 import TrustBlock from "@/src/components/blocks/TrustBlock";
+import SiteHeader from "@/src/components/SiteHeader";
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
+      <SiteHeader />
       <main>
         <Hero />
         <AboutCompany />

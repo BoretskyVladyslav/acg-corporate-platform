@@ -68,7 +68,7 @@ export default function Advantages() {
               transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
               className="mb-[25vh] last:mb-0"
             >
-              <span className="mb-4 block text-7xl font-bold text-acg-blue/10">
+              <span className="mb-4 block text-5xl font-black text-acg-blue/75 sm:text-7xl sm:text-acg-blue/65">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="text-3xl font-bold text-acg-blue">{item.title}</h3>

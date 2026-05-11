@@ -201,7 +201,7 @@ export default function Hero({
               LEFT COLUMN — "Safe Zone" (text never overlapped)
               7 of 12 columns on desktop
               ═══════════════════════════════════════════════ */}
-          <div className="col-span-1 lg:col-span-7 flex flex-col justify-center z-10 relative px-2 lg:pl-16 py-12 lg:py-0">
+          <div className="col-span-1 lg:col-span-7 flex flex-col justify-center z-10 relative px-2 lg:pl-16 max-lg:pt-[max(6.25rem,calc(1.75rem+env(safe-area-inset-top,0px)+4.5rem))] max-lg:pb-12 lg:py-0">
             {/* Entrance animation — runs ONCE, then framer-motion detaches */}
             <motion.div
               initial="hidden"
