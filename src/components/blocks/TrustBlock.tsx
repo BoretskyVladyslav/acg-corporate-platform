@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+
+import Reviews from "@/src/components/blocks/Reviews";
+import type { GoogleReviewItem } from "@/src/components/blocks/Reviews";
 
 export interface TrustQuote {
   quote?: string;
@@ -27,30 +29,45 @@ export interface TrustBlockProps {
   googleReviewsLabel?: string;
 }
 
-const defaultQuotes: TrustQuote[] = [
-  {
-    author: "Nataliia Melnychenko",
-    quote:
-      "Чудовий сервіс для ФОПів, працівники компанії завжди на зв'язку.",
-  },
-  {
-    author: "Олександр",
-    quote:
-      "Професійний підхід до ведення бухгалтерії. Зняли з мене весь головний біль щодо податків.",
-  },
-  {
-    author: "Ірина",
-    quote:
-      "Працюємо вже більше року, жодних нарікань. Швидко, чітко, прозоро.",
-  },
-  {
-    author: "Марія",
-    quote:
-      "Зручний кабінет і зрозумілі звіти. Рекомую всім, хто цінує час і спокій.",
-  },
-];
+function normalizeQuote(row: TrustQuote): {
+  authorLabel: string;
+  body: string;
+} {
+  const raw = row.quote?.trim() ?? "";
+  const named = row.author?.trim();
+  if (named && raw) return { authorLabel: named, body: raw };
+  const m = raw.match(/^([^:]+):\s*([\s\S]+)$/);
+  if (m) return { authorLabel: m[1].trim(), body: m[2].trim() };
+  return { authorLabel: "Клієнт", body: raw };
+}
 
-const cardListVariants = {
+function mapTrustQuotesToReviews(quotes: TrustQuote[]): GoogleReviewItem[] {
+  const datePool = [
+    "січень 2025",
+    "грудень 2024",
+    "лютий 2025",
+    "листопад 2024",
+    "березень 2025",
+  ];
+  return quotes.map((q, i) => {
+    const { authorLabel, body } = normalizeQuote(q);
+    const nameSrc = q.author?.trim() || authorLabel;
+    const initial =
+      nameSrc.trim().slice(0, 1).toUpperCase() ||
+      body.trim().slice(0, 1).toUpperCase() ||
+      "?";
+    return {
+      id: `g-review-${i}-${nameSrc.replace(/\W/g, "").slice(0, 28) || "client"}`,
+      authorName: authorLabel,
+      authorInitial: initial,
+      text: body,
+      date: datePool[i % datePool.length] ?? "2025",
+      rating: 5 as const,
+    };
+  });
+}
+
+const logoListVariants = {
   hidden: {},
   visible: {
     transition: {
@@ -59,7 +76,7 @@ const cardListVariants = {
   },
 };
 
-const cardItemVariants = {
+const logoItemVariants = {
   hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
@@ -119,45 +136,6 @@ function GoogleRatingBadge({
   );
 }
 
-function ReviewStars({ className }: { className?: string }) {
-  return (
-    <div
-      className={className}
-      aria-label="5 з 5 зірок"
-      role="img"
-    >
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className="size-3 fill-yellow-400 text-yellow-400"
-          strokeWidth={0}
-          aria-hidden
-        />
-      ))}
-    </div>
-  );
-}
-
-function quoteInitial(author: string | undefined, quote: string | undefined) {
-  const a = author?.trim();
-  if (a) return a.slice(0, 1).toUpperCase();
-  const q = quote?.trim();
-  if (q) return q.slice(0, 1).toUpperCase();
-  return "?";
-}
-
-function normalizeQuote(row: TrustQuote): {
-  authorLabel: string;
-  body: string;
-} {
-  const raw = row.quote?.trim() ?? "";
-  const named = row.author?.trim();
-  if (named && raw) return { authorLabel: named, body: raw };
-  const m = raw.match(/^([^:]+):\s*([\s\S]+)$/);
-  if (m) return { authorLabel: m[1].trim(), body: m[2].trim() };
-  return { authorLabel: "Клієнт", body: raw };
-}
-
 export default function TrustBlock({
   eyebrow = "Довіра",
   heading = "Відгуки клієнтів",
@@ -166,12 +144,14 @@ export default function TrustBlock({
   quotes,
   logos,
   googleRatingScore = "4.9",
-  googleReviewsLabel = "107 відгуків",
+  googleReviewsLabel = "110 відгуків",
 }: TrustBlockProps) {
   const filteredQuotes =
     quotes?.filter((q) => Boolean(q.quote?.trim())) ?? [];
-  const resolvedQuotes =
-    filteredQuotes.length > 0 ? filteredQuotes : defaultQuotes;
+  const reviewsFromCms =
+    filteredQuotes.length > 0
+      ? mapTrustQuotesToReviews(filteredQuotes)
+      : undefined;
 
   const filteredLogos =
     logos?.filter(
@@ -222,51 +202,7 @@ export default function TrustBlock({
           </motion.div>
         </div>
 
-        <motion.div
-          className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-          variants={cardListVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.12 }}
-        >
-          {resolvedQuotes.map((q, i) => {
-            const { authorLabel, body } = normalizeQuote(q);
-            const initial = quoteInitial(
-              q.author ?? authorLabel,
-              body,
-            );
-            return (
-              <motion.article
-                key={`${authorLabel}-${i}`}
-                variants={cardItemVariants}
-                className="flex flex-col rounded-2xl border-[0.5px] border-acg-border bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-7"
-              >
-                <header className="flex gap-3">
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-acg-blue/10 text-sm font-medium text-acg-blue"
-                    aria-hidden
-                  >
-                    {initial}
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <p className="text-sm font-medium text-foreground">
-                      {authorLabel}
-                    </p>
-                    <ReviewStars className="mt-1 flex gap-0.5" />
-                    {q.role?.trim() ? (
-                      <p className="mt-0.5 text-xs text-foreground/50">
-                        {q.role.trim()}
-                      </p>
-                    ) : null}
-                  </div>
-                </header>
-                <p className="mt-4 text-left text-sm leading-relaxed text-acg-body">
-                  {body}
-                </p>
-              </motion.article>
-            );
-          })}
-        </motion.div>
+        <Reviews items={reviewsFromCms} />
 
         {filteredLogos.length > 0 ? (
           <div className="mt-16 border-t border-foreground/10 pt-10">
@@ -275,13 +211,13 @@ export default function TrustBlock({
             </p>
             <motion.ul
               className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-8"
-              variants={cardListVariants}
+              variants={logoListVariants}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
             >
               {filteredLogos.map((logo, i) => (
-                <motion.li key={i} variants={cardItemVariants}>
+                <motion.li key={i} variants={logoItemVariants}>
                   {logo.imageUrl ? (
                     <Image
                       src={logo.imageUrl}

@@ -26,7 +26,8 @@ import { lenisEasing } from "@/src/lib/lenisEasing";
 const FALLBACK_HEADER_OFFSET_PX = 88;
 const LENIS_SCROLL_TO_DURATION = 1.15;
 
-const NAV_ACTIVE_PILL_LAYOUT_ID = "nav-desktop-active-pill";
+/** Єдиний layoutId для shared layout між пунктами меню та CTA. */
+const NAV_ACTIVE_PILL_LAYOUT_ID = "activeMenuPill";
 
 const IO_THRESHOLDS = [
   0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.35, 0.5, 0.65, 0.8, 1,
@@ -52,10 +53,14 @@ const MOBILE_MENU_EMAIL_HREF = "mailto:info@acg-ua.com";
 
 const FLUID_EASE = [0.4, 0, 0.2, 1] as const;
 
-const NAV_LAYOUT_TWEEN = {
-  type: "tween" as const,
-  ease: "circOut" as const,
-  duration: 0.3,
+/** Плашка активного пункту: жорсткіший spring — швидкий «переліт», мало залипання. */
+const NAV_ACTIVE_PILL_SPRING = {
+  type: "spring" as const,
+  stiffness: 400,
+  damping: 25,
+  mass: 0.55,
+  restSpeed: 2.5,
+  restDelta: 0.01,
 };
 
 const BURGER_MORPH_TWEEN = {
@@ -65,16 +70,6 @@ const BURGER_MORPH_TWEEN = {
 };
 
 const MOBILE_MENU_EASE = [0.22, 1, 0.36, 1] as const;
-
-const navLinkMotionVariants = {
-  rest: {},
-  hover: {},
-} as const;
-
-const navUnderlineVariants = {
-  rest: { scaleX: 0 },
-  hover: { scaleX: 1 },
-} as const;
 
 const MOBILE_OVERLAY_EXIT_DELAY = 0.4;
 
@@ -115,7 +110,7 @@ const linkBaseClass =
   "relative z-10 whitespace-nowrap px-4 py-2 font-sans text-sm font-medium tracking-wide text-foreground/65 outline-none transition-colors duration-700 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:text-foreground/90 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-acg-blue/20 focus-visible:ring-offset-2 focus-visible:ring-offset-white/90";
 
 const linkActiveClass =
-  "!text-acg-blue transition-colors duration-700 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:!text-acg-blue focus-visible:!ring-offset-white";
+  "!text-blue-950 transition-colors duration-200 ease-out hover:!text-blue-950 focus-visible:!ring-offset-white";
 
 const mobileLinkActiveClass =
   "font-light text-acg-blue !no-underline";
@@ -560,7 +555,7 @@ export default function SiteHeader() {
 
         <div className="pointer-events-none px-4 pt-3 sm:px-6 sm:pt-4">
           <motion.div
-            className="pointer-events-auto mx-auto w-full max-w-7xl overflow-hidden rounded-[999px] border border-acg-blue/[0.08] contain-layout will-change-transform [transform:translateZ(0)]"
+            className="pointer-events-auto mx-auto w-full max-w-7xl overflow-hidden rounded-[999px] border border-acg-blue/[0.08] will-change-transform [transform:translateZ(0)]"
             initial={false}
             style={{
               backdropFilter,
@@ -594,68 +589,47 @@ export default function SiteHeader() {
 
               <LayoutGroup id="site-header-desktop-nav">
                 <div className="absolute left-1/2 z-10 hidden -translate-x-1/2 items-center justify-center lg:flex">
-                  <motion.ul
-                    layout={!reduceMotionPreferred}
-                    className="m-0 flex list-none items-center justify-center p-0"
-                  >
+                  <ul className="m-0 flex list-none items-center justify-center p-0">
                     {NAV.map((item) => {
                       const id = anchorFromHash(item.href);
                       const isActive = activeSectionId === id;
                       const showNavPill =
                         isActive && activeSectionId !== "contact";
                       return (
-                        <motion.li
-                          key={item.href}
-                          layout={!reduceMotionPreferred}
-                          className="list-none"
-                        >
-                          <motion.a
+                        <li key={item.href} className="relative list-none">
+                          {showNavPill ? (
+                              <motion.div
+                              layoutId={NAV_ACTIVE_PILL_LAYOUT_ID}
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 z-0 rounded-full bg-blue-50/80 shadow-sm ring-1 ring-slate-900/[0.06] will-change-transform"
+                              transition={
+                                reduceMotionPreferred
+                                  ? { duration: 0 }
+                                  : NAV_ACTIVE_PILL_SPRING
+                              }
+                            />
+                          ) : null}
+                          <a
                             href={item.href}
                             onClick={(e) =>
                               scrollToSectionDesktop(item.href, e)
                             }
-                            className={`${linkBaseClass} ${isActive ? linkActiveClass : ""}`}
-                            variants={navLinkMotionVariants}
-                            initial="rest"
-                            whileHover={
-                              reduceMotionPreferred ? undefined : "hover"
-                            }
-                            whileFocus={
-                              reduceMotionPreferred ? undefined : "hover"
-                            }
+                            className={`group ${linkBaseClass} ${isActive ? linkActiveClass : ""}`}
                             aria-current={isActive ? "location" : undefined}
                           >
-                            {showNavPill ? (
-                              <motion.div
-                                layoutId={NAV_ACTIVE_PILL_LAYOUT_ID}
-                                aria-hidden
-                                className="pointer-events-none absolute inset-0 z-0 rounded-full bg-acg-blue/15 will-change-transform"
-                                transition={
-                                  reduceMotionPreferred
-                                    ? { duration: 0 }
-                                    : { layout: NAV_LAYOUT_TWEEN }
-                                }
-                              />
-                            ) : null}
                             <span className="relative z-10">{item.label}</span>
                             {!isActive ? (
-                              <motion.div
+                              <span
                                 aria-hidden
-                                variants={navUnderlineVariants}
-                                transition={
-                                  reduceMotionPreferred
-                                    ? { duration: 0 }
-                                    : NAV_LAYOUT_TWEEN
-                                }
-                                className="pointer-events-none absolute left-4 right-4 z-10 h-px origin-center bg-current opacity-60 will-change-transform"
+                                className="pointer-events-none absolute left-4 right-4 z-10 h-px origin-center bg-current opacity-60 scale-x-0 transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none group-hover:scale-x-100 group-focus-visible:scale-x-100"
                                 style={{ bottom: "-4px" }}
                               />
                             ) : null}
-                          </motion.a>
-                        </motion.li>
+                          </a>
+                        </li>
                       );
                     })}
-                  </motion.ul>
+                  </ul>
                 </div>
 
                 <div className="relative z-10 flex shrink-0 items-center gap-2">
@@ -677,11 +651,11 @@ export default function SiteHeader() {
                       <motion.div
                         layoutId={NAV_ACTIVE_PILL_LAYOUT_ID}
                         aria-hidden
-                        className="pointer-events-none absolute -inset-1 z-0 rounded-full border border-foreground/12 bg-white/50 shadow-[0_6px_28px_-10px_theme(colors.acg-blue/0.2)] backdrop-blur-md will-change-transform"
+                        className="pointer-events-none absolute -inset-1 z-0 rounded-full bg-blue-50/80 shadow-sm ring-1 ring-slate-900/[0.06] backdrop-blur-[2px] will-change-transform"
                         transition={
                           reduceMotionPreferred
                             ? { duration: 0 }
-                            : { layout: NAV_LAYOUT_TWEEN }
+                            : NAV_ACTIVE_PILL_SPRING
                         }
                       />
                     ) : null}
