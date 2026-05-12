@@ -13,6 +13,7 @@ export interface LeadCaptureFormProps {
   addressLine?: string;
   phoneDisplay?: string;
   phoneHref?: string;
+  service?: string;
 }
 
 function mapSubmitError(code: string | undefined): string {
@@ -25,6 +26,7 @@ function mapSubmitError(code: string | undefined): string {
       return "Вкажіть коректне ім'я.";
     case "auth_failed":
     case "no_responsible":
+    case "no_delivery_channel":
       return "Сервіс тимчасово недоступний. Спробуйте пізніше.";
     case "crm_rejected":
       return "Не вдалося зберегти заявку. Спробуйте ще раз.";
@@ -45,6 +47,7 @@ export default function LeadCaptureForm({
   addressLine = "М. КИЇВ, ВУЛ. САКСАГАНСЬКОГО 28.",
   phoneDisplay = "+38 097 505 86 86",
   phoneHref = "tel:+380975058686",
+  service,
 }: LeadCaptureFormProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -62,7 +65,12 @@ export default function LeadCaptureForm({
         const res = await fetch("/api/sendpulse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, phone, email }),
+          body: JSON.stringify({
+            name,
+            phone,
+            ...(email.trim() ? { email: email.trim() } : {}),
+            ...(service?.trim() ? { service: service.trim() } : {}),
+          }),
         });
         const data = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
@@ -82,7 +90,7 @@ export default function LeadCaptureForm({
         setIsSubmitting(false);
       }
     },
-    [name, phone, email],
+    [name, phone, email, service],
   );
 
   const inputClass =
@@ -236,7 +244,6 @@ export default function LeadCaptureForm({
                     inputMode="email"
                     value={email}
                     onChange={(ev) => setEmail(ev.target.value)}
-                    required
                     className={inputClass}
                   />
                 </div>

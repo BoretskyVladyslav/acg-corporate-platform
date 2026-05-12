@@ -7,7 +7,86 @@ type Body = {
   name?: string;
   phone?: string;
   email?: string;
+  service?: string;
 };
+
+function escapeTelegramHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function buildTelegramLeadText(input: {
+  name: string;
+  phone: string;
+  email?: string;
+  service?: string;
+}): string {
+  const name = escapeTelegramHtml(input.name);
+  const phone = escapeTelegramHtml(input.phone);
+  const lines = [
+    "🟢 <b>НОВИЙ ЛІД (Лендінг ACG)</b>",
+    `👤 <b>Ім'я:</b> ${name}`,
+    `📞 <b>Телефон:</b> ${phone}`,
+  ];
+  if (input.email?.trim()) {
+    lines.push(
+      `✉️ <b>Email:</b> ${escapeTelegramHtml(input.email.trim())}`,
+    );
+  }
+  if (input.service?.trim()) {
+    lines.push(
+      `🎯 <b>Послуга:</b> ${escapeTelegramHtml(input.service.trim())}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+function scheduleTelegramSend(text: string): void {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+  if (!token || !chatId) {
+    console.error(
+      "[sendpulse] telegram: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID",
+    );
+    return;
+  }
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const threadRaw = process.env.TELEGRAM_THREAD_ID?.trim();
+  void (async () => {
+    try {
+      const telegramBody: {
+        chat_id: string;
+        text: string;
+        parse_mode: "HTML";
+        message_thread_id?: number;
+      } = {
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+      };
+      if (threadRaw) {
+        telegramBody.message_thread_id = Number.parseInt(threadRaw, 10);
+      }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(telegramBody),
+      });
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        console.error(
+          "[sendpulse] telegram sendMessage failed",
+          res.status,
+          errBody.slice(0, 500),
+        );
+      }
+    } catch (e) {
+      console.error("[sendpulse] telegram sendMessage error", e);
+    }
+  })();
+}
 
 async function getAccessToken(): Promise<string | null> {
   const clientId = process.env.SENDPULSE_ID?.trim();
@@ -62,6 +141,19 @@ function isValidEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+function isSendPulseConfigured(): boolean {
+  return Boolean(
+    process.env.SENDPULSE_ID?.trim() && process.env.SENDPULSE_SECRET?.trim(),
+  );
+}
+
+function isTelegramConfigured(): boolean {
+  return Boolean(
+    process.env.TELEGRAM_BOT_TOKEN?.trim() &&
+      process.env.TELEGRAM_CHAT_ID?.trim(),
+  );
+}
+
 export async function POST(req: Request) {
   let body: Body;
   try {
@@ -72,49 +164,102 @@ export async function POST(req: Request) {
 
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const phone = typeof body.phone === "string" ? body.phone.trim() : "";
-  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const emailRaw =
+    typeof body.email === "string" ? body.email.trim() : "";
+  const service =
+    typeof body.service === "string" ? body.service.trim() : undefined;
 
-  if (!name || !phone || !email) {
+  if (!name || !phone) {
     return NextResponse.json({ ok: false, error: "required_fields" }, { status: 400 });
   }
-  if (!isValidEmail(email)) {
+
+  const sendPulseReady = isSendPulseConfigured();
+  const telegramReady = isTelegramConfigured();
+
+  if (!sendPulseReady && !telegramReady) {
+    console.error(
+      "[sendpulse] no delivery channel: SendPulse and Telegram are not configured",
+    );
+    return NextResponse.json(
+      { ok: false, error: "no_delivery_channel" },
+      { status: 503 },
+    );
+  }
+
+  if (sendPulseReady) {
+    if (!emailRaw) {
+      return NextResponse.json(
+        { ok: false, error: "required_fields" },
+        { status: 400 },
+      );
+    }
+    if (!isValidEmail(emailRaw)) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_email" },
+        { status: 400 },
+      );
+    }
+  } else if (emailRaw && !isValidEmail(emailRaw)) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
   }
 
-  const token = await getAccessToken();
-  if (!token) {
-    return NextResponse.json({ ok: false, error: "auth_failed" }, { status: 503 });
+  if (telegramReady) {
+    scheduleTelegramSend(
+      buildTelegramLeadText({
+        name,
+        phone,
+        ...(emailRaw ? { email: emailRaw } : {}),
+        service,
+      }),
+    );
   }
 
-  const responsibleId = await resolveResponsibleId(token);
-  if (responsibleId === null) {
-    return NextResponse.json({ ok: false, error: "no_responsible" }, { status: 503 });
+  if (sendPulseReady) {
+    const token = await getAccessToken();
+    if (!token) {
+      console.error("[sendpulse] SendPulse auth failed");
+      return NextResponse.json({ ok: false, error: "auth_failed" }, { status: 503 });
+    }
+
+    const responsibleId = await resolveResponsibleId(token);
+    if (responsibleId === null) {
+      console.error("[sendpulse] SendPulse no responsible user");
+      return NextResponse.json({ ok: false, error: "no_responsible" }, { status: 503 });
+    }
+
+    const { firstName, lastName } = splitName(name);
+    if (!firstName) {
+      return NextResponse.json({ ok: false, error: "invalid_name" }, { status: 400 });
+    }
+
+    const payload: Record<string, unknown> = {
+      responsibleId,
+      firstName,
+      phones: [phone],
+      emails: [emailRaw],
+    };
+    if (lastName) payload.lastName = lastName;
+
+    const crmRes = await fetch(`${CRM_BASE}/contacts`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!crmRes.ok) {
+      const errBody = await crmRes.text().catch(() => "");
+      console.error("[sendpulse] CRM rejected", crmRes.status, errBody.slice(0, 500));
+      return NextResponse.json({ ok: false, error: "crm_rejected" }, { status: 502 });
+    }
   }
 
-  const { firstName, lastName } = splitName(name);
-  if (!firstName) {
-    return NextResponse.json({ ok: false, error: "invalid_name" }, { status: 400 });
-  }
-
-  const payload: Record<string, unknown> = {
-    responsibleId,
-    firstName,
-    phones: [phone],
-    emails: [email],
-  };
-  if (lastName) payload.lastName = lastName;
-
-  const crmRes = await fetch(`${CRM_BASE}/contacts`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!crmRes.ok) {
-    return NextResponse.json({ ok: false, error: "crm_rejected" }, { status: 502 });
+  if (!telegramReady) {
+    console.error(
+      "[sendpulse] telegram not configured; lead saved only via SendPulse (if any)",
+    );
   }
 
   return NextResponse.json({ ok: true });
