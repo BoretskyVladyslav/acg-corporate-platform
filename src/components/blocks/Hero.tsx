@@ -100,8 +100,7 @@ const itemVariants = {
   },
 };
 
-const figureHeightClass = "lg:h-[95vh]";
-const figureScaleClass = "lg:scale-[1.4] xl:scale-[2]";
+const figureScaleClass = "lg:scale-[1.32] xl:scale-[1.72]";
 
 const headlineAccentClass =
   "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.08] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-5xl sm:text-6xl lg:text-6xl xl:text-7xl";
@@ -147,7 +146,8 @@ const floatingBadges: FloatingBadge[] = [
         </p>
       </div>
     ),
-    positionClass: "top-[6%] left-[4%] md:top-[20%] md:left-[20%]",
+    positionClass:
+      "top-16 -left-2 sm:top-20 sm:-left-6 lg:top-[30%] lg:-left-8 xl:top-[28%] xl:-left-10",
     animationDelay: 0,
     parallaxMul: 12,
   },
@@ -161,7 +161,8 @@ const floatingBadges: FloatingBadge[] = [
         aria-hidden
       />
     ),
-    positionClass: "top-[34%] right-[4%] md:top-[45%] md:right-[5%]",
+    positionClass:
+      "top-1/2 right-0 -translate-y-[42%] translate-x-2 sm:-translate-y-[40%] sm:translate-x-3 md:-right-2 md:translate-x-4 lg:top-1/2 lg:-right-5 lg:translate-x-1 lg:-translate-y-[38%]",
     animationDelay: 1.2,
     parallaxMul: 16,
   },
@@ -176,7 +177,8 @@ const floatingBadges: FloatingBadge[] = [
         </p>
       </div>
     ),
-    positionClass: "bottom-[26%] left-[2%] md:bottom-[20%] md:left-[-7%]",
+    positionClass:
+      "bottom-20 left-1/2 z-[7] -translate-x-1/2 sm:bottom-24 sm:left-auto sm:translate-x-0 sm:-left-8 md:bottom-28 md:-left-12 lg:-left-14 lg:bottom-[7.5rem] xl:-left-16",
     animationDelay: 2.4,
     parallaxMul: 14,
   },
@@ -297,7 +299,7 @@ export default function Hero({
           {heading}
         </h1>
 
-        <div className="relative grid min-h-0 grid-cols-1 gap-0 max-md:flex max-md:min-h-[90vh] max-md:flex-col lg:grid lg:min-h-[90vh] lg:grid-cols-12 lg:h-screen">
+        <div className="relative grid min-h-0 grid-cols-1 gap-0 max-md:flex max-md:min-h-[90vh] max-md:flex-col lg:grid lg:min-h-[90vh] lg:grid-cols-12 lg:h-screen lg:items-stretch">
 
           <div className="relative z-10 col-span-1 flex max-w-none flex-col justify-center px-0 max-md:order-1 max-md:pb-6 max-md:pt-[max(5.5rem,calc(1.5rem+env(safe-area-inset-top,0px)+4.25rem))] lg:col-span-7 lg:max-w-none lg:px-0 lg:pl-16 lg:py-0 lg:pt-0">
             <motion.div
@@ -378,7 +380,7 @@ export default function Hero({
           </div>
 
           <div
-            className={`relative col-span-1 z-20 flex max-md:order-2 max-md:mt-2 max-md:w-full max-md:justify-center lg:col-span-5 lg:-ml-20 lg:items-end lg:justify-center lg:overflow-visible ${figureHeightClass}`}
+            className="relative col-span-1 z-20 flex max-md:order-2 max-md:mt-auto max-md:w-full max-md:flex-col max-md:items-center max-md:justify-end max-md:pb-0 max-md:pt-2 lg:col-span-5 lg:-ml-20 lg:min-h-0 lg:flex-col lg:items-stretch lg:justify-end lg:overflow-visible lg:pb-0"
           >
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 top-[10%] bg-[radial-gradient(ellipse_80%_55%_at_50%_78%,color-mix(in_oklab,var(--color-acg-blue)_14%,transparent)_0%,transparent_68%)] max-md:hidden"
@@ -386,12 +388,12 @@ export default function Hero({
             />
 
             <div
-              className="pointer-events-none absolute bottom-0 left-1/2 z-[1] hidden h-[16%] w-[min(92%,480px)] -translate-x-1/2 rounded-[100%] bg-foreground/20 blur-[52px] lg:block"
+              className="pointer-events-none absolute bottom-0 left-1/2 z-[1] hidden h-[14%] w-[min(92%,480px)] -translate-x-1/2 rounded-[100%] bg-foreground/18 blur-[48px] lg:block"
               aria-hidden
             />
 
             <motion.div
-              className={`relative z-[5] w-full max-md:h-[400px] max-md:w-full max-md:overflow-hidden max-md:rounded-2xl lg:absolute lg:inset-x-0 lg:bottom-0 lg:h-full lg:max-w-none origin-bottom ${figureScaleClass} [filter:drop-shadow(0_30px_60px_rgba(0,0,0,0.12))]`}
+              className={`relative z-[5] mt-auto w-full max-w-full max-md:max-h-[min(52vh,420px)] max-md:w-full max-md:overflow-visible max-md:rounded-2xl lg:flex lg:max-h-[min(88vh,52rem)] lg:min-h-0 lg:w-full lg:max-w-none lg:items-end lg:justify-center origin-bottom ${figureScaleClass} [filter:drop-shadow(0_30px_60px_rgba(0,0,0,0.12))]`}
               initial={{ opacity: 0, y: 80 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -407,7 +409,7 @@ export default function Hero({
                 height={1000}
                 priority
                 sizes="(min-width: 1280px) 42vw, (min-width: 1024px) 50vw, (min-width: 768px) 90vw, 100vw"
-                className="h-full w-full object-cover object-top max-md:min-h-[400px] lg:absolute lg:inset-0 lg:min-h-0 lg:object-contain lg:object-bottom"
+                className="h-auto w-full max-md:max-h-[min(52vh,420px)] max-md:object-contain max-md:object-bottom lg:block lg:max-h-[min(88vh,52rem)] lg:w-full lg:object-contain lg:object-bottom"
               />
             </motion.div>
 

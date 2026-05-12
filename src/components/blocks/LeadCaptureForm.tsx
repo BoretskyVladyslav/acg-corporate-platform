@@ -4,6 +4,20 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { type FormEvent, useCallback, useState } from "react";
 
+import {
+  LEAD_EMAIL_INVALID_MESSAGE,
+  filterLeadEmailInput,
+  isValidLeadEmail,
+} from "@/src/lib/leadEmail";
+import {
+  UA_PHONE_ERROR,
+  UA_PHONE_HINT,
+  UA_PHONE_INPUT_DEFAULT,
+  filterPhoneInput,
+  isValidUaPhone,
+  normalizeUaPhone,
+} from "@/src/lib/uaPhone";
+
 export interface LeadCaptureFormProps {
   id?: string;
   eyebrow?: string;
@@ -20,8 +34,10 @@ function mapSubmitError(code: string | undefined): string {
   switch (code) {
     case "required_fields":
       return "Заповніть усі обов'язкові поля.";
+    case "invalid_phone":
+      return UA_PHONE_ERROR;
     case "invalid_email":
-      return "Перевірте формат email.";
+      return LEAD_EMAIL_INVALID_MESSAGE;
     case "invalid_name":
       return "Вкажіть коректне ім'я.";
     case "auth_failed":
@@ -50,8 +66,11 @@ export default function LeadCaptureForm({
   service,
 }: LeadCaptureFormProps) {
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(UA_PHONE_INPUT_DEFAULT);
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -60,14 +79,43 @@ export default function LeadCaptureForm({
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       setSubmitError(null);
+      setPhoneError(null);
+      setEmailError(null);
+
+      if (!name.trim()) {
+        setSubmitError("Заповніть ім'я.");
+        return;
+      }
+      const digits = phone.replace(/\D/g, "");
+      if (digits.length <= 3) {
+        setPhoneError("Вкажіть номер телефону.");
+        return;
+      }
+      if (!isValidUaPhone(phone)) {
+        setPhoneError(UA_PHONE_ERROR);
+        return;
+      }
+      const phoneE164 = normalizeUaPhone(phone);
+      if (!phoneE164) {
+        setPhoneError(UA_PHONE_ERROR);
+        return;
+      }
+
+      const emailTrim = email.trim();
+      if (emailTrim && !isValidLeadEmail(emailTrim)) {
+        setEmailError(LEAD_EMAIL_INVALID_MESSAGE);
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const res = await fetch("/api/sendpulse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name,
-            phone,
+            name: name.trim(),
+            phone: phoneE164,
+            website: honeypot,
             ...(email.trim() ? { email: email.trim() } : {}),
             ...(service?.trim() ? { service: service.trim() } : {}),
           }),
@@ -82,19 +130,33 @@ export default function LeadCaptureForm({
         }
         setIsSuccess(true);
         setName("");
-        setPhone("");
+        setPhone(UA_PHONE_INPUT_DEFAULT);
         setEmail("");
+        setHoneypot("");
+        setEmailError(null);
       } catch {
         setSubmitError(mapSubmitError(undefined));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [name, phone, email, service],
+    [name, phone, email, honeypot, service],
   );
 
   const inputClass =
     "mt-2 block h-14 w-full rounded-xl border border-acg-border bg-acg-surface-subtle px-4 text-base text-foreground outline-none transition duration-200 placeholder:text-foreground/40 focus:border-acg-blue focus:ring-2 focus:ring-acg-blue/20";
+
+  const phoneInputClass = `${inputClass} ${
+    phoneError
+      ? "border-acg-red/80 focus:border-acg-red focus:ring-acg-red/25"
+      : ""
+  }`;
+
+  const emailInputClass = `${inputClass} ${
+    emailError
+      ? "border-acg-red/80 focus:border-acg-red focus:ring-acg-red/25"
+      : ""
+  }`;
 
   return (
     <section
@@ -184,7 +246,25 @@ export default function LeadCaptureForm({
                 </p>
               </motion.div>
             ) : (
-              <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              <form
+                onSubmit={handleSubmit}
+                noValidate
+                className="relative space-y-6"
+              >
+                <div
+                  className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden opacity-0"
+                  aria-hidden="true"
+                >
+                  <input
+                    id="lead-website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={honeypot}
+                    onChange={(ev) => setHoneypot(ev.target.value)}
+                  />
+                </div>
                 {submitError ? (
                   <p
                     className="rounded-xl border border-acg-red/25 bg-acg-red/5 px-4 py-3 text-sm text-acg-red"
@@ -222,12 +302,50 @@ export default function LeadCaptureForm({
                     id="lead-phone"
                     name="phone"
                     type="tel"
+                    inputMode="tel"
                     autoComplete="tel"
                     value={phone}
-                    onChange={(ev) => setPhone(ev.target.value)}
+                    onChange={(ev) => {
+                      const next = filterPhoneInput(ev.target.value);
+                      setPhone(next);
+                      if (phoneError && isValidUaPhone(next)) {
+                        setPhoneError(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      const digits = phone.replace(/\D/g, "");
+                      if (digits.length <= 3) {
+                        setPhoneError(null);
+                        return;
+                      }
+                      setPhoneError(
+                        isValidUaPhone(phone) ? null : UA_PHONE_ERROR,
+                      );
+                    }}
                     required
-                    className={inputClass}
+                    aria-invalid={phoneError ? true : undefined}
+                    aria-describedby={
+                      phoneError
+                        ? "lead-phone-error lead-phone-hint"
+                        : "lead-phone-hint"
+                    }
+                    className={phoneInputClass}
                   />
+                  <p
+                    id="lead-phone-hint"
+                    className={`mt-1.5 text-xs ${phoneError ? "text-foreground/40" : "text-foreground/50"}`}
+                  >
+                    {UA_PHONE_HINT}
+                  </p>
+                  {phoneError ? (
+                    <p
+                      id="lead-phone-error"
+                      className="mt-2 text-sm font-medium text-acg-red"
+                      role="alert"
+                    >
+                      {phoneError}
+                    </p>
+                  ) : null}
                 </div>
                 <div>
                   <label
@@ -239,13 +357,55 @@ export default function LeadCaptureForm({
                   <input
                     id="lead-email"
                     name="email"
-                    type="email"
+                    type="text"
                     autoComplete="email"
                     inputMode="email"
                     value={email}
-                    onChange={(ev) => setEmail(ev.target.value)}
-                    className={inputClass}
+                    onChange={(ev) => {
+                      const next = filterLeadEmailInput(ev.target.value);
+                      setEmail(next);
+                      if (
+                        emailError &&
+                        (!next.trim() || isValidLeadEmail(next))
+                      ) {
+                        setEmailError(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      const t = email.trim();
+                      if (!t) {
+                        setEmailError(null);
+                        return;
+                      }
+                      setEmailError(
+                        isValidLeadEmail(t)
+                          ? null
+                          : LEAD_EMAIL_INVALID_MESSAGE,
+                      );
+                    }}
+                    aria-invalid={emailError ? true : undefined}
+                    aria-describedby={
+                      emailError
+                        ? "lead-email-error lead-email-hint"
+                        : "lead-email-hint"
+                    }
+                    className={emailInputClass}
                   />
+                  <p
+                    id="lead-email-hint"
+                    className={`mt-1.5 text-xs ${emailError ? "text-foreground/40" : "text-foreground/50"}`}
+                  >
+                    Латиниця, цифри та символи @ . _ + -
+                  </p>
+                  {emailError ? (
+                    <p
+                      id="lead-email-error"
+                      className="mt-2 text-sm font-medium text-acg-red"
+                      role="alert"
+                    >
+                      {emailError}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="pt-2">
                   <motion.button

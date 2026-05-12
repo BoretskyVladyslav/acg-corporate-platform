@@ -97,23 +97,23 @@ export default function Services({
     <section
       id="services"
       aria-labelledby="services-title"
-      className="border-y border-foreground/10 bg-white text-foreground"
+      className="border-y border-foreground/[0.07] bg-white text-foreground"
     >
-      <div className="mx-auto max-w-6xl px-6 py-24 sm:px-6 sm:py-28 lg:py-32">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
+      <div className="mx-auto max-w-7xl px-6 py-24 sm:px-8 sm:py-28 lg:px-10 lg:py-36">
+        <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-foreground/45">
           {eyebrow}
         </p>
         <h2
           id="services-title"
-          className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
+          className="mt-5 max-w-4xl text-4xl font-light leading-[1.08] tracking-[-0.02em] text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.06]"
         >
           {heading}
         </h2>
-        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-foreground/75">
+        <p className="mt-7 max-w-2xl text-[1.0625rem] font-light leading-[1.75] text-foreground/65">
           {intro}
         </p>
         <motion.ul
-          className="mt-14 grid w-full grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-9 lg:grid-cols-4 lg:gap-12 xl:gap-14"
+          className="mt-16 grid w-full grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:mt-20 lg:gap-x-14 lg:gap-y-14"
           variants={listVariants}
           initial="hidden"
           whileInView="visible"
@@ -129,27 +129,28 @@ export default function Services({
               <motion.li
                 key={i}
                 variants={itemVariants}
-                className="relative isolate h-full w-full overflow-hidden rounded-3xl border-[0.5px] border-acg-border bg-gradient-to-br from-white to-acg-surface-subtle/50 p-8 shadow-[0_8px_30px_-18px_rgba(36,84,148,0.08)] transition-[border-color,box-shadow] duration-300 ease-out hover:border-acg-blue/30 hover:shadow-[0_14px_44px_-22px_rgba(36,84,148,0.14)] sm:p-9 lg:p-8 xl:p-10"
+                className="group relative isolate flex h-full min-h-0 w-full overflow-hidden rounded-2xl border border-foreground/[0.08] bg-white p-10 shadow-none transition-[border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:p-11 lg:min-h-[19rem] lg:p-12 xl:p-14 hover:border-foreground/[0.14] hover:shadow-[0_24px_64px_-40px_rgba(15,23,42,0.18)]"
               >
                 <span
-                  className="pointer-events-none absolute right-3 top-2 select-none font-light tabular-nums text-acg-light text-[clamp(3.5rem,12vw,5.5rem)] leading-none tracking-tighter sm:right-4 sm:top-3"
+                  className="pointer-events-none absolute -right-2 top-6 select-none font-extralight tabular-nums text-foreground/[0.055] text-[clamp(4.5rem,14vw,8.5rem)] leading-none tracking-[-0.04em] transition-opacity duration-500 group-hover:text-foreground/[0.07] sm:right-2 sm:top-8"
                   aria-hidden
                 >
                   {ordinal}
                 </span>
-                <div className="relative z-[1] flex h-full flex-col">
-                  <h3 className="text-lg font-medium tracking-[0.06em] text-acg-blue">
+                <div className="pointer-events-none absolute left-0 top-10 h-[calc(100%-2.5rem)] w-px bg-gradient-to-b from-foreground/12 via-foreground/6 to-transparent" />
+                <div className="relative z-[1] flex min-h-0 flex-1 flex-col pl-8 sm:pl-9 lg:pl-10">
+                  <h3 className="text-[1.375rem] font-normal leading-snug tracking-[-0.015em] text-foreground sm:text-2xl lg:text-[1.625rem] lg:leading-tight">
                     {item.title}
                   </h3>
                   {bullets.length ? (
-                    <ul className="mt-4 flex flex-1 flex-col gap-2.5">
+                    <ul className="mt-6 flex flex-1 flex-col gap-3.5">
                       {bullets.map((line, j) => (
                         <li
                           key={j}
-                          className="flex gap-2.5 text-sm leading-relaxed text-foreground/75"
+                          className="flex gap-3.5 text-[0.9375rem] font-light leading-[1.7] text-foreground/68"
                         >
                           <span
-                            className="mt-[0.55em] h-px w-2 shrink-0 bg-acg-blue/35"
+                            className="mt-[0.62rem] h-px w-3 shrink-0 bg-foreground/20"
                             aria-hidden
                           />
                           <span>{line}</span>
@@ -158,7 +159,7 @@ export default function Services({
                     </ul>
                   ) : null}
                   {item.note ? (
-                    <p className="mt-5 text-xs italic leading-loose text-foreground/45">
+                    <p className="mt-8 border-t border-foreground/[0.08] pt-6 text-[11px] font-normal uppercase tracking-[0.2em] text-foreground/40">
                       {item.note}
                     </p>
                   ) : null}

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { isValidLeadEmail } from "@/src/lib/leadEmail";
+import { normalizeUaPhone } from "@/src/lib/uaPhone";
+
 const CRM_BASE = "https://api.sendpulse.com/crm/v1";
 const AUTH_URL = "https://api.sendpulse.com/oauth/access_token";
 
@@ -8,6 +11,8 @@ type Body = {
   phone?: string;
   email?: string;
   service?: string;
+  /** Honeypot: must stay empty; bots often fill “website” fields. */
+  website?: string;
 };
 
 function escapeTelegramHtml(text: string): string {
@@ -137,10 +142,6 @@ function splitName(full: string): { firstName: string; lastName?: string } {
   return rest ? { firstName, lastName: rest } : { firstName };
 }
 
-function isValidEmail(v: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-}
-
 function isSendPulseConfigured(): boolean {
   return Boolean(
     process.env.SENDPULSE_ID?.trim() && process.env.SENDPULSE_SECRET?.trim(),
@@ -163,13 +164,33 @@ export async function POST(req: Request) {
   }
 
   const name = typeof body.name === "string" ? body.name.trim() : "";
-  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : "";
   const emailRaw =
     typeof body.email === "string" ? body.email.trim() : "";
   const service =
     typeof body.service === "string" ? body.service.trim() : undefined;
+  const honeypot =
+    typeof body.website === "string" ? body.website.trim() : "";
 
-  if (!name || !phone) {
+  if (honeypot) {
+    return NextResponse.json({ ok: true });
+  }
+
+  const phone = phoneRaw ? normalizeUaPhone(phoneRaw) : null;
+  if (!phoneRaw) {
+    return NextResponse.json(
+      { ok: false, error: "required_fields" },
+      { status: 400 },
+    );
+  }
+  if (!phone) {
+    return NextResponse.json(
+      { ok: false, error: "invalid_phone" },
+      { status: 400 },
+    );
+  }
+
+  if (!name) {
     return NextResponse.json({ ok: false, error: "required_fields" }, { status: 400 });
   }
 
@@ -193,13 +214,13 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    if (!isValidEmail(emailRaw)) {
+    if (!isValidLeadEmail(emailRaw)) {
       return NextResponse.json(
         { ok: false, error: "invalid_email" },
         { status: 400 },
       );
     }
-  } else if (emailRaw && !isValidEmail(emailRaw)) {
+  } else if (emailRaw && !isValidLeadEmail(emailRaw)) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
   }
 
