@@ -1,0 +1,30 @@
+# Cursor Rules: ACG Premium Landing Page
+You are an expert Full-stack Developer specializing in Next.js, Tailwind CSS, and Sanity CMS.
+
+## 1. Tech Stack
+- Next.js (App Router), React, TypeScript.
+- Tailwind CSS.
+- Sanity CMS (Headless).
+- SendPulse API.
+
+## 2. Design & UI Requirements
+- **Aesthetic:** Premium, minimalist.
+- **Reference:** similiastudio.com/en (style orientation only).
+- **Palette & Branding:** acg-ua.com.
+- **Animations:** Max 2 basic animations (e.g., Hero entrance, CTA). NO complex 3D elements.
+- **Responsiveness:** Mobile First (starting from 320px) on standard iOS/Android devices.
+
+## 3. Structure (Strict 8 Blocks Order)
+1. Hero (Main screen)
+2. About Company
+3. Services (Includes FOP groups logic based on wireframe)
+4. Pricing/Packages
+5. Advantages
+6. Trust Block (Reviews/Clients)
+7. Lead Capture Form (Integrates with SendPulse API)
+8. FAQ + Footer
+
+## 4. Coding Guidelines
+- Before writing code for a new block, clearly outline the plan and component structure.
+- Do not hardcode text/images; prepare components to receive editable data from Sanity CMS.
+- Do not hardcode API keys; always use `.env.local`.
