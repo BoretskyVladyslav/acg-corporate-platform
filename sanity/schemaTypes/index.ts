@@ -3,7 +3,7 @@ import { type SchemaTypeDefinition } from "sanity";
 import { aboutCompanyMetricType, landingAboutType } from "./landingAbout";
 import { advantageItemType, landingAdvantagesType } from "./landingAdvantages";
 import { faqFooterLinkType, faqItemType, landingFaqType } from "./landingFaq";
-import { landingHeroType } from "./landingHero";
+import { landingHeroType } from "./hero";
 import {
   landingPricingType,
   pricingFeatureLineType,
@@ -16,23 +16,26 @@ import {
   trustQuoteType,
 } from "./landingTrust";
 
+/**
+ * Усі object-типи першими, потім document-типи — стабільніша реєстрація в Studio.
+ */
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
     aboutCompanyMetricType,
-    landingAboutType,
     servicesCardType,
-    landingServicesType,
     pricingFeatureLineType,
     pricingTierSchemaType,
-    landingPricingType,
     advantageItemType,
-    landingAdvantagesType,
     trustQuoteType,
     trustPartnerLogoType,
-    landingTrustType,
     faqItemType,
     faqFooterLinkType,
-    landingFaqType,
     landingHeroType,
+    landingAboutType,
+    landingServicesType,
+    landingPricingType,
+    landingAdvantagesType,
+    landingTrustType,
+    landingFaqType,
   ],
 };

@@ -4,11 +4,14 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { type FormEvent, useCallback, useState } from "react";
 
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+
 import {
   LEAD_EMAIL_INVALID_MESSAGE,
   filterLeadEmailInput,
   isValidLeadEmail,
 } from "@/src/lib/leadEmail";
+import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
 import {
   UA_PHONE_ERROR,
   UA_PHONE_HINT,
@@ -46,6 +49,8 @@ function mapSubmitError(code: string | undefined): string {
       return "Сервіс тимчасово недоступний. Спробуйте пізніше.";
     case "crm_rejected":
       return "Не вдалося зберегти заявку. Спробуйте ще раз.";
+    case "list_sync_failed":
+      return "Не вдалося зберегти email у розсилці. Спробуйте ще раз.";
     case "bad_json":
       return "Некоректні дані форми.";
     default:
@@ -74,6 +79,8 @@ export default function LeadCaptureForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const isMdUp = useIsMdUp();
 
   const handleSubmit = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -109,6 +116,18 @@ export default function LeadCaptureForm({
 
       setIsSubmitting(true);
       try {
+        let tierFromPricing: string | undefined;
+        try {
+          if (typeof window !== "undefined") {
+            const stored = sessionStorage
+              .getItem(ACG_SELECTED_PRICING_TIER_KEY)
+              ?.trim();
+            if (stored) tierFromPricing = stored;
+          }
+        } catch {
+          /* ignore */
+        }
+
         const res = await fetch("/api/sendpulse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -118,6 +137,7 @@ export default function LeadCaptureForm({
             website: honeypot,
             ...(email.trim() ? { email: email.trim() } : {}),
             ...(service?.trim() ? { service: service.trim() } : {}),
+            ...(tierFromPricing ? { tier: tierFromPricing } : {}),
           }),
         });
         const data = (await res.json().catch(() => ({}))) as {
@@ -166,10 +186,13 @@ export default function LeadCaptureForm({
     >
       <motion.div
         className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
-        initial={{ opacity: 0, y: 30 }}
+        initial={isMdUp ? { opacity: 0, y: 30 } : { opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] as const }}
+        transition={{
+          duration: isMdUp ? 0.7 : 0.42,
+          ease: [0.22, 1, 0.36, 1] as const,
+        }}
       >
         <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="max-w-xl lg:pt-2">
@@ -213,24 +236,32 @@ export default function LeadCaptureForm({
           <div className="rounded-2xl border border-acg-border bg-white p-8 shadow-xl shadow-acg-blue/[0.06] sm:p-10">
             {isSuccess ? (
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
+                initial={
+                  isMdUp ? { opacity: 0, y: 16 } : { opacity: 0, y: 8 }
+                }
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
-                  duration: 0.55,
+                  duration: isMdUp ? 0.55 : 0.35,
                   ease: [0.22, 1, 0.36, 1],
                 }}
                 className="flex flex-col items-center py-10 text-center sm:py-14"
                 role="status"
               >
                 <motion.div
-                  initial={{ scale: 0.85, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 380,
-                    damping: 24,
-                    delay: 0.05,
-                  }}
+                  initial={
+                    isMdUp ? { scale: 0.85, opacity: 0 } : { opacity: 0 }
+                  }
+                  animate={isMdUp ? { scale: 1, opacity: 1 } : { opacity: 1 }}
+                  transition={
+                    isMdUp
+                      ? {
+                          type: "spring",
+                          stiffness: 380,
+                          damping: 24,
+                          delay: 0.05,
+                        }
+                      : { duration: 0.3 }
+                  }
                 >
                   <CheckCircle2
                     className="size-[4.5rem] text-acg-success"
@@ -414,10 +445,14 @@ export default function LeadCaptureForm({
                     aria-busy={isSubmitting}
                     className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl bg-acg-blue px-6 py-3 text-lg font-medium text-white shadow-md shadow-acg-blue/20 transition hover:bg-acg-blue/95 disabled:pointer-events-none disabled:opacity-65"
                     whileHover={
-                      isSubmitting ? undefined : { scale: 1.01 }
+                      isSubmitting || !isMdUp
+                        ? undefined
+                        : { scale: 1.01 }
                     }
                     whileTap={
-                      isSubmitting ? undefined : { scale: 0.99 }
+                      isSubmitting || !isMdUp
+                        ? undefined
+                        : { scale: 0.99 }
                     }
                   >
                     {isSubmitting ? (

@@ -15,6 +15,11 @@ export const GOOGLE_REVIEWS_COUNT = 110;
 export const GOOGLE_REVIEWS_URL =
   "https://maps.app.goo.gl/jkYbLAmDTHjdr4Lb6";
 
+function textOr(value: string | undefined | null, fallback: string): string {
+  const t = typeof value === "string" ? value.trim() : "";
+  return t || fallback;
+}
+
 const reviewsData = [
   {
     id: 1,
@@ -247,9 +252,17 @@ function InfiniteMarqueeRow({
 
 export default function Reviews({
   items,
-  googleReviewsUrl = GOOGLE_REVIEWS_URL,
-  googleReviewsCount = GOOGLE_REVIEWS_COUNT,
+  googleReviewsUrl,
+  googleReviewsCount,
 }: ReviewsProps) {
+  const resolvedUrl = textOr(googleReviewsUrl, GOOGLE_REVIEWS_URL);
+  const resolvedCount =
+    typeof googleReviewsCount === "number" &&
+    Number.isFinite(googleReviewsCount) &&
+    googleReviewsCount > 0
+      ? googleReviewsCount
+      : GOOGLE_REVIEWS_COUNT;
+
   const rawList = items?.length ? items : reviewsData;
   const list: GoogleReviewItem[] = rawList.map((r) => ({
     ...r,
@@ -260,7 +273,7 @@ export default function Reviews({
   const [rawTop, rawBottom] = splitIntoTwoRows(list);
   const topRow = expandRowForMarquee(rawTop);
   const bottomRow = expandRowForMarquee(rawBottom);
-  const ctaLabel = `Читати всі ${googleReviewsCount} відгуків на Google`;
+  const ctaLabel = `Читати всі ${resolvedCount} відгуків на Google`;
 
   return (
     <motion.div
@@ -298,7 +311,7 @@ export default function Reviews({
 
       <div className="mt-10 flex justify-center px-4 sm:px-6">
         <a
-          href={googleReviewsUrl}
+          href={resolvedUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="group inline-flex max-w-full items-center justify-center gap-3 rounded-2xl border border-foreground/[0.1] bg-white px-8 py-4 text-center text-base font-normal tracking-wide text-foreground shadow-[0_2px_20px_-12px_rgba(15,23,42,0.12)] transition-[border-color,box-shadow,background-color] duration-300 hover:border-foreground/[0.16] hover:bg-foreground/[0.02] hover:shadow-[0_12px_36px_-16px_rgba(15,23,42,0.14)] sm:px-10 sm:py-5 sm:text-[1.0625rem]"

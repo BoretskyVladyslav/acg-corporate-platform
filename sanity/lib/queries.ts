@@ -6,6 +6,7 @@ export const landingHeroQuery = groq`
     subheading,
     primaryCtaLabel,
     secondaryCtaLabel,
+    telegramLink,
     primaryCtaHref,
     secondaryCtaHref,
     backgroundImage
@@ -87,6 +88,7 @@ export type LandingHeroQueryResult = {
   subheading?: string | null;
   primaryCtaLabel?: string | null;
   secondaryCtaLabel?: string | null;
+  telegramLink?: string | null;
   primaryCtaHref?: string | null;
   secondaryCtaHref?: string | null;
   backgroundImage?: Record<string, unknown> | null;

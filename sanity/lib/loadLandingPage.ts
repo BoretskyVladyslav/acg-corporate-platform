@@ -1,6 +1,8 @@
 import type { SanityImageSource } from "@sanity/image-url";
 import { createImageUrlBuilder } from "@sanity/image-url";
-import { createClient } from "next-sanity";
+import type { SanityClient } from "next-sanity";
+
+import { createLandingSanityClient } from "./landingSanityClient";
 
 import type { AboutCompanyProps } from "@/src/components/blocks/AboutCompany";
 import type { AdvantagesProps } from "@/src/components/blocks/Advantages";
@@ -28,14 +30,12 @@ import {
 
 type SanityUrlBuilder = ReturnType<typeof createImageUrlBuilder>;
 
-const apiVersion =
-  process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2026-05-09";
-
 export type LandingHeroPageProps = {
   heading?: string;
   subheading?: string;
   primaryCtaLabel?: string;
   secondaryCtaLabel?: string;
+  telegramLink?: string;
   primaryCtaHref?: string;
   secondaryCtaHref?: string;
   backgroundImageUrl?: string;
@@ -51,6 +51,73 @@ export type LandingPageData = {
   trust: TrustBlockProps;
   faq: FAQProps;
 };
+
+export const EMPTY_LANDING_PAGE: LandingPageData = {
+  hero: {},
+  about: {},
+  services: {},
+  pricing: {},
+  advantages: {},
+  trust: {},
+  faq: {},
+};
+
+export type RawLandingDocuments = {
+  heroDoc: LandingHeroQueryResult;
+  aboutDoc: LandingAboutQueryResult;
+  servicesDoc: LandingServicesQueryResult;
+  pricingDoc: LandingPricingQueryResult;
+  advantagesDoc: LandingAdvantagesQueryResult;
+  trustDoc: LandingTrustQueryResult;
+  faqDoc: LandingFaqQueryResult;
+};
+
+export async function fetchAllLandingDocuments(
+  client: SanityClient,
+): Promise<RawLandingDocuments> {
+  const [
+    heroDoc,
+    aboutDoc,
+    servicesDoc,
+    pricingDoc,
+    advantagesDoc,
+    trustDoc,
+    faqDoc,
+  ] = await Promise.all([
+    client.fetch<LandingHeroQueryResult>(landingHeroQuery),
+    client.fetch<LandingAboutQueryResult>(landingAboutQuery),
+    client.fetch<LandingServicesQueryResult>(landingServicesQuery),
+    client.fetch<LandingPricingQueryResult>(landingPricingQuery),
+    client.fetch<LandingAdvantagesQueryResult>(landingAdvantagesQuery),
+    client.fetch<LandingTrustQueryResult>(landingTrustQuery),
+    client.fetch<LandingFaqQueryResult>(landingFaqQuery),
+  ]);
+
+  return {
+    heroDoc,
+    aboutDoc,
+    servicesDoc,
+    pricingDoc,
+    advantagesDoc,
+    trustDoc,
+    faqDoc,
+  };
+}
+
+export function mapDocumentsToLandingPageData(
+  docs: RawLandingDocuments,
+  urlBuilder: SanityUrlBuilder,
+): LandingPageData {
+  return {
+    hero: mapHero(docs.heroDoc, urlBuilder),
+    about: mapAbout(docs.aboutDoc),
+    services: mapServices(docs.servicesDoc),
+    pricing: mapPricing(docs.pricingDoc),
+    advantages: mapAdvantages(docs.advantagesDoc, urlBuilder),
+    trust: mapTrust(docs.trustDoc, urlBuilder),
+    faq: mapFaq(docs.faqDoc),
+  };
+}
 
 function pickNonEmpty(value: string | null | undefined): string | undefined {
   const t = value?.trim();
@@ -97,6 +164,7 @@ function mapHero(
     subheading: pickNonEmpty(doc.subheading),
     primaryCtaLabel: pickNonEmpty(doc.primaryCtaLabel),
     secondaryCtaLabel: pickNonEmpty(doc.secondaryCtaLabel),
+    telegramLink: pickNonEmpty(doc.telegramLink),
     primaryCtaHref: pickNonEmpty(doc.primaryCtaHref),
     secondaryCtaHref: pickNonEmpty(doc.secondaryCtaHref),
     backgroundImageUrl,
@@ -260,61 +328,41 @@ function mapFaq(doc: LandingFaqQueryResult): FAQProps {
 }
 
 export async function loadLandingPageForHome(): Promise<LandingPageData> {
-  const empty: LandingPageData = {
-    hero: {},
-    about: {},
-    services: {},
-    pricing: {},
-    advantages: {},
-    trust: {},
-    faq: {},
-  };
+  const client = createLandingSanityClient();
+  if (!client) {
+    return EMPTY_LANDING_PAGE;
+  }
 
   const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
   const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-
   if (!projectId || !dataset) {
-    return empty;
+    return EMPTY_LANDING_PAGE;
   }
 
   try {
-    const client = createClient({
-      projectId,
-      dataset,
-      apiVersion,
-      useCdn: true,
-    });
-
     const urlBuilder = createImageUrlBuilder({ projectId, dataset });
-
-    const [
-      heroDoc,
-      aboutDoc,
-      servicesDoc,
-      pricingDoc,
-      advantagesDoc,
-      trustDoc,
-      faqDoc,
-    ] = await Promise.all([
-      client.fetch<LandingHeroQueryResult>(landingHeroQuery),
-      client.fetch<LandingAboutQueryResult>(landingAboutQuery),
-      client.fetch<LandingServicesQueryResult>(landingServicesQuery),
-      client.fetch<LandingPricingQueryResult>(landingPricingQuery),
-      client.fetch<LandingAdvantagesQueryResult>(landingAdvantagesQuery),
-      client.fetch<LandingTrustQueryResult>(landingTrustQuery),
-      client.fetch<LandingFaqQueryResult>(landingFaqQuery),
-    ]);
-
-    return {
-      hero: mapHero(heroDoc, urlBuilder),
-      about: mapAbout(aboutDoc),
-      services: mapServices(servicesDoc),
-      pricing: mapPricing(pricingDoc),
-      advantages: mapAdvantages(advantagesDoc, urlBuilder),
-      trust: mapTrust(trustDoc, urlBuilder),
-      faq: mapFaq(faqDoc),
-    };
+    const docs = await fetchAllLandingDocuments(client);
+    return mapDocumentsToLandingPageData(docs, urlBuilder);
   } catch {
-    return empty;
+    return EMPTY_LANDING_PAGE;
+  }
+}
+
+/** Окреме завантаження Hero (GROQ + зображення), для скриптів міграції та тестів. */
+export async function fetchHeroFromSanity(): Promise<LandingHeroPageProps> {
+  const client = createLandingSanityClient();
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
+
+  if (!client || !projectId || !dataset) {
+    return {};
+  }
+
+  try {
+    const urlBuilder = createImageUrlBuilder({ projectId, dataset });
+    const heroDoc = await client.fetch<LandingHeroQueryResult>(landingHeroQuery);
+    return mapHero(heroDoc, urlBuilder);
+  } catch {
+    return {};
   }
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useMemo } from "react";
+
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 
 export interface AboutCompanyProps {
   id?: string;
@@ -15,6 +18,33 @@ export const DEFAULT_ABOUT_METRICS: NonNullable<AboutCompanyProps["metrics"]> = 
   { value: "10+ років досвіду" },
   { value: "100% захист від штрафів" },
 ];
+
+const DEFAULT_EYEBROW = "Про нас";
+const DEFAULT_HEADING =
+  "ВАШ НАДІЙНИЙ ПАРТНЕР У СВІТІ БУХГАЛТЕРІЇ ТА ПРАВА";
+const DEFAULT_BODY =
+  "Ми супроводжуємо вас на всіх етапах: від підготовки матеріалів до представлення ваших інтересів у податкових та інших органах. Наша мета — ваш юридичний та фінансовий спокій.";
+
+function textOr(value: string | undefined | null, fallback: string): string {
+  const t = typeof value === "string" ? value.trim() : "";
+  return t || fallback;
+}
+
+function resolveAboutMetrics(
+  metrics: AboutCompanyProps["metrics"],
+): NonNullable<AboutCompanyProps["metrics"]> {
+  const cleaned = metrics?.filter(
+    (m) => Boolean(m?.label?.trim()) || Boolean(m?.value?.trim()),
+  );
+  if (!cleaned?.length) return DEFAULT_ABOUT_METRICS;
+  return cleaned.slice(0, 3).map((m, i) => {
+    const d = DEFAULT_ABOUT_METRICS[i] ?? DEFAULT_ABOUT_METRICS[2];
+    return {
+      label: textOr(m?.label, d?.label ?? ""),
+      value: textOr(m?.value, d?.value ?? ""),
+    };
+  });
+}
 
 function splitMetricFigure(value: string): { figure: string; caption: string } {
   const trimmed = value.trim();
@@ -44,6 +74,35 @@ const fadeUpItem = {
   },
 };
 
+const fadeUpItemMobile = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+const sectionRevealMobile = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0,
+    },
+  },
+};
+
+const metricsGridRevealMobile = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0,
+    },
+  },
+};
+
 const metricsGridReveal = {
   hidden: {},
   visible: {
@@ -56,35 +115,51 @@ const metricsGridReveal = {
 
 export default function AboutCompany({
   id,
-  eyebrow = "Про нас",
-  heading = "ВАШ НАДІЙНИЙ ПАРТНЕР У СВІТІ БУХГАЛТЕРІЇ ТА ПРАВА",
-  body = "Ми супроводжуємо вас на всіх етапах: від підготовки матеріалів до представлення ваших інтересів у податкових та інших органах. Наша мета — ваш юридичний та фінансовий спокій.",
+  eyebrow,
+  heading,
+  body,
   metrics,
 }: AboutCompanyProps) {
   const reduceMotionPreferred = useReducedMotion();
+  const isMdUp = useIsMdUp();
   const resolvedId = id?.trim() ? id : "about";
-  const cleanedMetrics = metrics?.filter(
-    (m) => Boolean(m?.label?.trim()) || Boolean(m?.value?.trim()),
+  const displayEyebrow = textOr(eyebrow, DEFAULT_EYEBROW);
+  const displayHeading = textOr(heading, DEFAULT_HEADING);
+  const displayBody = textOr(body, DEFAULT_BODY);
+  const resolvedMetrics = resolveAboutMetrics(metrics);
+
+  const revealVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
+        : isMdUp
+          ? sectionReveal
+          : sectionRevealMobile,
+    [reduceMotionPreferred, isMdUp],
   );
-  const resolvedMetrics =
-    cleanedMetrics && cleanedMetrics.length > 0
-      ? cleanedMetrics
-      : DEFAULT_ABOUT_METRICS;
 
-  const revealVariants = reduceMotionPreferred
-    ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
-    : sectionReveal;
+  const metricsRevealVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
+        : isMdUp
+          ? metricsGridReveal
+          : metricsGridRevealMobile,
+    [reduceMotionPreferred, isMdUp],
+  );
 
-  const metricsRevealVariants = reduceMotionPreferred
-    ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
-    : metricsGridReveal;
-
-  const itemVariants = reduceMotionPreferred
-    ? {
-        hidden: { opacity: 1, y: 0 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0 } },
-      }
-    : fadeUpItem;
+  const itemVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? {
+            hidden: { opacity: 1, y: 0 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0 } },
+          }
+        : isMdUp
+          ? fadeUpItem
+          : fadeUpItemMobile,
+    [reduceMotionPreferred, isMdUp],
+  );
 
   const viewportOpts = { once: true, amount: 0.22 } as const;
 
@@ -105,7 +180,7 @@ export default function AboutCompany({
           variants={itemVariants}
           className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/55"
         >
-          {eyebrow}
+          {displayEyebrow}
         </motion.p>
 
         <motion.div variants={itemVariants} className="mt-10 flex gap-6 md:mt-12 md:gap-8">
@@ -117,7 +192,7 @@ export default function AboutCompany({
             id="about-heading"
             className="max-w-2xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
           >
-            {heading}
+            {displayHeading}
           </h2>
         </motion.div>
 
@@ -125,7 +200,7 @@ export default function AboutCompany({
           variants={itemVariants}
           className="mt-10 max-w-3xl text-lg leading-relaxed text-acg-body sm:pl-[calc(1px+1.5rem)] md:mt-12"
         >
-          {body}
+          {displayBody}
         </motion.p>
 
         <motion.div

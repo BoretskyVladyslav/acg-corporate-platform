@@ -4,6 +4,9 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import { externalLinkProps } from "@/src/lib/externalLink";
+
 export interface FaqItem {
   question?: string;
   answer?: string;
@@ -16,6 +19,51 @@ export interface FAQProps {
   items?: FaqItem[];
   footerNote?: string;
   footerLinks?: Array<{ label?: string; href?: string }>;
+}
+
+const DEFAULT_FAQ_EYEBROW = "FAQ";
+const DEFAULT_FAQ_HEADING = "Популярні запитання";
+const DEFAULT_FAQ_INTRO = "Відповіді на часті питання наших клієнтів";
+const DEFAULT_FAQ_FOOTER_NOTE = "© {year} Назва компанії. Усі права захищені.";
+
+function textOr(value: string | undefined | null, fallback: string): string {
+  const t = typeof value === "string" ? value.trim() : "";
+  return t || fallback;
+}
+
+function mergeFaqItems(cms: FaqItem[] | undefined, defaults: FaqItem[]): FaqItem[] {
+  const filtered =
+    cms?.filter(
+      (row) =>
+        Boolean(row.question?.trim()) && Boolean(row.answer?.trim()),
+    ) ?? [];
+  if (!filtered.length) return defaults;
+  return filtered.map((item, i) => {
+    const d = defaults[Math.min(i, defaults.length - 1)];
+    return {
+      question: textOr(item.question, d.question ?? ""),
+      answer: textOr(item.answer, d.answer ?? ""),
+    };
+  });
+}
+
+function mergeFooterLinks(
+  cms: FAQProps["footerLinks"],
+  defaults: NonNullable<FAQProps["footerLinks"]>,
+): NonNullable<FAQProps["footerLinks"]> {
+  const filtered =
+    cms?.filter(
+      (link) =>
+        Boolean(link.label?.trim()) && Boolean(link.href?.trim()),
+    ) ?? [];
+  if (!filtered.length) return defaults;
+  return filtered.map((link, i) => {
+    const d = defaults[Math.min(i, defaults.length - 1)];
+    return {
+      label: textOr(link.label, d.label ?? ""),
+      href: textOr(link.href, d.href ?? "#"),
+    };
+  });
 }
 
 const defaultItems: FaqItem[] = [
@@ -56,33 +104,29 @@ function formatItemIndex(i: number) {
 }
 
 export default function FAQ({
-  eyebrow = "FAQ",
-  heading = "Популярні запитання",
-  intro = "Відповіді на часті питання наших клієнтів",
+  eyebrow,
+  heading,
+  intro,
   items,
-  footerNote = "© {year} Назва компанії. Усі права захищені.",
+  footerNote,
   footerLinks,
 }: FAQProps) {
-  const filteredItems =
-    items?.filter(
-      (row) =>
-        Boolean(row.question?.trim()) && Boolean(row.answer?.trim()),
-    ) ?? [];
-  const resolvedItems =
-    filteredItems.length > 0 ? filteredItems : defaultItems;
+  const displayEyebrow = textOr(eyebrow, DEFAULT_FAQ_EYEBROW);
+  const displayHeading = textOr(heading, DEFAULT_FAQ_HEADING);
+  const displayIntro = textOr(intro, DEFAULT_FAQ_INTRO);
+  const resolvedItems = mergeFaqItems(items, defaultItems);
 
-  const filteredFooterLinks =
-    footerLinks?.filter(
-      (link) =>
-        Boolean(link.label?.trim()) && Boolean(link.href?.trim()),
-    ) ?? [];
-  const resolvedFooterLinks =
-    filteredFooterLinks.length > 0 ? filteredFooterLinks : defaultFooterLinks;
+  const resolvedFooterLinks = mergeFooterLinks(
+    footerLinks,
+    defaultFooterLinks,
+  );
 
   const year = new Date().getFullYear();
-  const resolvedNote = footerNote.replace("{year}", String(year));
+  const footerNoteTemplate = textOr(footerNote, DEFAULT_FAQ_FOOTER_NOTE);
+  const resolvedNote = footerNoteTemplate.replace("{year}", String(year));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const reduceMotionPreferred = useReducedMotion();
+  const isMdUp = useIsMdUp();
   const reactId = useId();
   const faqIdPrefix = reactId.replace(/:/g, "");
 
@@ -105,24 +149,29 @@ export default function FAQ({
     >
       <motion.div
         className="py-24 sm:py-28 lg:py-32"
-        initial={{ opacity: 0, y: 24 }}
+        initial={
+          isMdUp ? { opacity: 0, y: 24 } : { opacity: 0, y: 10 }
+        }
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.12 }}
-        transition={{ duration: 0.55, ease: revealEase }}
+        transition={{
+          duration: isMdUp ? 0.55 : 0.38,
+          ease: revealEase,
+        }}
       >
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:gap-20">
           <div className="pb-12 lg:col-span-5 lg:sticky lg:top-32 lg:h-fit lg:pb-0">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
-              {eyebrow}
+              {displayEyebrow}
             </p>
             <h2
               id="faq-heading"
               className="mt-5 max-w-[min(100%,18ch)] text-4xl font-semibold tracking-tight text-acg-blue lg:text-5xl lg:leading-[1.12]"
             >
-              {heading}
+              {displayHeading}
             </h2>
             <p className="mt-8 max-w-md text-lg leading-relaxed text-foreground/65">
-              {intro}
+              {displayIntro}
             </p>
           </div>
 
@@ -156,10 +205,10 @@ export default function FAQ({
                         className="flex w-full cursor-pointer items-start gap-4 py-6 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-acg-blue/25 focus-visible:ring-offset-2 focus-visible:ring-offset-acg-light sm:gap-5"
                       >
                         <span
-                          className={`min-w-0 flex-1 text-[1.0625rem] font-medium leading-snug tracking-tight transition-all duration-300 sm:text-lg sm:leading-snug ${
+                          className={`min-w-0 flex-1 text-[1.0625rem] font-medium leading-snug tracking-tight sm:text-lg sm:leading-snug md:transition-all md:duration-300 ${
                             isOpen
                               ? "translate-x-0 text-foreground"
-                              : "translate-x-0 text-foreground/85 hover:translate-x-1 hover:text-foreground"
+                              : "translate-x-0 text-foreground/85 md:hover:translate-x-1 md:hover:text-foreground"
                           }`}
                         >
                           {q}
@@ -175,7 +224,8 @@ export default function FAQ({
                           <motion.span
                             animate={{ rotate: isOpen ? 45 : 0 }}
                             transition={{
-                              duration: reduceMotionPreferred ? 0 : 0.32,
+                              duration:
+                                reduceMotionPreferred ? 0 : isMdUp ? 0.32 : 0.12,
                               ease: revealEase,
                             }}
                             className="flex items-center justify-center"
@@ -220,16 +270,20 @@ export default function FAQ({
             <p className="text-sm text-foreground/55">{resolvedNote}</p>
             <nav aria-label="Footer">
               <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                {resolvedFooterLinks.map((link, i) => (
-                  <li key={i}>
-                    <a
-                      href={link.href ?? "#"}
-                      className="text-acg-blue/80 underline-offset-4 hover:text-acg-blue hover:underline"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
+                {resolvedFooterLinks.map((link, i) => {
+                  const href = textOr(link.href, "#");
+                  return (
+                    <li key={i}>
+                      <a
+                        href={href}
+                        {...externalLinkProps(href)}
+                        className="text-acg-blue/80 underline-offset-4 hover:text-acg-blue hover:underline"
+                      >
+                        {textOr(link.label, "Посилання")}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
           </div>
