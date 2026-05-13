@@ -106,7 +106,7 @@ export default function Advantages({
     <section
       id="advantages"
       aria-labelledby="advantages-heading"
-      className="overflow-x-hidden bg-white text-foreground"
+      className="overflow-x-clip bg-white text-foreground"
     >
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-12 px-4 py-24 sm:px-6 sm:py-28 lg:grid-cols-12 lg:items-stretch lg:gap-16 lg:py-32">
         <div className="col-span-1 flex min-h-0 flex-col lg:col-span-5 lg:h-full">
@@ -122,7 +122,7 @@ export default function Advantages({
                 {displayHeading}
               </h2>
             </div>
-            <div className="relative mt-10 min-h-0 w-full flex-1 overflow-x-hidden lg:mt-12">
+            <div className="relative mt-10 min-h-0 w-full flex-1 overflow-x-clip lg:mt-12">
               <div
                 className="pointer-events-none absolute left-[-14%] top-[6%] -z-10 h-[76%] w-[92%] rounded-[54%_46%_40%_60%] bg-gradient-to-tr from-acg-blue/[0.09] via-acg-light to-white blur-3xl max-lg:max-w-[110%]"
                 aria-hidden
