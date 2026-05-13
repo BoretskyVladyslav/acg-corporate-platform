@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * This configuration is used to for the Sanity Studio that’s mounted on the `\app\studio\[[...tool]]\page.tsx` route
+ * Sanity Studio is mounted at `src/app/studio/[[...index]]/page.tsx` (basePath `/studio`).
  */
 
 import {visionTool} from '@sanity/vision'

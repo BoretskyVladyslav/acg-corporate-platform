@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+
 export interface AdvantageItem {
   title: string;
   description: string;
@@ -14,6 +16,30 @@ export interface AdvantagesProps {
   items?: AdvantageItem[];
   sideImageUrl?: string;
   sideImageAlt?: string;
+}
+
+const DEFAULT_ADVANTAGES_EYEBROW = "Переваги";
+const DEFAULT_ADVANTAGES_HEADING = "Чому нас обирають";
+const DEFAULT_SIDE_IMAGE = "/images/team-transparent.png";
+const DEFAULT_SIDE_IMAGE_ALT = "Команда ACG";
+
+function textOr(value: string | undefined | null, fallback: string): string {
+  const t = typeof value === "string" ? value.trim() : "";
+  return t || fallback;
+}
+
+function mergeAdvantageItems(
+  cms: AdvantageItem[] | undefined,
+  defaults: AdvantageItem[],
+): AdvantageItem[] {
+  if (!cms?.length) return defaults;
+  return cms.map((row, i) => {
+    const d = defaults[Math.min(i, defaults.length - 1)];
+    return {
+      title: textOr(row.title, d.title),
+      description: textOr(row.description, d.description),
+    };
+  });
 }
 
 const DEFAULT_ADVANTAGES_ITEMS: AdvantageItem[] = [
@@ -48,51 +74,55 @@ const advantageIndexOutlineStyle = {
 const itemRevealEase = [0.22, 1, 0.36, 1] as const;
 
 export default function Advantages({
-  eyebrow = "Переваги",
-  heading = "Чому нас обирають",
+  eyebrow,
+  heading,
   items,
   sideImageUrl,
   sideImageAlt,
 }: AdvantagesProps) {
   const reduceMotionPreferred = useReducedMotion();
-  const filteredItems =
-    items?.filter(
-      (row) => Boolean(row.title?.trim()) && Boolean(row.description?.trim()),
-    ) ?? [];
-  const resolvedItems =
-    filteredItems.length > 0 ? filteredItems : DEFAULT_ADVANTAGES_ITEMS;
+  const isMdUp = useIsMdUp();
+  const displayEyebrow = textOr(eyebrow, DEFAULT_ADVANTAGES_EYEBROW);
+  const displayHeading = textOr(heading, DEFAULT_ADVANTAGES_HEADING);
+  const resolvedItems = mergeAdvantageItems(items, DEFAULT_ADVANTAGES_ITEMS);
 
-  const resolvedImageSrc =
-    sideImageUrl?.trim() ? sideImageUrl : "/images/team-transparent.png";
-  const resolvedImageAlt =
-    sideImageAlt?.trim() ? sideImageAlt : "Команда ACG";
+  const resolvedImageSrc = textOr(sideImageUrl, DEFAULT_SIDE_IMAGE);
+  const resolvedImageAlt = textOr(sideImageAlt, DEFAULT_SIDE_IMAGE_ALT);
 
   const itemTransition = {
-    duration: reduceMotionPreferred ? 0 : 0.56,
+    duration:
+      reduceMotionPreferred ? 0 : isMdUp ? 0.56 : 0.38,
     ease: itemRevealEase,
   };
+
+  const itemInitial =
+    reduceMotionPreferred
+      ? { opacity: 1, y: 0 }
+      : isMdUp
+        ? { opacity: 0, y: 20 }
+        : { opacity: 0, y: 10 };
 
   return (
     <section
       id="advantages"
       aria-labelledby="advantages-heading"
-      className="bg-white text-foreground"
+      className="overflow-x-hidden bg-white text-foreground"
     >
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-12 px-4 py-24 sm:px-6 sm:py-28 lg:grid-cols-12 lg:items-stretch lg:gap-16 lg:py-32">
         <div className="col-span-1 flex min-h-0 flex-col lg:col-span-5 lg:h-full">
           <div className="relative isolate w-full max-w-none min-w-0 shrink-0 break-words lg:sticky lg:top-32 lg:z-10 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:min-h-0 lg:flex-col lg:self-start">
             <div className="shrink-0">
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
-                {eyebrow}
+                {displayEyebrow}
               </p>
               <h2
                 id="advantages-heading"
                 className="mt-3 bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/80 bg-clip-text text-5xl font-black leading-[0.92] tracking-tighter text-transparent [background-clip:text] [-webkit-background-clip:text] lg:text-7xl"
               >
-                {heading}
+                {displayHeading}
               </h2>
             </div>
-            <div className="relative mt-10 min-h-0 w-full flex-1 lg:mt-12">
+            <div className="relative mt-10 min-h-0 w-full flex-1 overflow-x-hidden lg:mt-12">
               <div
                 className="pointer-events-none absolute left-[-14%] top-[6%] -z-10 h-[76%] w-[92%] rounded-[54%_46%_40%_60%] bg-gradient-to-tr from-acg-blue/[0.09] via-acg-light to-white blur-3xl max-lg:max-w-[110%]"
                 aria-hidden
@@ -117,11 +147,7 @@ export default function Advantages({
           {resolvedItems.map((item, i) => (
             <motion.div
               key={item.title}
-              initial={
-                reduceMotionPreferred
-                  ? { opacity: 1, y: 0 }
-                  : { opacity: 0, y: 20 }
-              }
+              initial={itemInitial}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={itemTransition}

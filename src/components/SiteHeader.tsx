@@ -21,6 +21,7 @@ import {
   useState,
 } from "react";
 import { useLenis } from "@/src/components/SmoothScrolling";
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import { lenisEasing } from "@/src/lib/lenisEasing";
 
 const FALLBACK_HEADER_OFFSET_PX = 88;
@@ -164,6 +165,7 @@ function scrollElementNative(
 export default function SiteHeader() {
   const lenis = useLenis();
   const reduceMotionPreferred = useReducedMotion();
+  const isMdUp = useIsMdUp();
   const { scrollY } = useScroll();
 
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -386,19 +388,19 @@ export default function SiteHeader() {
             exit: { opacity: 0 },
           }
         : {
-            hidden: { opacity: 0, y: 20 },
+            hidden: { opacity: 0, y: 10 },
             show: {
               opacity: 1,
               y: 0,
               transition: {
-                duration: 0.28,
+                duration: 0.26,
                 ease: MOBILE_MENU_EASE,
               },
             },
             exit: {
               opacity: 0,
-              y: 10,
-              transition: { duration: 0.22, ease: FLUID_EASE },
+              y: 8,
+              transition: { duration: 0.2, ease: FLUID_EASE },
             },
           },
     [reduceMotionPreferred],
@@ -557,21 +559,37 @@ export default function SiteHeader() {
           <motion.div
             className="pointer-events-auto mx-auto w-full max-w-7xl overflow-hidden rounded-[999px] border border-acg-blue/[0.08] will-change-transform [transform:translateZ(0)]"
             initial={false}
-            style={{
-              backdropFilter,
-              WebkitBackdropFilter: backdropFilter,
-              backgroundColor: capsuleBackgroundColor,
-              boxShadow: capsuleBoxShadow,
-            }}
+            style={
+              isMdUp && !reduceMotionPreferred
+                ? {
+                    backdropFilter,
+                    WebkitBackdropFilter: backdropFilter,
+                    backgroundColor: capsuleBackgroundColor,
+                    boxShadow: capsuleBoxShadow,
+                  }
+                : {
+                    backdropFilter: reduceMotionPreferred ? "none" : "blur(10px)",
+                    WebkitBackdropFilter: reduceMotionPreferred
+                      ? "none"
+                      : "blur(10px)",
+                    backgroundColor: "rgba(255, 255, 255, 0.94)",
+                    boxShadow:
+                      "0 14px 48px -28px rgba(36, 84, 148, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.72)",
+                  }
+            }
           >
             <motion.nav
               aria-label="Головна навігація"
               className={`${navShellClass} pointer-events-auto`}
               initial={false}
-              style={{
-                paddingTop: navPaddingY,
-                paddingBottom: navPaddingY,
-              }}
+              style={
+                isMdUp
+                  ? {
+                      paddingTop: navPaddingY,
+                      paddingBottom: navPaddingY,
+                    }
+                  : { paddingTop: 20, paddingBottom: 20 }
+              }
             >
               <Link
                 href="/"
@@ -798,7 +816,7 @@ export default function SiteHeader() {
                   boxShadow: CTA_REST_SHADOW,
                   willChange: "transform",
                 }}
-                whileHover={ctaWhileHover}
+                whileHover={isMdUp ? ctaWhileHover : undefined}
                 aria-current={
                   activeSectionId === "contact" ? "location" : undefined
                 }

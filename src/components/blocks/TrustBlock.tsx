@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 
 import Reviews from "@/src/components/blocks/Reviews";
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import type { GoogleReviewItem } from "@/src/components/blocks/Reviews";
 
 export interface TrustQuote {
@@ -29,6 +30,19 @@ export interface TrustBlockProps {
   googleReviewsLabel?: string;
 }
 
+const DEFAULT_TRUST_EYEBROW = "Довіра";
+const DEFAULT_TRUST_HEADING = "Відгуки клієнтів";
+const DEFAULT_TRUST_INTRO = "Що про нас кажуть підприємці";
+const DEFAULT_LOGOS_SECTION_TITLE = "Логотипи партнерів";
+const DEFAULT_GOOGLE_SCORE = "4.9";
+const DEFAULT_GOOGLE_REVIEWS_LABEL = "110 відгуків";
+const DEFAULT_QUOTE_AUTHOR = "Клієнт";
+
+function textOr(value: string | undefined | null, fallback: string): string {
+  const t = typeof value === "string" ? value.trim() : "";
+  return t || fallback;
+}
+
 function normalizeQuote(row: TrustQuote): {
   authorLabel: string;
   body: string;
@@ -38,7 +52,7 @@ function normalizeQuote(row: TrustQuote): {
   if (named && raw) return { authorLabel: named, body: raw };
   const m = raw.match(/^([^:]+):\s*([\s\S]+)$/);
   if (m) return { authorLabel: m[1].trim(), body: m[2].trim() };
-  return { authorLabel: "Клієнт", body: raw };
+  return { authorLabel: DEFAULT_QUOTE_AUTHOR, body: raw };
 }
 
 function mapTrustQuotesToReviews(quotes: TrustQuote[]): GoogleReviewItem[] {
@@ -82,6 +96,24 @@ const logoItemVariants = {
     opacity: 1,
     y: 0,
     transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+const logoListVariantsMobile = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.03,
+    },
+  },
+};
+
+const logoItemVariantsMobile = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
   },
 };
 
@@ -137,15 +169,27 @@ function GoogleRatingBadge({
 }
 
 export default function TrustBlock({
-  eyebrow = "Довіра",
-  heading = "Відгуки клієнтів",
-  intro = "Що про нас кажуть підприємці",
-  logosSectionTitle = "Логотипи партнерів",
+  eyebrow,
+  heading,
+  intro,
+  logosSectionTitle,
   quotes,
   logos,
-  googleRatingScore = "4.9",
-  googleReviewsLabel = "110 відгуків",
+  googleRatingScore,
+  googleReviewsLabel,
 }: TrustBlockProps) {
+  const displayEyebrow = textOr(eyebrow, DEFAULT_TRUST_EYEBROW);
+  const displayHeading = textOr(heading, DEFAULT_TRUST_HEADING);
+  const displayIntro = textOr(intro, DEFAULT_TRUST_INTRO);
+  const displayLogosTitle = textOr(
+    logosSectionTitle,
+    DEFAULT_LOGOS_SECTION_TITLE,
+  );
+  const displayGoogleScore = textOr(googleRatingScore, DEFAULT_GOOGLE_SCORE);
+  const displayGoogleReviewsLabel = textOr(
+    googleReviewsLabel,
+    DEFAULT_GOOGLE_REVIEWS_LABEL,
+  );
   const filteredQuotes =
     quotes?.filter((q) => Boolean(q.quote?.trim())) ?? [];
   const reviewsFromCms =
@@ -158,46 +202,53 @@ export default function TrustBlock({
       (row) => Boolean(row.name?.trim()) || Boolean(row.imageUrl?.trim()),
     ) ?? [];
 
+  const isMdUp = useIsMdUp();
+
   return (
     <section
       id="trust"
       aria-labelledby="trust-heading"
-      className="bg-acg-light text-foreground"
+      className="overflow-x-hidden bg-acg-light text-foreground"
     >
       <motion.div
-        className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
-        initial={{ opacity: 0, y: 28 }}
+        className="mx-auto max-w-6xl overflow-x-hidden px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
+        initial={
+          isMdUp ? { opacity: 0, y: 28 } : { opacity: 0, y: 10 }
+        }
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] as const }}
+        transition={{
+          duration: isMdUp ? 0.65 : 0.4,
+          ease: [0.22, 1, 0.36, 1] as const,
+        }}
       >
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
-            {eyebrow}
+            {displayEyebrow}
           </p>
           <h2
             id="trust-heading"
             className="mt-3 text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
           >
-            {heading}
+            {displayHeading}
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-foreground/75">
-            {intro}
+            {displayIntro}
           </p>
           <motion.div
             className="mt-8 flex justify-center"
-            initial={{ opacity: 0, y: 12 }}
+            initial={isMdUp ? { opacity: 0, y: 12 } : { opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{
-              duration: 0.5,
+              duration: isMdUp ? 0.5 : 0.36,
               ease: [0.22, 1, 0.36, 1] as const,
-              delay: 0.05,
+              delay: isMdUp ? 0.05 : 0,
             }}
           >
             <GoogleRatingBadge
-              score={googleRatingScore}
-              reviewsLabel={googleReviewsLabel}
+              score={displayGoogleScore}
+              reviewsLabel={displayGoogleReviewsLabel}
             />
           </motion.div>
         </div>
@@ -207,17 +258,20 @@ export default function TrustBlock({
         {filteredLogos.length > 0 ? (
           <div className="mt-16 border-t border-foreground/10 pt-10">
             <p className="text-center text-xs font-medium uppercase tracking-[0.2em] text-foreground/50">
-              {logosSectionTitle}
+              {displayLogosTitle}
             </p>
             <motion.ul
               className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-8"
-              variants={logoListVariants}
+              variants={isMdUp ? logoListVariants : logoListVariantsMobile}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
             >
               {filteredLogos.map((logo, i) => (
-                <motion.li key={i} variants={logoItemVariants}>
+                <motion.li
+                  key={i}
+                  variants={isMdUp ? logoItemVariants : logoItemVariantsMobile}
+                >
                   {logo.imageUrl ? (
                     <Image
                       src={logo.imageUrl}

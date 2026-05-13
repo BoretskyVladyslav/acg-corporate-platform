@@ -1,6 +1,9 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useMemo } from "react";
+
+import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 
 export interface ServiceItem {
   title?: string;
@@ -13,6 +16,31 @@ export interface ServicesProps {
   heading?: string;
   intro?: string;
   items?: ServiceItem[];
+}
+
+const DEFAULT_SERVICES_EYEBROW = "Послуги";
+const DEFAULT_SERVICES_HEADING = "Бухгалтерія для ФОП";
+const DEFAULT_SERVICES_INTRO =
+  "Чотири напрями супроводу: три групи ЄП та загальна система оподаткування";
+
+function textOr(value: string | undefined | null, fallback: string): string {
+  const t = typeof value === "string" ? value.trim() : "";
+  return t || fallback;
+}
+
+function mergeServiceItems(
+  cms: ServiceItem[] | undefined,
+  defaults: ServiceItem[],
+): ServiceItem[] {
+  if (!cms?.length) return defaults;
+  return cms.map((item, i) => {
+    const d = defaults[Math.min(i, defaults.length - 1)];
+    return {
+      title: textOr(item.title, d.title ?? ""),
+      description: textOr(item.description, d.description ?? ""),
+      note: textOr(item.note, d.note ?? ""),
+    };
+  });
 }
 
 const defaultItems: ServiceItem[] = [
@@ -72,26 +100,60 @@ const cardItemVariants = {
   },
 };
 
+const cardItemVariantsMobile = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+const cardListVariantsMobile = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.04,
+      delayChildren: 0,
+    },
+  },
+};
+
 export default function Services({
-  eyebrow = "Послуги",
-  heading = "Бухгалтерія для ФОП",
-  intro =
-    "Чотири напрями супроводу: три групи ЄП та загальна система оподаткування",
+  eyebrow,
+  heading,
+  intro,
   items,
 }: ServicesProps) {
   const reduceMotionPreferred = useReducedMotion();
-  const resolvedItems = items?.length ? items : defaultItems;
+  const isMdUp = useIsMdUp();
+  const displayEyebrow = textOr(eyebrow, DEFAULT_SERVICES_EYEBROW);
+  const displayHeading = textOr(heading, DEFAULT_SERVICES_HEADING);
+  const displayIntro = textOr(intro, DEFAULT_SERVICES_INTRO);
+  const resolvedItems = mergeServiceItems(items, defaultItems);
 
-  const listVariants = reduceMotionPreferred
-    ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
-    : cardListVariants;
+  const listVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
+        : isMdUp
+          ? cardListVariants
+          : cardListVariantsMobile,
+    [reduceMotionPreferred, isMdUp],
+  );
 
-  const itemVariants = reduceMotionPreferred
-    ? {
-        hidden: { opacity: 1, y: 0 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0 } },
-      }
-    : cardItemVariants;
+  const itemVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? {
+            hidden: { opacity: 1, y: 0 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0 } },
+          }
+        : isMdUp
+          ? cardItemVariants
+          : cardItemVariantsMobile,
+    [reduceMotionPreferred, isMdUp],
+  );
 
   return (
     <section
@@ -101,16 +163,16 @@ export default function Services({
     >
       <div className="mx-auto max-w-7xl px-6 py-24 sm:px-8 sm:py-28 lg:px-10 lg:py-36">
         <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-foreground/45">
-          {eyebrow}
+          {displayEyebrow}
         </p>
         <h2
           id="services-title"
           className="mt-5 max-w-4xl text-4xl font-light leading-[1.08] tracking-[-0.02em] text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.06]"
         >
-          {heading}
+          {displayHeading}
         </h2>
         <p className="mt-7 max-w-2xl text-[1.0625rem] font-light leading-[1.75] text-foreground/65">
-          {intro}
+          {displayIntro}
         </p>
         <motion.ul
           className="mt-16 grid w-full grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:mt-20 lg:gap-x-14 lg:gap-y-14"
