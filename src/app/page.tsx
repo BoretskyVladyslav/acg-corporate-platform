@@ -43,7 +43,7 @@ export default async function Home() {
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <SiteHeader />
-      <main className="min-w-0 flex-1 overflow-x-hidden">
+      <main className="min-w-0 flex-1 overflow-x-clip">
         <Hero {...hero} />
         <AboutCompany {...about} />
         <Services {...services} />

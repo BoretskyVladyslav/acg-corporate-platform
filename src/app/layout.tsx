@@ -31,11 +31,11 @@ export default function RootLayout({
     <html
       lang="uk"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full overflow-x-hidden antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full overflow-x-clip antialiased`}
     >
       <body
         suppressHydrationWarning
-        className="min-h-full flex min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground"
+        className="min-h-full flex min-w-0 flex-col overflow-x-clip bg-background font-sans text-foreground"
       >
         <Script id="bis-skin-checked-guard" strategy="beforeInteractive">
           {`(function(){var o=new MutationObserver(function(m){m.forEach(function(r){if(r.type==='attributes'&&r.attributeName==='bis_skin_checked'){r.target.removeAttribute('bis_skin_checked')}})});o.observe(document.documentElement,{attributes:true,subtree:true,attributeFilter:['bis_skin_checked']});setTimeout(function(){o.disconnect()},5000);document.querySelectorAll('[bis_skin_checked]').forEach(function(e){e.removeAttribute('bis_skin_checked')})})()`}
