@@ -1,4 +1,4 @@
-import { createImageUrlBuilder } from "@sanity/image-url";
+import type { Metadata } from "next";
 
 import AboutCompany from "@/src/components/blocks/AboutCompany";
 import Advantages from "@/src/components/blocks/Advantages";
@@ -9,36 +9,40 @@ import Pricing from "@/src/components/blocks/Pricing";
 import Services from "@/src/components/blocks/Services";
 import TrustBlock from "@/src/components/blocks/TrustBlock";
 import SiteHeader from "@/src/components/SiteHeader";
-import { createLandingSanityClient } from "@/sanity/lib/landingSanityClient";
-import {
-  EMPTY_LANDING_PAGE,
-  fetchAllLandingDocuments,
-  mapDocumentsToLandingPageData,
-  type LandingPageData,
-} from "@/sanity/lib/loadLandingPage";
+import { loadLandingPageForHome } from "@/sanity/lib/loadLandingPage";
 
 /** Свіжі дані з Sanity при кожному запиті (без знімка збірки). */
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  let landing: LandingPageData = EMPTY_LANDING_PAGE;
-  const client = createLandingSanityClient();
+const FALLBACK_SITE_TITLE = "ACG";
+const FALLBACK_SITE_DESCRIPTION = "Landing page";
 
-  if (client) {
-    const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
-    const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-    if (projectId && dataset) {
-      try {
-        const urlBuilder = createImageUrlBuilder({ projectId, dataset });
-        const docs = await fetchAllLandingDocuments(client);
-        landing = mapDocumentsToLandingPageData(docs, urlBuilder);
-      } catch {
-        landing = EMPTY_LANDING_PAGE;
-      }
-    }
+export async function generateMetadata(): Promise<Metadata> {
+  const { seo } = await loadLandingPageForHome();
+  const title = seo.metaTitle?.trim() ?? FALLBACK_SITE_TITLE;
+  const description = seo.metaDescription?.trim() ?? FALLBACK_SITE_DESCRIPTION;
+  const meta: Metadata = { title, description };
+  const ogUrl = seo.ogImageUrl?.trim();
+  if (ogUrl) {
+    meta.openGraph = {
+      title,
+      description,
+      images: [
+        {
+          url: ogUrl,
+          ...(seo.ogImageAlt?.trim()
+            ? { alt: seo.ogImageAlt.trim() }
+            : {}),
+        },
+      ],
+    };
   }
+  return meta;
+}
 
-  const { hero, about, services, pricing, advantages, trust, faq } = landing;
+export default async function Home() {
+  const { hero, about, services, pricing, advantages, trust, faq, contact } =
+    await loadLandingPageForHome();
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -47,11 +51,11 @@ export default async function Home() {
         <Hero {...hero} />
         <AboutCompany {...about} />
         <Services {...services} />
-        <Pricing {...pricing} />
+        <Pricing {...pricing} /> 
         <Advantages {...advantages} />
         <TrustBlock {...trust} />
-        <LeadCaptureForm />
-        <FAQ {...faq} />
+        <LeadCaptureForm {...contact} />
+        <FAQ {...faq} phoneDisplay={contact.phoneDisplay} />
       </main>
     </div>
   );

@@ -8,30 +8,64 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { Shield, TrendingUp } from "lucide-react";
+import { Building2, Shield, TrendingUp, UserPlus } from "lucide-react";
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useLenis } from "@/src/components/SmoothScrolling";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import { externalLinkProps } from "@/src/lib/externalLink";
+import { dispatchPricingTierPreset } from "@/src/lib/pricingTierNavigation";
+import { scrollToSectionById } from "@/src/lib/scrollToAnchor";
+
+import { prepareConsultationGeneral } from "@/src/lib/leadIntent";
+
+import { ACG_TELEGRAM_LEADS_URL } from "@/src/lib/telegram";
+
+import ConsultationModal from "./ConsultationModal";
+
+export type HeroCardContent = {
+  title: string;
+  subtitle: string;
+};
 
 export interface HeroProps {
   heading?: string;
   subheading?: string;
+  heroCards?: HeroCardContent[];
   primaryCtaLabel?: string;
   secondaryCtaLabel?: string;
-  primaryCtaHref?: string;
-  /** URL кнопки Telegram; після resolve має бути реальний URL або `#`. */
-  secondaryCtaHref?: string;
-  /** Сирий URL з Sanity (опційно; для передачі в `resolveHeroProps`). */
-  telegramLink?: string;
   backgroundImageUrl?: string;
-  backgroundImageAlt?: string;
 }
 
 const FALLBACK_HERO_IMAGE = "/images/hero-man.png";
-const FALLBACK_HERO_IMAGE_ALT = "Експерт бухгалтерського супроводу";
+
+function TelegramMarkIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        fill="currentColor"
+        d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"
+      />
+    </svg>
+  );
+}
+
+const PRIMARY_CTA_LABEL_FALLBACK =
+  "ОТРИМАТИ ПЕРВИННУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО";
+
+const SECONDARY_CTA_LABEL_FALLBACK = "ШВИДКА ВІДПОВІДЬ У TELEGRAM";
+
+const FALLBACK_HERO_CARDS: HeroCardContent[] = [
+  { title: "Реєстрація ФОП", subtitle: "Тарифи та вартість" },
+  { title: "Бухгалтерія ТОВ", subtitle: "Напрями послуг" },
+];
 
 function splitHeroHeading(heading: string): {
   accentPrimary: string;
@@ -127,13 +161,14 @@ const contentVariantsMobile = {
   },
 };
 
-const figureScaleClass = "lg:scale-[1.32] xl:scale-[1.72]";
+const figureImageShadowClass =
+  "[filter:drop-shadow(0_22px_44px_rgba(0,0,0,0.09))]";
 
 const headlineAccentClass =
-  "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.08] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-5xl sm:text-6xl lg:text-6xl xl:text-7xl";
+  "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.06] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-[clamp(1.375rem,5.2vw,1.75rem)] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-6xl xl:text-7xl";
 
 const headlineSupportingClass =
-  "max-w-3xl font-light leading-relaxed tracking-normal text-foreground/80 normal-case text-base sm:text-lg lg:text-xl";
+  "mt-3 max-w-3xl font-light leading-relaxed tracking-normal text-foreground/80 normal-case text-sm sm:mt-6 sm:text-base md:text-lg lg:mt-7 lg:text-xl";
 
 const grainPatternUrl =
   'url("data:image/svg+xml,' +
@@ -156,6 +191,7 @@ interface FloatingBadge {
   desktopOnly?: boolean;
 }
 
+/** Координати лише всередині колонки з фото (`relative` на фігурі). Без негативних left — щоб не заходити в текстову зону. */
 const floatingBadges: FloatingBadge[] = [
   {
     id: 1,
@@ -171,7 +207,7 @@ const floatingBadges: FloatingBadge[] = [
       </div>
     ),
     positionClass:
-      "origin-top-left top-[3%] left-[1%] max-w-[calc(100%-0.5rem)] md:top-20 md:left-auto md:max-w-none md:-left-6 lg:top-[30%] lg:-left-8 xl:top-[28%] xl:-left-10",
+      "origin-top-left top-[4%] left-[3%] max-w-[calc(100%-1rem)] sm:top-[6%] sm:left-[5%] md:top-[8%] md:left-[6%]",
     animationDelay: 0,
     parallaxMul: 12,
   },
@@ -186,7 +222,7 @@ const floatingBadges: FloatingBadge[] = [
       />
     ),
     positionClass:
-      "origin-center top-1/2 right-0 -translate-y-[42%] translate-x-2 md:-translate-y-[40%] md:translate-x-3 md:-right-2 lg:top-1/2 lg:-right-5 lg:translate-x-1 lg:-translate-y-[38%]",
+      "origin-center top-[38%] right-[4%] -translate-y-1/2 sm:right-[6%] md:top-[40%] md:right-[8%]",
     animationDelay: 1.2,
     parallaxMul: 16,
     desktopOnly: true,
@@ -207,7 +243,7 @@ const floatingBadges: FloatingBadge[] = [
       </div>
     ),
     positionClass:
-      "origin-bottom-right bottom-[5%] right-[2%] left-auto z-[7] max-w-[min(100%,11rem)] translate-x-0 md:bottom-28 md:left-auto md:right-auto md:max-w-none md:-left-12 lg:-left-14 lg:bottom-[7.5rem] xl:-left-16",
+      "origin-bottom-right bottom-[8%] right-[4%] left-auto max-w-[min(100%,11rem)] sm:bottom-[10%] sm:right-[6%] md:bottom-[12%] md:right-[8%]",
     animationDelay: 2.4,
     parallaxMul: 14,
   },
@@ -235,7 +271,7 @@ function HeroFloatingBadge({
 
   return (
     <motion.div
-      className={`pointer-events-none absolute z-[6] flex w-max ${badge.desktopOnly ? "hidden md:flex" : ""} ${badge.positionClass}`}
+      className={`pointer-events-none absolute z-10 flex w-max ${badge.desktopOnly ? "hidden md:flex" : ""} ${badge.positionClass}`}
       initial={
         allowHeavy
           ? { opacity: 0, scale: 0.85, y: 24 }
@@ -283,13 +319,14 @@ function HeroFloatingBadge({
 export default function HeroClient({
   heading = "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.",
   subheading = "",
-  primaryCtaLabel = "ОТРИМАТИ ПЕРВИННУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО",
-  secondaryCtaLabel = "ШВИДКА ВІДПОВІДЬ У TELEGRAM",
-  primaryCtaHref = "#contact",
-  secondaryCtaHref = "#",
+  heroCards,
+  primaryCtaLabel = PRIMARY_CTA_LABEL_FALLBACK,
+  secondaryCtaLabel = SECONDARY_CTA_LABEL_FALLBACK,
   backgroundImageUrl,
-  backgroundImageAlt,
 }: HeroProps) {
+  const [consultModalOpen, setConsultModalOpen] = useState(false);
+  const [consultModalKey, setConsultModalKey] = useState(0);
+  const lenis = useLenis();
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
   const { accentPrimary, accentSecondary, supporting } = useMemo(
@@ -303,14 +340,44 @@ export default function HeroClient({
   const springY = useSpring(mouseY, { stiffness: 90, damping: 22 });
 
   const resolvedFigureSrc = backgroundImageUrl ?? FALLBACK_HERO_IMAGE;
-  const resolvedFigureAlt =
-    backgroundImageAlt ?? FALLBACK_HERO_IMAGE_ALT;
+  const heroImageAlt = heading.trim() || "ACG";
 
   const reduceMotion = Boolean(reduceMotionPreferred);
   const contentMotion = isMdUp ? contentVariants : contentVariantsMobile;
   const itemMotion = isMdUp ? itemVariants : itemVariantsMobile;
 
-  const secondaryHref = secondaryCtaHref || "#";
+  const telegramHref = ACG_TELEGRAM_LEADS_URL;
+
+  const goToFopPricing = useCallback(() => {
+    dispatchPricingTierPreset("fop-registration");
+    requestAnimationFrame(() => {
+      scrollToSectionById("pricing", lenis);
+    });
+  }, [lenis]);
+
+  const goToTovServices = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollToSectionById("services", lenis);
+    });
+  }, [lenis]);
+
+  const goToPricingSection = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollToSectionById("pricing", lenis);
+    });
+  }, [lenis]);
+
+  const resolvedHeroCards =
+    heroCards && heroCards.length > 0 ? heroCards : FALLBACK_HERO_CARDS;
+
+  const onHeroCardClick = useCallback(
+    (index: number) => {
+      if (index === 0) goToFopPricing();
+      else if (index === 1) goToTovServices();
+      else goToPricingSection();
+    },
+    [goToFopPricing, goToTovServices, goToPricingSection],
+  );
 
   return (
     <section
@@ -337,20 +404,20 @@ export default function HeroClient({
         <div className="absolute bottom-[18%] right-[-6%] h-[min(420px,48vw)] w-[min(420px,48vw)] rounded-full bg-acg-red/[0.08] blur-[80px] will-change-transform md:animate-[hero-blob-3_26s_ease-in-out_8s_infinite]" />
       </div>
 
-      <div className="relative z-[2] mx-auto max-w-7xl px-6 sm:px-6 lg:px-6">
+      <div className="relative z-[2] mx-auto max-w-7xl px-4 pb-6 pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+0.75rem)] sm:px-6 sm:pb-10 sm:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1rem)] lg:px-6 lg:pb-0 lg:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1.25rem)] xl:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1.5rem)]">
         <h1 id="hero-heading" className="sr-only">
           {heading}
         </h1>
 
-        <div className="relative grid min-h-0 grid-cols-1 gap-0 max-md:flex max-md:min-h-[min(100svh,100dvh)] max-md:flex-col lg:grid lg:min-h-[90vh] lg:grid-cols-12 lg:h-screen lg:items-stretch">
+        <div className="relative isolate grid min-h-0 grid-cols-1 gap-6 max-md:flex max-md:min-h-0 max-md:flex-col max-md:gap-4 md:gap-10 lg:min-h-[min(680px,calc(100svh-var(--header-offset)-1.25rem))] lg:grid-cols-12 lg:items-stretch lg:gap-6 lg:gap-y-0 lg:py-0 xl:gap-8">
 
-          {/* Вище z колонки з фото (z-20): інакше через lg:-ml-20 зображення перекриває кнопки й блокує кліки */}
-          <div className="relative z-30 col-span-1 flex w-full max-w-none flex-col justify-center px-0 max-md:min-h-0 max-md:flex-1 max-md:items-center max-md:justify-center max-md:text-center max-md:px-4 max-md:pb-16 max-md:pt-[max(5.5rem,calc(1.5rem+env(safe-area-inset-top,0px)+4.25rem))] lg:col-span-7 lg:min-h-0 lg:max-w-none lg:items-start lg:justify-center lg:px-0 lg:pl-16 lg:pb-0 lg:pt-0 lg:text-left">
+          {/* Текстова колонка — завжди вище фонового шару фото; відступ зверху лише в зовнішньому контейнері (хедер). */}
+          <div className="relative z-20 col-span-1 flex w-full min-w-0 max-w-none flex-col justify-start px-0 pb-6 max-md:mx-auto max-md:max-w-lg max-md:items-center max-md:text-center max-md:pb-4 md:justify-center md:pb-10 lg:col-span-7 lg:mx-0 lg:max-w-none lg:items-start lg:justify-start lg:pb-14 lg:pl-2 lg:pr-4 lg:text-left xl:pb-16 xl:pl-4 xl:pr-6">
             <motion.div
               initial="hidden"
               animate="visible"
               variants={contentMotion}
-              className="flex max-w-4xl flex-col gap-2 pt-1 max-md:mx-auto max-md:items-center max-md:text-center"
+              className="flex max-w-4xl flex-col gap-3 pt-0 max-md:mx-auto max-md:items-center max-md:text-center sm:gap-4 md:gap-5"
             >
               {accentSecondary ? (
                 <>
@@ -381,7 +448,7 @@ export default function HeroClient({
               {supporting ? (
                 <motion.p
                   aria-hidden
-                  className={`mt-3 ${headlineSupportingClass}`}
+                  className={headlineSupportingClass}
                   variants={itemMotion}
                 >
                   {supporting}
@@ -390,94 +457,136 @@ export default function HeroClient({
             </motion.div>
 
             <motion.div
-              className="mt-8 flex max-w-xl flex-col gap-6 max-md:mx-auto max-md:items-center max-md:text-center"
+              className="mt-4 flex w-full max-w-xl flex-col gap-3 max-md:mx-auto max-md:items-center max-md:text-center sm:gap-3.5 lg:mt-7 lg:max-w-xl xl:max-w-[26rem]"
               initial="hidden"
               animate="visible"
               variants={contentMotion}
             >
               {subheading.trim() ? (
                 <motion.p
-                  className="text-base font-medium leading-relaxed text-foreground/72 sm:text-lg max-md:mx-auto max-md:max-w-xl"
+                  className="text-sm font-medium leading-snug text-foreground/72 sm:text-base max-md:mx-auto max-md:max-w-xl"
                   variants={itemMotion}
                 >
                   {subheading}
                 </motion.p>
               ) : null}
               <motion.div
-                className="flex flex-col gap-3 max-md:mx-auto max-md:w-full max-md:max-w-md max-md:items-stretch sm:flex-row sm:items-center"
+                className="flex w-full flex-col gap-3 rounded-2xl border border-foreground/[0.06] bg-white/[0.45] p-3 shadow-sm shadow-acg-blue/[0.04] ring-1 ring-white/60 backdrop-blur-[6px] max-md:max-w-md sm:p-3.5"
                 variants={itemMotion}
               >
-                <a
-                  href={primaryCtaHref}
-                  {...externalLinkProps(primaryCtaHref)}
-                  className={`${ctaShineClass} inline-flex items-center justify-center rounded-full bg-acg-red px-6 py-3 text-sm font-medium text-white ring-1 ring-white/20 transition-colors duration-300 hover:bg-acg-red/92`}
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2.5">
+                  {resolvedHeroCards.map((card, index) => {
+                    const Icon = index % 2 === 0 ? UserPlus : Building2;
+                    return (
+                      <button
+                        key={`${card.title}-${index}`}
+                        type="button"
+                        onClick={() => onHeroCardClick(index)}
+                        className={`${ctaShineClass} group flex min-h-[3rem] flex-row items-center gap-2.5 rounded-xl border border-acg-blue/15 bg-white/70 px-3 py-2.5 text-left shadow-sm ring-1 ring-white/40 backdrop-blur-[2px] transition hover:border-acg-blue/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/30 sm:min-h-0 sm:flex-col sm:items-start sm:gap-2 sm:py-3`}
+                      >
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-acg-blue/10 text-acg-blue transition group-hover:bg-acg-blue/15 sm:size-10 sm:rounded-xl">
+                          <Icon className="size-[1.15rem] sm:size-5" aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold tracking-tight text-foreground">
+                            {card.title}
+                          </span>
+                          <span className="mt-0.5 block text-[0.7rem] leading-snug text-foreground/55 sm:text-xs">
+                            {card.subtitle}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    prepareConsultationGeneral();
+                    setConsultModalKey((k) => k + 1);
+                    setConsultModalOpen(true);
+                  }}
+                  className={`${ctaShineClass} mt-0.5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-acg-red px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/20 transition-colors hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80`}
                 >
                   <span className="relative z-20">{primaryCtaLabel}</span>
-                </a>
+                </button>
                 <a
-                  href={secondaryHref}
-                  {...externalLinkProps(secondaryHref)}
-                  className={`${ctaShineClass} inline-flex items-center justify-center rounded-full border border-acg-blue bg-white/25 px-6 py-3 text-sm font-medium text-acg-blue backdrop-blur-[2px] ring-1 ring-white/40 transition-colors duration-300 hover:bg-acg-blue/10`}
+                  href={telegramHref}
+                  {...externalLinkProps(telegramHref)}
+                  className={`${ctaShineClass} group/telegram inline-flex min-h-[44px] w-full items-center justify-center gap-2.5 rounded-xl border border-acg-blue/15 bg-white/60 px-3 py-2 text-[0.7rem] font-semibold uppercase tracking-wide text-acg-blue shadow-sm ring-1 ring-acg-blue/10 transition hover:border-acg-blue/35 hover:bg-acg-blue/[0.06] hover:ring-acg-blue/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 sm:text-xs`}
                 >
-                  <span className="relative z-20">{secondaryCtaLabel}</span>
+                  <TelegramMarkIcon className="size-5 shrink-0 text-[#229ED9] transition group-hover/telegram:scale-105" />
+                  <span className="text-balance transition group-hover/telegram:text-acg-blue">
+                    {secondaryCtaLabel}
+                  </span>
                 </a>
               </motion.div>
             </motion.div>
           </div>
 
-            {/* Фото + бейджі: лише md+ (hidden на мобільних). */}
+          {/* Фігура: заповнює висоту клітини сітки; низ до низу секції; object-cover + object-bottom для масштабу й візуальної ваги поруч із заголовком. */}
+          <div className="relative z-10 col-span-1 hidden min-h-0 overflow-x-clip overflow-y-visible md:col-span-5 md:flex md:h-full md:min-h-[min(36rem,62svh)] md:flex-col md:items-stretch md:justify-end md:self-stretch md:pb-0 md:pl-0 lg:-ml-10 lg:min-h-0 xl:-ml-14">
             <div
-              className="relative z-20 col-span-1 hidden min-h-0 md:pointer-events-none md:flex md:flex-col md:items-stretch md:justify-end md:overflow-visible lg:col-span-5 lg:-ml-20 lg:pb-0 lg:pt-0"
-            >
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 top-[10%] bg-[radial-gradient(ellipse_80%_55%_at_50%_78%,color-mix(in_oklab,var(--color-acg-blue)_14%,transparent)_0%,transparent_68%)] max-md:hidden"
+              className="pointer-events-none absolute inset-x-0 bottom-0 top-[12%] bg-[radial-gradient(ellipse_80%_55%_at_50%_78%,color-mix(in_oklab,var(--color-acg-blue)_14%,transparent)_0%,transparent_68%)]"
               aria-hidden
             />
 
             <div
-              className="pointer-events-none absolute bottom-0 left-1/2 z-[1] hidden h-[14%] w-[min(92%,480px)] -translate-x-1/2 rounded-[100%] bg-foreground/18 blur-[48px] lg:block"
+              className="pointer-events-none absolute bottom-0 left-1/2 z-[1] hidden h-[16%] w-[min(96%,480px)] max-w-[480px] -translate-x-1/2 rounded-[100%] bg-foreground/12 blur-[48px] lg:block"
               aria-hidden
             />
 
-            {/* Мобільний: фото + бейджі в одному relative — бейджі «сидять» на фігурі. md+: `contents` — бейджі знову відносно високої колонки, як у десктопному макеті. */}
-            <div className="relative mx-auto w-full max-w-[min(100%,400px)] pb-1 md:contents">
-            <motion.div
-              className={`relative z-[5] w-full max-md:mx-auto max-md:min-h-0 max-md:overflow-visible max-md:rounded-2xl md:mt-auto lg:flex lg:max-h-[min(88vh,52rem)] lg:min-h-0 lg:w-full lg:max-w-none lg:items-end lg:justify-center origin-bottom ${figureScaleClass} [filter:drop-shadow(0_30px_60px_rgba(0,0,0,0.12))]`}
-              initial={
-                isMdUp ? { opacity: 0, y: 80 } : { opacity: 0, y: 12 }
-              }
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: isMdUp ? 1.2 : 0.45,
-                ease: [0.16, 1, 0.3, 1],
-                delay: isMdUp ? 0.3 : 0.08,
-              }}
-            >
-              <Image
-                src={resolvedFigureSrc}
-                alt={resolvedFigureAlt}
-                width={800}
-                height={1000}
-                priority
-                sizes="(min-width: 1280px) 42vw, (min-width: 1024px) 50vw, (min-width: 768px) 90vw, 100vw"
-                className="h-auto w-full max-md:origin-bottom max-md:scale-[1.14] max-md:object-contain max-md:object-bottom md:scale-100 lg:block lg:max-h-[min(88vh,52rem)] lg:w-full lg:object-contain lg:object-bottom"
-              />
-            </motion.div>
+            <div className="relative min-h-0 w-full flex-1 lg:min-h-0">
+              <div className="relative h-full min-h-[min(24rem,55svh)] w-full md:absolute md:inset-0 md:min-h-0">
+                <div className="relative h-full min-h-0 w-full overflow-visible">
+                  <div className="pointer-events-none absolute inset-0 z-0 flex min-h-0 flex-col justify-end">
+                    <motion.div
+                      className={`relative z-[5] h-full min-h-[min(24rem,50svh)] w-full origin-bottom md:min-h-full ${figureImageShadowClass}`}
+                      initial={
+                        isMdUp ? { opacity: 0, y: 80 } : { opacity: 0, y: 12 }
+                      }
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: isMdUp ? 1.2 : 0.45,
+                        ease: [0.16, 1, 0.3, 1],
+                        delay: isMdUp ? 0.3 : 0.08,
+                      }}
+                    >
+                      <Image
+                        src={resolvedFigureSrc}
+                        alt={heroImageAlt}
+                        fill
+                        priority
+                        sizes="(min-width: 1536px) 48vw, (min-width: 1280px) 46vw, (min-width: 1024px) 44vw, (min-width: 768px) 46vw, 100vw"
+                        className="pointer-events-auto rounded-t-2xl object-cover object-bottom"
+                      />
+                    </motion.div>
+                  </div>
 
-            {floatingBadges.map((badge) => (
-              <HeroFloatingBadge
-                key={badge.id}
-                badge={badge}
-                springX={springX}
-                springY={springY}
-                reduceMotion={reduceMotion}
-                isMdUp={isMdUp}
-              />
-            ))}
+                  <div className="relative z-[6] mx-auto h-full w-full min-h-0">
+                    {floatingBadges.map((badge) => (
+                      <HeroFloatingBadge
+                        key={badge.id}
+                        badge={badge}
+                        springX={springX}
+                        springY={springY}
+                        reduceMotion={reduceMotion}
+                        isMdUp={isMdUp}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <ConsultationModal
+        key={consultModalKey}
+        open={consultModalOpen}
+        onClose={() => setConsultModalOpen(false)}
+      />
     </section>
   );
 }

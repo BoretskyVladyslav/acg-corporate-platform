@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 
 import Reviews from "@/src/components/blocks/Reviews";
@@ -10,22 +9,15 @@ import type { GoogleReviewItem } from "@/src/components/blocks/Reviews";
 export interface TrustQuote {
   quote?: string;
   author?: string;
-  role?: string;
-}
-
-export interface TrustLogo {
-  name?: string;
-  imageUrl?: string;
-  imageAlt?: string;
+  /** Оцінка 1–5 з Sanity (`trustQuote.rating`). */
+  rating?: number;
 }
 
 export interface TrustBlockProps {
   eyebrow?: string;
   heading?: string;
   intro?: string;
-  logosSectionTitle?: string;
   quotes?: TrustQuote[];
-  logos?: TrustLogo[];
   googleRatingScore?: string;
   googleReviewsLabel?: string;
 }
@@ -33,7 +25,6 @@ export interface TrustBlockProps {
 const DEFAULT_TRUST_EYEBROW = "Довіра";
 const DEFAULT_TRUST_HEADING = "Відгуки клієнтів";
 const DEFAULT_TRUST_INTRO = "Що про нас кажуть підприємці";
-const DEFAULT_LOGOS_SECTION_TITLE = "Логотипи партнерів";
 const DEFAULT_GOOGLE_SCORE = "4.9";
 const DEFAULT_GOOGLE_REVIEWS_LABEL = "110 відгуків";
 const DEFAULT_QUOTE_AUTHOR = "Клієнт";
@@ -41,6 +32,11 @@ const DEFAULT_QUOTE_AUTHOR = "Клієнт";
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
   return t || fallback;
+}
+
+function clampRating(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 5;
+  return Math.min(5, Math.max(1, Math.round(value)));
 }
 
 function normalizeQuote(row: TrustQuote): {
@@ -56,66 +52,17 @@ function normalizeQuote(row: TrustQuote): {
 }
 
 function mapTrustQuotesToReviews(quotes: TrustQuote[]): GoogleReviewItem[] {
-  const datePool = [
-    "січень 2025",
-    "грудень 2024",
-    "лютий 2025",
-    "листопад 2024",
-    "березень 2025",
-  ];
   return quotes.map((q, i) => {
     const { authorLabel, body } = normalizeQuote(q);
     const nameSrc = q.author?.trim() || authorLabel;
-    const initial =
-      nameSrc.trim().slice(0, 1).toUpperCase() ||
-      body.trim().slice(0, 1).toUpperCase() ||
-      "?";
     return {
       id: `g-review-${i}-${nameSrc.replace(/\W/g, "").slice(0, 28) || "client"}`,
       authorName: authorLabel,
-      authorInitial: initial,
       text: body,
-      date: datePool[i % datePool.length] ?? "2025",
-      rating: 5 as const,
+      rating: clampRating(q.rating),
     };
   });
 }
-
-const logoListVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
-
-const logoItemVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
-
-const logoListVariantsMobile = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.03,
-    },
-  },
-};
-
-const logoItemVariantsMobile = {
-  hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
 
 function GoogleGlyphCompact({ className }: { className?: string }) {
   return (
@@ -172,19 +119,13 @@ export default function TrustBlock({
   eyebrow,
   heading,
   intro,
-  logosSectionTitle,
   quotes,
-  logos,
   googleRatingScore,
   googleReviewsLabel,
 }: TrustBlockProps) {
   const displayEyebrow = textOr(eyebrow, DEFAULT_TRUST_EYEBROW);
   const displayHeading = textOr(heading, DEFAULT_TRUST_HEADING);
   const displayIntro = textOr(intro, DEFAULT_TRUST_INTRO);
-  const displayLogosTitle = textOr(
-    logosSectionTitle,
-    DEFAULT_LOGOS_SECTION_TITLE,
-  );
   const displayGoogleScore = textOr(googleRatingScore, DEFAULT_GOOGLE_SCORE);
   const displayGoogleReviewsLabel = textOr(
     googleReviewsLabel,
@@ -197,11 +138,6 @@ export default function TrustBlock({
       ? mapTrustQuotesToReviews(filteredQuotes)
       : undefined;
 
-  const filteredLogos =
-    logos?.filter(
-      (row) => Boolean(row.name?.trim()) || Boolean(row.imageUrl?.trim()),
-    ) ?? [];
-
   const isMdUp = useIsMdUp();
 
   return (
@@ -211,7 +147,7 @@ export default function TrustBlock({
       className="overflow-x-hidden bg-acg-light text-foreground"
     >
       <motion.div
-        className="mx-auto max-w-6xl overflow-x-hidden px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
+        className="mx-auto max-w-6xl overflow-x-hidden px-4 py-16 sm:px-6 sm:py-20 lg:py-24"
         initial={
           isMdUp ? { opacity: 0, y: 28 } : { opacity: 0, y: 10 }
         }
@@ -254,47 +190,6 @@ export default function TrustBlock({
         </div>
 
         <Reviews items={reviewsFromCms} />
-
-        {filteredLogos.length > 0 ? (
-          <div className="mt-16 border-t border-foreground/10 pt-10">
-            <p className="text-center text-xs font-medium uppercase tracking-[0.2em] text-foreground/50">
-              {displayLogosTitle}
-            </p>
-            <motion.ul
-              className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-8"
-              variants={isMdUp ? logoListVariants : logoListVariantsMobile}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {filteredLogos.map((logo, i) => (
-                <motion.li
-                  key={i}
-                  variants={isMdUp ? logoItemVariants : logoItemVariantsMobile}
-                >
-                  {logo.imageUrl ? (
-                    <Image
-                      src={logo.imageUrl}
-                      alt={
-                        logo.imageAlt?.trim() ||
-                        logo.name?.trim() ||
-                        "Логотип партнера"
-                      }
-                      width={160}
-                      height={40}
-                      className="h-8 w-auto object-contain opacity-85"
-                      unoptimized
-                    />
-                  ) : (
-                    <span className="inline-flex h-9 min-w-[5.5rem] animate-pulse items-center justify-center rounded-lg bg-acg-border/50 px-4 text-xs font-medium tracking-wide text-foreground/45">
-                      {logo.name?.trim()}
-                    </span>
-                  )}
-                </motion.li>
-              ))}
-            </motion.ul>
-          </div>
-        ) : null}
       </motion.div>
     </section>
   );

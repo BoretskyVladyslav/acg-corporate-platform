@@ -6,7 +6,6 @@ import { useMemo } from "react";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 
 export interface AboutCompanyProps {
-  id?: string;
   eyebrow?: string;
   heading?: string;
   body?: string;
@@ -48,11 +47,37 @@ function resolveAboutMetrics(
 
 function splitMetricFigure(value: string): { figure: string; caption: string } {
   const trimmed = value.trim();
-  const m = trimmed.match(/^(\d+(?:\+|%))\s+(.+)$/);
-  if (m) {
-    return { figure: m[1], caption: m[2].trim() };
+  const digitsPlusRest = trimmed.match(/^(\d+)\+\s+(.+)/);
+  if (digitsPlusRest) {
+    return { figure: `${digitsPlusRest[1]}+`, caption: digitsPlusRest[2].trim() };
+  }
+  const pctRest = trimmed.match(/^(\d+)%\s*(.+)/);
+  if (pctRest) {
+    return { figure: `${pctRest[1]}%`, caption: pctRest[2].trim() };
+  }
+  const digitSpaceWord = trimmed.match(/^(\d+)\s+(.+)/);
+  if (digitSpaceWord) {
+    return { figure: digitSpaceWord[1], caption: digitSpaceWord[2].trim() };
   }
   return { figure: trimmed, caption: "" };
+}
+
+/** Одне поле тексту або явна пара «Значення + Підпис» з CMS. */
+function resolveMetricPresentation(
+  m: NonNullable<AboutCompanyProps["metrics"]>[number],
+) {
+  const labelLine = typeof m.label === "string" ? m.label.trim() : "";
+  const valueLine = typeof m.value === "string" ? m.value.trim() : "";
+
+  if (labelLine && valueLine) {
+    return { figure: valueLine, caption: labelLine };
+  }
+  if (valueLine) {
+    const split = splitMetricFigure(valueLine);
+    return { figure: split.figure, caption: split.caption.trim() };
+  }
+  const splitLabel = splitMetricFigure(labelLine);
+  return { figure: splitLabel.figure, caption: splitLabel.caption.trim() };
 }
 
 const sectionReveal = {
@@ -114,7 +139,6 @@ const metricsGridReveal = {
 };
 
 export default function AboutCompany({
-  id,
   eyebrow,
   heading,
   body,
@@ -122,7 +146,6 @@ export default function AboutCompany({
 }: AboutCompanyProps) {
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
-  const resolvedId = id?.trim() ? id : "about";
   const displayEyebrow = textOr(eyebrow, DEFAULT_EYEBROW);
   const displayHeading = textOr(heading, DEFAULT_HEADING);
   const displayBody = textOr(body, DEFAULT_BODY);
@@ -165,12 +188,12 @@ export default function AboutCompany({
 
   return (
     <section
-      id={resolvedId}
+      id="about"
       aria-labelledby="about-heading"
       className="bg-acg-light text-foreground"
     >
       <motion.div
-        className="mx-auto max-w-6xl px-6 py-24 sm:px-6 sm:py-28 lg:py-32"
+        className="mx-auto max-w-6xl px-6 py-12 sm:px-6 sm:py-16 lg:py-20"
         variants={revealVariants}
         initial="hidden"
         whileInView="visible"
@@ -183,7 +206,7 @@ export default function AboutCompany({
           {displayEyebrow}
         </motion.p>
 
-        <motion.div variants={itemVariants} className="mt-10 flex gap-6 md:mt-12 md:gap-8">
+        <motion.div variants={itemVariants} className="mt-8 flex gap-6 sm:mt-10 md:mt-12 md:gap-8">
           <div
             className="mt-1 hidden h-[40px] w-px shrink-0 bg-foreground/12 sm:block"
             aria-hidden
@@ -198,7 +221,7 @@ export default function AboutCompany({
 
         <motion.p
           variants={itemVariants}
-          className="mt-10 max-w-3xl text-lg leading-relaxed text-acg-body sm:pl-[calc(1px+1.5rem)] md:mt-12"
+          className="mt-8 max-w-3xl text-lg leading-relaxed whitespace-pre-line text-acg-body sm:mt-10 sm:pl-[calc(1px+1.5rem)] md:mt-11"
         >
           {displayBody}
         </motion.p>
@@ -207,40 +230,27 @@ export default function AboutCompany({
           variants={metricsRevealVariants}
           role="list"
           aria-label="Ключові показники"
-          className="mt-14 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-9 lg:mt-16 lg:grid-cols-3 lg:gap-10"
+          className="mt-14 grid min-w-0 grid-cols-1 gap-x-8 gap-y-9 sm:gap-y-10 md:grid-cols-2 lg:mt-16 lg:grid-cols-3 lg:gap-x-10"
         >
           {resolvedMetrics.slice(0, 3).map((m, i) => {
-            const labelLine = m?.label?.trim() ?? "";
-            const valueLine = m?.value?.trim() ?? "";
-            const primaryText = valueLine || labelLine;
-            const { figure, caption } = splitMetricFigure(primaryText);
-            const showSplit = Boolean(caption);
+            const { figure, caption } = resolveMetricPresentation(m);
 
             return (
               <motion.article
-                key={i}
+                key={`${figure}__${caption}__${i}`}
                 role="listitem"
                 variants={itemVariants}
-                className="rounded-3xl border border-white/20 bg-white/40 p-8 shadow-none backdrop-blur-md transition-[background-color,box-shadow] duration-500 ease-out hover:bg-white/55 hover:shadow-sm sm:p-10"
+                className="min-w-0 rounded-3xl border border-white/20 bg-white/40 p-7 shadow-none backdrop-blur-md transition-[background-color,box-shadow] duration-500 ease-out hover:bg-white/55 hover:shadow-sm sm:p-9 lg:p-10"
               >
-                {labelLine && valueLine ? (
-                  <p className="text-sm text-foreground/55">{labelLine}</p>
-                ) : null}
-                <div className={labelLine && valueLine ? "mt-2" : ""}>
-                  {showSplit ? (
-                    <>
-                      <p className="text-2xl font-semibold tracking-tighter text-acg-blue sm:text-[1.65rem]">
-                        {figure}
-                      </p>
-                      <p className="mt-2 text-base font-normal leading-snug tracking-normal text-foreground/70">
-                        {caption}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-2xl font-semibold tracking-tighter text-acg-blue sm:text-[1.65rem]">
-                      {figure}
+                <div className="flex min-w-0 flex-col gap-2.5 sm:gap-3">
+                  <p className="break-words text-[1.75rem] font-bold leading-[1.1] tracking-tight text-acg-blue sm:text-[2rem] lg:text-[2.25rem]">
+                    {figure}
+                  </p>
+                  {caption ? (
+                    <p className="text-[0.9375rem] font-normal leading-relaxed tracking-normal text-foreground/72 sm:text-base">
+                      {caption}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </motion.article>
             );

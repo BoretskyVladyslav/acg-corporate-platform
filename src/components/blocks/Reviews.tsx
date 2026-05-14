@@ -5,10 +5,9 @@ import { motion, useReducedMotion } from "framer-motion";
 export type GoogleReviewItem = {
   id: string;
   authorName: string;
-  authorInitial: string;
   text: string;
-  date: string;
-  rating: 5;
+  /** Кількість зірочок 1–5. */
+  rating: number;
 };
 
 export const GOOGLE_REVIEWS_COUNT = 110;
@@ -24,67 +23,51 @@ const reviewsData = [
   {
     id: 1,
     authorName: "Ivan Vysitskyi",
-    authorInitial: "I",
     text: "Скажу просто. 67 грн на день за бухгалтера і можливість отримати консультацію юриста — це супер.",
-    date: "6 місяців тому",
     rating: 5,
   },
   {
     id: 2,
     authorName: "Ірина Гураль",
-    authorInitial: "І",
     text: "Відкрила ФОП 3 група через ACG і тепер користуюсь їхнім бухгалтерським супроводом. Дуже зручно. Для мене це велика економія часу.",
-    date: "7 місяців тому",
     rating: 5,
   },
   {
     id: 3,
     authorName: "Марія Савченко",
-    authorInitial: "М",
     text: "Ми з чоловіком вирішили відкрити компанію (ТОВ) з пошиття жіночого одягу. Шукали нормального юриста і по рекомендації звернулися до ACG.",
-    date: "9 місяців тому",
     rating: 5,
   },
   {
     id: 4,
     authorName: "Петро Ісько",
-    authorInitial: "П",
     text: "Мав неприємний досвід із бухгалтером, який просто зник — виявляється, так буває )) Після цього вирішив працювати тільки офіційно, за договором, і з цією компанією.",
-    date: "7 місяців тому",
     rating: 5,
   },
   {
     id: 5,
     authorName: "Катерина Аврамишин",
-    authorInitial: "К",
     text: "Вже не перший рік з ACG — і кожного разу переконуюсь, що звернулась у правильну компанію. Професіоналізм, людяне ставлення, терпіння до всіх моїх “а якщо…” 😅",
-    date: "11 місяців тому",
     rating: 5,
   },
   {
     id: 6,
     authorName: "Victor _G",
-    authorInitial: "V",
     text: "Вже скоро 10 років, як співпрацюємо з АКГ. Професійна команда + якісний сервіс = багаторічна співпраця.",
-    date: "рік тому",
     rating: 5,
   },
   {
     id: 7,
     authorName: "Rool. ik",
-    authorInitial: "R",
     text: "Уже рік ця компанія допомагає мені вільно працювати і не думати про бухгалтерські завдання. Все на вищому рівні, допомагають і в інших питаннях де потрібний юрист.",
-    date: "рік тому",
     rating: 5,
   },
   {
     id: 8,
     authorName: "Анна Сильчук",
-    authorInitial: "А",
     text: "Дуже відповідальна компанія! Всі процеси під контролем, миттєво надають інформацію і вирішують любі питання, повʼязані з діяльністю.",
-    date: "5 місяців тому",
     rating: 5,
-  }
+  },
 ];
 
 const MIN_ITEMS_PER_ROW = 6;
@@ -98,7 +81,10 @@ const carouselReveal = {
   },
 };
 
-/** Два яруси: перша половина масиву / друга; якщо один елемент — дублюємо рядок. */
+/**
+ * Один плоский масив відгуків із Sanity ділиться навпіл для двох рядів маркіза;
+ * ярус у CMS не задається.
+ */
 function splitIntoTwoRows(
   items: GoogleReviewItem[],
 ): [GoogleReviewItem[], GoogleReviewItem[]] {
@@ -130,6 +116,12 @@ function expandRowForMarquee(row: GoogleReviewItem[]): GoogleReviewItem[] {
     cycle++;
   }
   return out;
+}
+
+/** Обмежує оцінку для відображення зірок (1–5). */
+function clampReviewRating(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 5;
+  return Math.min(5, Math.max(1, Math.round(value)));
 }
 
 /** Як у Google Maps: зірка #F4B400 (amber). */
@@ -185,29 +177,18 @@ function ReviewCardGoogleStyle({ review }: { review: GoogleReviewItem }) {
   return (
     <article className="w-[320px] shrink-0 md:w-[400px]">
       <div className="flex h-full flex-col rounded-2xl border border-[#dadce0] bg-white px-4 pb-4 pt-4 shadow-sm">
-        <div className="flex gap-3">
-          <div
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#e8eaed] text-[15px] font-normal text-[#3c4043]"
-            aria-hidden
-          >
-            {review.authorInitial}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-left text-sm font-medium leading-tight text-[#202124]">
-              {review.authorName}
-            </h3>
-            <div
-              className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
-              aria-label={`Оцінка ${review.rating} з 5`}
-              role="img"
-            >
-              <div className="flex items-center gap-px text-[#f4b400]">
-                {Array.from({ length: review.rating }).map((_, i) => (
-                  <GoogleStar key={i} className="size-[14px]" />
-                ))}
-              </div>
-            </div>
-            <p className="mt-1 text-xs text-[#70757a]">{review.date}</p>
+        <h3 className="text-left text-sm font-medium leading-tight text-[#202124]">
+          {review.authorName}
+        </h3>
+        <div
+          className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
+          aria-label={`Оцінка ${review.rating} з 5`}
+          role="img"
+        >
+          <div className="flex items-center gap-px text-[#f4b400]">
+            {Array.from({ length: review.rating }).map((_, i) => (
+              <GoogleStar key={i} className="size-[14px]" />
+            ))}
           </div>
         </div>
         <p className="mt-3 text-left text-sm leading-[1.6] text-[#3c4043]">
@@ -267,7 +248,7 @@ export default function Reviews({
   const list: GoogleReviewItem[] = rawList.map((r) => ({
     ...r,
     id: String(r.id),
-    rating: 5 as const,
+    rating: clampReviewRating(r.rating),
   }));
   const reduceMotion = useReducedMotion();
   const [rawTop, rawBottom] = splitIntoTwoRows(list);
