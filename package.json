@@ -6,7 +6,8 @@
     "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:landing": "node sanity/scripts/migrate-landing-page.mjs"
   },
   "dependencies": {
     "@sanity/image-url": "^2.1.1",

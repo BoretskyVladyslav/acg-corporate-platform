@@ -23,6 +23,7 @@ import {
 import { useLenis } from "@/src/components/SmoothScrolling";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import { lenisEasing } from "@/src/lib/lenisEasing";
+import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
 
 const FALLBACK_HEADER_OFFSET_PX = 88;
 const LENIS_SCROLL_TO_DURATION = 1.15;
@@ -48,7 +49,8 @@ const NAV: { href: string; label: string }[] = [
 ];
 
 const MOBILE_MENU_PHONE_DISPLAY = "+38 097 505 86 86";
-const MOBILE_MENU_PHONE_HREF = "tel:+380975058686";
+const MOBILE_MENU_PHONE_HREF =
+  telHrefFromDisplay(MOBILE_MENU_PHONE_DISPLAY) ?? "tel:+380975058686";
 const MOBILE_MENU_EMAIL = "info@acg-ua.com";
 const MOBILE_MENU_EMAIL_HREF = "mailto:info@acg-ua.com";
 

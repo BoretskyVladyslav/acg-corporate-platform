@@ -1,101 +1,93 @@
 import { groq } from "next-sanity";
 
-export const landingHeroQuery = groq`
-  *[_type == "landingHero" && _id == "landingHeroSingleton"][0]{
-    heading,
-    subheading,
-    primaryCtaLabel,
-    secondaryCtaLabel,
-    telegramLink,
-    primaryCtaHref,
-    secondaryCtaHref,
-    backgroundImage
-  }
-`;
-
-export const landingAboutQuery = groq`
-  *[_type == "landingAbout" && _id == "landingAboutSingleton"][0]{
-    sectionId,
-    eyebrow,
-    heading,
-    body,
-    metrics[]{label, value}
-  }
-`;
-
-export const landingServicesQuery = groq`
-  *[_type == "landingServices" && _id == "landingServicesSingleton"][0]{
-    eyebrow,
-    heading,
-    intro,
-    items[]{title, description, note}
-  }
-`;
-
-export const landingPricingQuery = groq`
-  *[_type == "landingPricing" && _id == "landingPricingSingleton"][0]{
-    eyebrow,
-    heading,
-    intro,
-    tiers[]{
-      name,
-      price,
-      cadence,
+/** Один документ із усіма секціями лендингу та вкладками Studio. */
+export const landingPageQuery = groq`
+  *[_type == "landingPage" && _id == "landingPageSingleton"][0]{
+    hero{
+      heading,
+      subheading,
+      heroCards[]{title, subtitle},
+      primaryCtaLabel,
+      secondaryCtaLabel,
+      backgroundImage
+    },
+    about{
+      eyebrow,
+      heading,
+      body,
+      metrics[]{label, value}
+    },
+    services{
+      eyebrow,
+      heading,
+      intro,
+      items[]{title, description, note, icon}
+    },
+    pricing{
+      eyebrow,
+      heading,
+      intro,
+      ctaText,
+      globalButtonLabel,
+      tiers[]{
+        name,
+        priceText,
+        description,
+        features[]{title, description, note, icon, isHeader},
+        isPopular
+      }
+    },
+    advantages{
+      eyebrow,
+      heading,
+      sideImage,
+      items[]{title, description}
+    },
+    trust{
+      eyebrow,
+      heading,
+      intro,
+      googleRatingScore,
+      googleReviewsLabel,
+      quotes[]{quote, author, rating}
+    },
+    contact{
+      eyebrow,
+      heading,
       description,
-      features[]{text},
-      ctaLabel,
-      ctaHref,
-      highlighted
+      submitLabel,
+      addressLine,
+      phoneDisplay,
+      service
+    },
+    faq{
+      eyebrow,
+      heading,
+      intro,
+      items[]{question, answer},
+      footerButtonText,
+      footerNote
+    },
+    seo{
+      metaTitle,
+      metaDescription,
+      ogImage
     }
   }
 `;
 
-export const landingAdvantagesQuery = groq`
-  *[_type == "landingAdvantages" && _id == "landingAdvantagesSingleton"][0]{
-    eyebrow,
-    heading,
-    sideImage,
-    items[]{title, description}
-  }
-`;
-
-export const landingTrustQuery = groq`
-  *[_type == "landingTrust" && _id == "landingTrustSingleton"][0]{
-    eyebrow,
-    heading,
-    intro,
-    googleRatingScore,
-    googleReviewsLabel,
-    logosSectionTitle,
-    quotes[]{quote, author, role},
-    logos[]{name, logo}
-  }
-`;
-
-export const landingFaqQuery = groq`
-  *[_type == "landingFaq" && _id == "landingFaqSingleton"][0]{
-    eyebrow,
-    heading,
-    intro,
-    items[]{question, answer},
-    footerNote,
-    footerLinks[]{label, href}
-  }
-`;
+/** Плоскі форми вкладених блоків збігаються з минулими одиночними запитами для маперів. */
 
 export type LandingHeroQueryResult = {
   heading?: string | null;
   subheading?: string | null;
+  heroCards?: Array<{ title?: string | null; subtitle?: string | null }> | null;
   primaryCtaLabel?: string | null;
   secondaryCtaLabel?: string | null;
-  telegramLink?: string | null;
-  primaryCtaHref?: string | null;
-  secondaryCtaHref?: string | null;
   backgroundImage?: Record<string, unknown> | null;
 } | null;
 
 export type LandingAboutQueryResult = {
-  sectionId?: string | null;
   eyebrow?: string | null;
   heading?: string | null;
   body?: string | null;
@@ -110,6 +102,7 @@ export type LandingServicesQueryResult = {
     title?: string | null;
     description?: string | null;
     note?: string | null;
+    icon?: string | null;
   }> | null;
 } | null;
 
@@ -117,15 +110,23 @@ export type LandingPricingQueryResult = {
   eyebrow?: string | null;
   heading?: string | null;
   intro?: string | null;
+  ctaText?: string | null;
+  globalButtonLabel?: string | null;
   tiers?: Array<{
     name?: string | null;
-    price?: string | null;
-    cadence?: string | null;
+    /** Повне відображення ціни (єдине поле в Studio). */
+    priceText?: string | null;
     description?: string | null;
-    features?: Array<{ text?: string | null }> | null;
-    ctaLabel?: string | null;
-    ctaHref?: string | null;
-    highlighted?: boolean | null;
+    features?:
+      | Array<{
+          title?: string | null;
+          description?: string | null;
+          note?: string | null;
+          icon?: string | null;
+          isHeader?: boolean | null;
+        }>
+      | null;
+    isPopular?: boolean | null;
   }> | null;
 } | null;
 
@@ -142,15 +143,10 @@ export type LandingTrustQueryResult = {
   intro?: string | null;
   googleRatingScore?: string | null;
   googleReviewsLabel?: string | null;
-  logosSectionTitle?: string | null;
   quotes?: Array<{
     quote?: string | null;
     author?: string | null;
-    role?: string | null;
-  }> | null;
-  logos?: Array<{
-    name?: string | null;
-    logo?: Record<string, unknown> | null;
+    rating?: number | null;
   }> | null;
 } | null;
 
@@ -159,6 +155,34 @@ export type LandingFaqQueryResult = {
   heading?: string | null;
   intro?: string | null;
   items?: Array<{ question?: string | null; answer?: string | null }> | null;
+  footerButtonText?: string | null;
   footerNote?: string | null;
-  footerLinks?: Array<{ label?: string | null; href?: string | null }> | null;
+} | null;
+
+export type LandingContactQueryResult = {
+  eyebrow?: string | null;
+  heading?: string | null;
+  description?: string | null;
+  submitLabel?: string | null;
+  addressLine?: string | null;
+  phoneDisplay?: string | null;
+  service?: string | null;
+} | null;
+
+export type LandingSeoQueryResult = {
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  ogImage?: Record<string, unknown> | null;
+} | null;
+
+export type LandingPageQueryResult = {
+  hero?: LandingHeroQueryResult;
+  about?: LandingAboutQueryResult;
+  services?: LandingServicesQueryResult;
+  pricing?: LandingPricingQueryResult;
+  advantages?: LandingAdvantagesQueryResult;
+  trust?: LandingTrustQueryResult;
+  contact?: LandingContactQueryResult;
+  faq?: LandingFaqQueryResult;
+  seo?: LandingSeoQueryResult;
 } | null;

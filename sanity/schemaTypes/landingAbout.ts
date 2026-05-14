@@ -5,33 +5,48 @@ const aboutMetricObject = defineType({
   title: "Показник",
   type: "object",
   fields: [
-    defineField({ name: "label", title: "Підпис", type: "string" }),
-    defineField({ name: "value", title: "Значення", type: "string" }),
+    defineField({
+      name: "label",
+      title: "Підпис",
+      type: "string",
+      description:
+        "Короткий текст під великим значенням на сайті (наприклад «клієнтів у різних сферах»). Заповнюйте разом із «Значення».",
+    }),
+    defineField({
+      name: "value",
+      title: "Значення",
+      type: "string",
+      description:
+        "Великий акцент на картці: число або короткий рядок (наприклад «900+» або «100%»). Або один довгий рядок на кшталт «900+ клієнтів…» — тоді підпис можна не вказувати.",
+    }),
   ],
 });
 
-export const landingAboutType = defineType({
-  name: "landingAbout",
+export const landingAboutSectionType = defineType({
+  name: "landingAboutSection",
   title: "Про компанію",
-  type: "document",
+  type: "object",
   fields: [
     defineField({
-      name: "sectionId",
-      title: "ID секції (anchor)",
+      name: "eyebrow",
+      title: "Текст над заголовком (eyebrow)",
       type: "string",
-      initialValue: "about",
+      description: "Коротка підводка перед основним заголовком секції.",
     }),
-    defineField({ name: "eyebrow", title: "Eyebrow", type: "string" }),
     defineField({
       name: "heading",
-      title: "Заголовок",
+      title: "Заголовок секції",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
-    defineField({ name: "body", title: "Текст", type: "text", rows: 5 }),
+    defineField({
+      name: "body",
+      title: "Текст",
+      type: "text",
+      rows: 5,
+    }),
     defineField({
       name: "metrics",
-      title: "Показники",
+      title: "Показники (до 3)",
       type: "array",
       of: [defineArrayMember({ type: aboutMetricObject.name })],
       validation: (Rule) => Rule.max(3),

@@ -21,30 +21,26 @@ const advantageItemObject = defineType({
   ],
 });
 
-export const landingAdvantagesType = defineType({
-  name: "landingAdvantages",
+export const landingAdvantagesSectionType = defineType({
+  name: "landingAdvantagesSection",
   title: "Переваги",
-  type: "document",
+  type: "object",
   fields: [
-    defineField({ name: "eyebrow", title: "Eyebrow", type: "string" }),
+    defineField({
+      name: "eyebrow",
+      title: "Текст над заголовком (eyebrow)",
+      type: "string",
+    }),
     defineField({
       name: "heading",
-      title: "Заголовок",
+      title: "Заголовок секції",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: "sideImage",
-      title: "Зображення біля заголовка",
+      title: "Зображення біля списку",
       type: "image",
       options: { hotspot: true },
-      fields: [
-        defineField({
-          name: "alt",
-          title: "Alt-текст",
-          type: "string",
-        }),
-      ],
     }),
     defineField({
       name: "items",

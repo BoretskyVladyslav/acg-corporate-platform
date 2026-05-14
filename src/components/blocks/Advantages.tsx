@@ -108,7 +108,7 @@ export default function Advantages({
       aria-labelledby="advantages-heading"
       className="overflow-x-clip bg-white text-foreground"
     >
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-12 px-4 py-24 sm:px-6 sm:py-28 lg:grid-cols-12 lg:items-stretch lg:gap-16 lg:py-32">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-12 lg:items-stretch lg:gap-12 lg:py-24">
         <div className="col-span-1 flex min-h-0 flex-col lg:col-span-5 lg:h-full">
           <div className="relative isolate w-full max-w-none min-w-0 shrink-0 break-words lg:sticky lg:top-32 lg:z-10 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:min-h-0 lg:flex-col lg:self-start">
             <div className="shrink-0">
@@ -151,7 +151,7 @@ export default function Advantages({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={itemTransition}
-              className={`py-12 ${i > 0 ? "border-t border-acg-border" : ""}`}
+              className={`py-8 ${i > 0 ? "border-t border-acg-border" : ""}`}
             >
               <span
                 style={advantageIndexOutlineStyle}

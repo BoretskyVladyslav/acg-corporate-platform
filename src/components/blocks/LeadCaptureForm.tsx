@@ -11,6 +11,10 @@ import {
   filterLeadEmailInput,
   isValidLeadEmail,
 } from "@/src/lib/leadEmail";
+import {
+  clearLeadIntent,
+  getLeadIntent,
+} from "@/src/lib/leadIntent";
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
 import {
   UA_PHONE_ERROR,
@@ -20,16 +24,15 @@ import {
   isValidUaPhone,
   normalizeUaPhone,
 } from "@/src/lib/uaPhone";
+import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
 
 export interface LeadCaptureFormProps {
-  id?: string;
   eyebrow?: string;
   heading?: string;
   description?: string;
   submitLabel?: string;
   addressLine?: string;
   phoneDisplay?: string;
-  phoneHref?: string;
   service?: string;
 }
 
@@ -58,16 +61,16 @@ function mapSubmitError(code: string | undefined): string {
   }
 }
 
+const DEFAULT_PHONE_DISPLAY = "+38 097 505 86 86";
+
 export default function LeadCaptureForm({
-  id = "contact",
   eyebrow = "Контакти",
   heading = "Замовити консультацію",
   description =
     "Залишіть заявку, і наші спеціалісти зв'яжуться з вами найближчим часом.",
   submitLabel = "Відправити заявку",
   addressLine = "М. КИЇВ, ВУЛ. САКСАГАНСЬКОГО 28.",
-  phoneDisplay = "+38 097 505 86 86",
-  phoneHref = "tel:+380975058686",
+  phoneDisplay = DEFAULT_PHONE_DISPLAY,
   service,
 }: LeadCaptureFormProps) {
   const [name, setName] = useState("");
@@ -128,6 +131,9 @@ export default function LeadCaptureForm({
           /* ignore */
         }
 
+        const leadIntent = getLeadIntent();
+        const isGeneralConsultation = leadIntent === "general_consultation";
+
         const res = await fetch("/api/sendpulse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -136,8 +142,15 @@ export default function LeadCaptureForm({
             phone: phoneE164,
             website: honeypot,
             ...(email.trim() ? { email: email.trim() } : {}),
-            ...(service?.trim() ? { service: service.trim() } : {}),
-            ...(tierFromPricing ? { tier: tierFromPricing } : {}),
+            ...(service?.trim() && !isGeneralConsultation
+              ? { service: service.trim() }
+              : {}),
+            ...(!isGeneralConsultation && tierFromPricing
+              ? { tier: tierFromPricing }
+              : {}),
+            ...(isGeneralConsultation
+              ? { leadIntent: "general_consultation" }
+              : {}),
           }),
         });
         const data = (await res.json().catch(() => ({}))) as {
@@ -154,6 +167,7 @@ export default function LeadCaptureForm({
         setEmail("");
         setHoneypot("");
         setEmailError(null);
+        clearLeadIntent();
       } catch {
         setSubmitError(mapSubmitError(undefined));
       } finally {
@@ -178,14 +192,18 @@ export default function LeadCaptureForm({
       : ""
   }`;
 
+  const phoneTelHref =
+    telHrefFromDisplay(phoneDisplay) ??
+    telHrefFromDisplay(DEFAULT_PHONE_DISPLAY);
+
   return (
     <section
-      id={id}
+      id="contact"
       aria-labelledby="lead-form-heading"
       className="border-t border-foreground/10 bg-acg-light text-foreground"
     >
       <motion.div
-        className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:py-32"
+        className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24"
         initial={isMdUp ? { opacity: 0, y: 30 } : { opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
@@ -222,12 +240,18 @@ export default function LeadCaptureForm({
                   Телефон
                 </dt>
                 <dd className="mt-3">
-                  <a
-                    href={phoneHref}
-                    className="text-lg font-medium text-acg-blue underline-offset-[6px] transition hover:underline"
-                  >
-                    {phoneDisplay}
-                  </a>
+                  {phoneTelHref ? (
+                    <a
+                      href={phoneTelHref}
+                      className="text-lg font-medium text-acg-blue underline-offset-[6px] transition hover:underline"
+                    >
+                      {phoneDisplay}
+                    </a>
+                  ) : (
+                    <span className="text-lg font-medium text-acg-blue">
+                      {phoneDisplay}
+                    </span>
+                  )}
                 </dd>
               </div>
             </dl>

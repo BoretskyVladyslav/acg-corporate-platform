@@ -1,46 +1,35 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
 
-const servicesCardObject = defineType({
-  name: "servicesCard",
-  title: "Картка послуги",
+import { featureItemType } from "./featureItem";
+
+export const landingServicesSectionType = defineType({
+  name: "landingServicesSection",
+  title: "Послуги",
   type: "object",
   fields: [
     defineField({
-      name: "title",
-      title: "Назва",
+      name: "eyebrow",
+      title: "Текст над заголовком (eyebrow)",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
-    defineField({ name: "description", title: "Опис", type: "text", rows: 4 }),
-    defineField({
-      name: "note",
-      title: "Примітка",
-      type: "text",
-      rows: 2,
-    }),
-  ],
-});
-
-export const landingServicesType = defineType({
-  name: "landingServices",
-  title: "Послуги",
-  type: "document",
-  fields: [
-    defineField({ name: "eyebrow", title: "Eyebrow", type: "string" }),
     defineField({
       name: "heading",
-      title: "Заголовок",
+      title: "Заголовок секції",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
-    defineField({ name: "intro", title: "Вступний текст", type: "text", rows: 3 }),
+    defineField({
+      name: "intro",
+      title: "Вступний текст",
+      type: "text",
+      rows: 3,
+    }),
     defineField({
       name: "items",
       title: "Картки послуг",
       type: "array",
-      of: [defineArrayMember({ type: servicesCardObject.name })],
+      description:
+        "Кожна картка: назва, опис, необов’язкова примітка та іконка (спільна структура зі списками в тарифах).",
+      of: [defineArrayMember({ type: featureItemType.name })],
     }),
   ],
 });
-
-export const servicesCardType = servicesCardObject;

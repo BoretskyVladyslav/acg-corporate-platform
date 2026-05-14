@@ -13,6 +13,8 @@ type Body = {
   service?: string;
   /** Останній обраний тариф з блоку Pricing (sessionStorage). */
   tier?: string;
+  /** Якщо `general_consultation` — лід без тарифу та (за замовчуванням) без послуги з форми. */
+  leadIntent?: string;
   /** Honeypot: must stay empty; bots often fill “website” fields. */
   website?: string;
 };
@@ -30,6 +32,7 @@ function buildTelegramLeadText(input: {
   email?: string;
   service?: string;
   tier?: string;
+  leadIntentGeneral?: boolean;
 }): string {
   const name = escapeTelegramHtml(input.name);
   const phone = escapeTelegramHtml(input.phone);
@@ -38,7 +41,11 @@ function buildTelegramLeadText(input: {
     `👤 <b>Ім'я:</b> ${name}`,
     `📞 <b>Телефон:</b> ${phone}`,
   ];
-  if (input.tier?.trim()) {
+  if (input.leadIntentGeneral) {
+    lines.push(
+      "📋 <b>Статус:</b> Запит на загальну консультацію",
+    );
+  } else if (input.tier?.trim()) {
     lines.push(
       `📦 <b>Тариф:</b> ${escapeTelegramHtml(input.tier.trim())}`,
     );
@@ -48,7 +55,7 @@ function buildTelegramLeadText(input: {
       `✉️ <b>Email:</b> ${escapeTelegramHtml(input.email.trim())}`,
     );
   }
-  if (input.service?.trim()) {
+  if (input.service?.trim() && !input.leadIntentGeneral) {
     lines.push(
       `🎯 <b>Послуга:</b> ${escapeTelegramHtml(input.service.trim())}`,
     );
@@ -194,6 +201,7 @@ async function createCrmContactAndDeal(input: {
   email?: string;
   tier?: string;
   service?: string;
+  leadIntentGeneral?: boolean;
 }): Promise<boolean> {
   try {
     const ids = parseCrmIds();
@@ -205,14 +213,14 @@ async function createCrmContactAndDeal(input: {
 
     const attributes: Array<{ name: string; value: string; type: number }> =
       [];
-    if (input.tier?.trim()) {
+    if (input.tier?.trim() && !input.leadIntentGeneral) {
       attributes.push({
         name: "Тариф",
         value: input.tier.trim().slice(0, 500),
         type: 0,
       });
     }
-    if (input.service?.trim()) {
+    if (input.service?.trim() && !input.leadIntentGeneral) {
       attributes.push({
         name: "Послуга",
         value: input.service.trim().slice(0, 500),
@@ -263,9 +271,11 @@ async function createCrmContactAndDeal(input: {
       return false;
     }
 
-    const dealNameBase = input.tier?.trim()
-      ? `${input.name} — ${input.tier.trim()}`
-      : input.name;
+    const dealNameBase = input.leadIntentGeneral
+      ? `${input.name} — загальна консультація`
+      : input.tier?.trim()
+        ? `${input.name} — ${input.tier.trim()}`
+        : input.name;
     const dealName = `Заявка: ${dealNameBase}`.slice(0, 255);
 
     const dealRes = await fetch(`${CRM_BASE}/deals`, {
@@ -307,6 +317,7 @@ async function addEmailToSendPulseAddressBook(input: {
   phone: string;
   service?: string;
   tier?: string;
+  leadIntentGeneral?: boolean;
 }): Promise<boolean> {
   try {
     const listId = process.env.SENDPULSE_LIST_ID?.trim();
@@ -316,10 +327,10 @@ async function addEmailToSendPulseAddressBook(input: {
       name: input.name,
       phone: input.phone,
     };
-    if (input.service?.trim()) {
+    if (input.service?.trim() && !input.leadIntentGeneral) {
       variables.service = input.service.trim();
     }
-    if (input.tier?.trim()) {
+    if (input.tier?.trim() && !input.leadIntentGeneral) {
       variables.tier = input.tier.trim();
     }
 
@@ -372,6 +383,9 @@ export async function POST(req: Request) {
     typeof body.service === "string" ? body.service.trim() : undefined;
   const tier =
     typeof body.tier === "string" ? body.tier.trim() : undefined;
+  const leadIntentRaw =
+    typeof body.leadIntent === "string" ? body.leadIntent.trim() : "";
+  const isGeneralConsultation = leadIntentRaw === "general_consultation";
   const honeypot =
     typeof body.website === "string" ? body.website.trim() : "";
 
@@ -446,8 +460,9 @@ export async function POST(req: Request) {
       name,
       phone,
       ...(emailRaw ? { email: emailRaw } : {}),
-      ...(tier ? { tier } : {}),
-      ...(service ? { service } : {}),
+      ...(!isGeneralConsultation && tier ? { tier } : {}),
+      ...(!isGeneralConsultation && service ? { service } : {}),
+      ...(isGeneralConsultation ? { leadIntentGeneral: true } : {}),
     });
     if (!crmOk) {
       console.warn("[sendpulse] CRM save failed; trying list sync / Telegram");
@@ -463,8 +478,9 @@ export async function POST(req: Request) {
       email: emailRaw,
       name,
       phone,
-      ...(service ? { service } : {}),
-      ...(tier ? { tier } : {}),
+      ...(!isGeneralConsultation && service ? { service } : {}),
+      ...(!isGeneralConsultation && tier ? { tier } : {}),
+      ...(isGeneralConsultation ? { leadIntentGeneral: true } : {}),
     });
     if (!listOk && crmOk) {
       console.warn(
@@ -484,8 +500,9 @@ export async function POST(req: Request) {
         name,
         phone,
         ...(emailRaw ? { email: emailRaw } : {}),
-        ...(service ? { service } : {}),
-        ...(tier ? { tier } : {}),
+        ...(!isGeneralConsultation && service ? { service } : {}),
+        ...(!isGeneralConsultation && tier ? { tier } : {}),
+        ...(isGeneralConsultation ? { leadIntentGeneral: true } : {}),
       }),
     );
     if (!telegramOk && (crmOk || listOk)) {

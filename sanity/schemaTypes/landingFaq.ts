@@ -21,39 +21,27 @@ const faqItemObject = defineType({
   ],
 });
 
-const faqFooterLinkObject = defineType({
-  name: "faqFooterLink",
-  title: "Посилання у футері",
+export const landingFaqSectionType = defineType({
+  name: "landingFaqSection",
+  title: "FAQ",
   type: "object",
   fields: [
     defineField({
-      name: "label",
-      title: "Текст",
+      name: "eyebrow",
+      title: "Текст над заголовком (eyebrow)",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
-    defineField({
-      name: "href",
-      title: "URL",
-      type: "string",
-      validation: (Rule) => Rule.required(),
-    }),
-  ],
-});
-
-export const landingFaqType = defineType({
-  name: "landingFaq",
-  title: "FAQ та футер",
-  type: "document",
-  fields: [
-    defineField({ name: "eyebrow", title: "Eyebrow", type: "string" }),
     defineField({
       name: "heading",
-      title: "Заголовок",
+      title: "Заголовок секції",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
-    defineField({ name: "intro", title: "Вступний текст", type: "text", rows: 3 }),
+    defineField({
+      name: "intro",
+      title: "Вступний текст",
+      type: "text",
+      rows: 3,
+    }),
     defineField({
       name: "items",
       title: "Питання та відповіді",
@@ -62,19 +50,19 @@ export const landingFaqType = defineType({
     }),
     defineField({
       name: "footerNote",
-      title: "Текст футера",
+      title: "Текст футера секції FAQ",
       type: "text",
       rows: 2,
       description: "Використайте плейсхолдер {year} для поточного року.",
     }),
     defineField({
-      name: "footerLinks",
-      title: "Посилання футера",
-      type: "array",
-      of: [defineArrayMember({ type: faqFooterLinkObject.name })],
+      name: "footerButtonText",
+      title: "Текст кнопки після списку FAQ",
+      type: "string",
+      description:
+        "Заповніть останнім. Кнопка відкриває форму консультації (без посилання). Якщо поле порожнє — кнопка на сайті не з’являється.",
     }),
   ],
 });
 
 export const faqItemType = faqItemObject;
-export const faqFooterLinkType = faqFooterLinkObject;

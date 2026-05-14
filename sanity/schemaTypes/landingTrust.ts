@@ -13,45 +13,38 @@ const trustQuoteObject = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({ name: "author", title: "Автор", type: "string" }),
-    defineField({ name: "role", title: "Посада / контекст", type: "string" }),
+    defineField({
+      name: "rating",
+      title: "Оцінка (зірочки)",
+      type: "number",
+      description: "Ціле число від 1 до 5.",
+      initialValue: 5,
+      validation: (Rule) => Rule.min(1).max(5).integer(),
+    }),
   ],
 });
 
-const trustPartnerLogoObject = defineType({
-  name: "trustPartnerLogo",
-  title: "Логотип партнера",
+export const landingTrustSectionType = defineType({
+  name: "landingTrustSection",
+  title: "Довіра та відгуки",
   type: "object",
   fields: [
-    defineField({ name: "name", title: "Назва", type: "string" }),
     defineField({
-      name: "logo",
-      title: "Зображення логотипу",
-      type: "image",
-      options: { hotspot: true },
-      fields: [
-        defineField({
-          name: "alt",
-          title: "Alt-текст",
-          type: "string",
-        }),
-      ],
+      name: "eyebrow",
+      title: "Текст над заголовком (eyebrow)",
+      type: "string",
     }),
-  ],
-});
-
-export const landingTrustType = defineType({
-  name: "landingTrust",
-  title: "Довіра та відгуки",
-  type: "document",
-  fields: [
-    defineField({ name: "eyebrow", title: "Eyebrow", type: "string" }),
     defineField({
       name: "heading",
-      title: "Заголовок",
+      title: "Заголовок секції",
       type: "string",
-      validation: (Rule) => Rule.required(),
     }),
-    defineField({ name: "intro", title: "Вступний текст", type: "text", rows: 3 }),
+    defineField({
+      name: "intro",
+      title: "Вступний текст",
+      type: "text",
+      rows: 3,
+    }),
     defineField({
       name: "googleRatingScore",
       title: "Оцінка Google (текст)",
@@ -70,19 +63,7 @@ export const landingTrustType = defineType({
       type: "array",
       of: [defineArrayMember({ type: trustQuoteObject.name })],
     }),
-    defineField({
-      name: "logosSectionTitle",
-      title: "Заголовок блоку логотипів",
-      type: "string",
-    }),
-    defineField({
-      name: "logos",
-      title: "Логотипи",
-      type: "array",
-      of: [defineArrayMember({ type: trustPartnerLogoObject.name })],
-    }),
   ],
 });
 
 export const trustQuoteType = trustQuoteObject;
-export const trustPartnerLogoType = trustPartnerLogoObject;

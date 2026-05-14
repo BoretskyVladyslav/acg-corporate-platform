@@ -1,11 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Phone, Plus, Send } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
+import ConsultationModal from "./ConsultationModal";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import { externalLinkProps } from "@/src/lib/externalLink";
+import { prepareConsultationGeneral } from "@/src/lib/leadIntent";
+import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
+import { ACG_TELEGRAM_LEADS_URL } from "@/src/lib/telegram";
 
 export interface FaqItem {
   question?: string;
@@ -17,8 +21,11 @@ export interface FAQProps {
   heading?: string;
   intro?: string;
   items?: FaqItem[];
+  /** Якщо порожньо або лише пробіли — картка з кнопкою під FAQ не показується. Кнопка лише відкриває ConsultationModal (як у тарифах). */
+  footerButtonText?: string;
   footerNote?: string;
-  footerLinks?: Array<{ label?: string; href?: string }>;
+  /** З [LeadCaptureForm / Sanity `contact`]: для футера. */
+  phoneDisplay?: string;
 }
 
 const DEFAULT_FAQ_EYEBROW = "FAQ";
@@ -43,25 +50,6 @@ function mergeFaqItems(cms: FaqItem[] | undefined, defaults: FaqItem[]): FaqItem
     return {
       question: textOr(item.question, d.question ?? ""),
       answer: textOr(item.answer, d.answer ?? ""),
-    };
-  });
-}
-
-function mergeFooterLinks(
-  cms: FAQProps["footerLinks"],
-  defaults: NonNullable<FAQProps["footerLinks"]>,
-): NonNullable<FAQProps["footerLinks"]> {
-  const filtered =
-    cms?.filter(
-      (link) =>
-        Boolean(link.label?.trim()) && Boolean(link.href?.trim()),
-    ) ?? [];
-  if (!filtered.length) return defaults;
-  return filtered.map((link, i) => {
-    const d = defaults[Math.min(i, defaults.length - 1)];
-    return {
-      label: textOr(link.label, d.label ?? ""),
-      href: textOr(link.href, d.href ?? "#"),
     };
   });
 }
@@ -92,7 +80,11 @@ const defaultItems: FaqItem[] = [
   },
 ];
 
-const defaultFooterLinks: NonNullable<FAQProps["footerLinks"]> = [
+const FAQ_INDIVIDUAL_CTA_COPY =
+  "Маєте індивідуальне запитання? Наші експерти готові допомогти.";
+
+/** Додаткові посилання під FAQ не редагуються в Sanity — лише в коді. */
+const STATIC_FOOTER_NAV_LINKS: Array<{ label: string; href: string }> = [
   { label: "Конфіденційність", href: "#" },
   { label: "Умови", href: "#" },
 ];
@@ -108,23 +100,27 @@ export default function FAQ({
   heading,
   intro,
   items,
+  footerButtonText,
   footerNote,
-  footerLinks,
+  phoneDisplay,
 }: FAQProps) {
   const displayEyebrow = textOr(eyebrow, DEFAULT_FAQ_EYEBROW);
   const displayHeading = textOr(heading, DEFAULT_FAQ_HEADING);
   const displayIntro = textOr(intro, DEFAULT_FAQ_INTRO);
   const resolvedItems = mergeFaqItems(items, defaultItems);
 
-  const resolvedFooterLinks = mergeFooterLinks(
-    footerLinks,
-    defaultFooterLinks,
-  );
+  const trimmedFooterButtonText =
+    typeof footerButtonText === "string" ? footerButtonText.trim() : "";
+  const showFaqConsultCta = Boolean(trimmedFooterButtonText);
+
+  const footerPhoneHref = telHrefFromDisplay(phoneDisplay);
 
   const year = new Date().getFullYear();
   const footerNoteTemplate = textOr(footerNote, DEFAULT_FAQ_FOOTER_NOTE);
   const resolvedNote = footerNoteTemplate.replace("{year}", String(year));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [consultModalOpen, setConsultModalOpen] = useState(false);
+  const [consultModalKey, setConsultModalKey] = useState(0);
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
   const reactId = useId();
@@ -148,7 +144,7 @@ export default function FAQ({
       className="bg-acg-light text-foreground"
     >
       <motion.div
-        className="py-24 sm:py-28 lg:py-32"
+        className="py-16 sm:py-20 lg:py-24"
         initial={
           isMdUp ? { opacity: 0, y: 24 } : { opacity: 0, y: 10 }
         }
@@ -159,18 +155,18 @@ export default function FAQ({
           ease: revealEase,
         }}
       >
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:gap-20">
-          <div className="pb-12 lg:col-span-5 lg:sticky lg:top-32 lg:h-fit lg:pb-0">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 md:gap-10 lg:grid-cols-12 lg:gap-14">
+          <div className="pb-8 lg:col-span-5 lg:sticky lg:top-32 lg:h-fit lg:pb-0">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
               {displayEyebrow}
             </p>
             <h2
               id="faq-heading"
-              className="mt-5 max-w-[min(100%,18ch)] text-4xl font-semibold tracking-tight text-acg-blue lg:text-5xl lg:leading-[1.12]"
+              className="mt-4 max-w-[min(100%,18ch)] text-4xl font-semibold tracking-tight text-acg-blue lg:mt-5 lg:text-5xl lg:leading-[1.12]"
             >
               {displayHeading}
             </h2>
-            <p className="mt-8 max-w-md text-lg leading-relaxed text-foreground/65">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-foreground/65 md:mt-8 md:text-lg">
               {displayIntro}
             </p>
           </div>
@@ -188,9 +184,9 @@ export default function FAQ({
                   key={`${q}-${i}`}
                   className="border-b border-acg-border first:border-t first:border-acg-border"
                 >
-                  <div className="flex gap-5 sm:gap-6">
+                  <div className="flex gap-3 sm:gap-5">
                     <span
-                      className="w-9 shrink-0 pt-6 text-right text-3xl font-light tabular-nums leading-none text-acg-blue/20 sm:w-10 sm:text-4xl"
+                      className="w-8 shrink-0 pt-4 text-right text-2xl font-light tabular-nums leading-none text-acg-blue/20 sm:w-10 sm:pt-4 sm:text-4xl"
                       aria-hidden
                     >
                       {formatItemIndex(i)}
@@ -202,7 +198,7 @@ export default function FAQ({
                         aria-expanded={isOpen}
                         aria-controls={answerId}
                         onClick={() => toggle(i)}
-                        className="flex w-full cursor-pointer items-start gap-4 py-6 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-acg-blue/25 focus-visible:ring-offset-2 focus-visible:ring-offset-acg-light sm:gap-5"
+                        className="flex min-h-11 w-full cursor-pointer items-start gap-3 py-3.5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-acg-blue/25 focus-visible:ring-offset-2 focus-visible:ring-offset-acg-light sm:min-h-0 sm:gap-4 sm:py-4 md:gap-5"
                       >
                         <span
                           className={`min-w-0 flex-1 text-[1.0625rem] font-medium leading-snug tracking-tight sm:text-lg sm:leading-snug md:transition-all md:duration-300 ${
@@ -214,7 +210,7 @@ export default function FAQ({
                           {q}
                         </span>
                         <span
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-300 sm:h-8 sm:w-8 ${
                             isOpen
                               ? "bg-acg-blue/10 text-acg-blue"
                               : "bg-acg-surface-subtle text-foreground/45"
@@ -253,7 +249,7 @@ export default function FAQ({
                         }}
                         className="overflow-hidden"
                       >
-                        <p className="max-w-3xl pb-6 pt-2 text-base leading-relaxed text-acg-muted sm:text-[1.0625rem]">
+                        <p className="max-w-3xl pb-4 pt-1.5 text-sm leading-relaxed text-acg-muted sm:pb-4 sm:pt-2 sm:text-[1.0625rem]">
                           {a}
                         </p>
                       </motion.div>
@@ -265,21 +261,76 @@ export default function FAQ({
           </div>
         </div>
 
-        <footer className="mx-auto mt-20 max-w-7xl border-t border-acg-border px-4 pt-10 sm:px-6">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-foreground/55">{resolvedNote}</p>
-            <nav aria-label="Footer">
-              <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                {resolvedFooterLinks.map((link, i) => {
-                  const href = textOr(link.href, "#");
+        {showFaqConsultCta ? (
+          <>
+            <div className="mx-auto mt-10 max-w-7xl px-4 sm:mt-12 sm:px-6">
+              <div className="rounded-2xl border border-acg-border bg-white/90 px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+                <p className="text-center text-sm leading-relaxed text-foreground/75 sm:text-base">
+                  {FAQ_INDIVIDUAL_CTA_COPY}
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      prepareConsultationGeneral();
+                      setConsultModalKey((k) => k + 1);
+                      setConsultModalOpen(true);
+                    }}
+                    className="inline-flex min-h-11 w-full max-w-sm items-center justify-center rounded-full bg-acg-blue px-6 py-3 text-sm font-semibold text-white shadow-md ring-1 ring-acg-blue/20 transition hover:bg-acg-blue/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/35 sm:w-auto"
+                  >
+                    {trimmedFooterButtonText}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <ConsultationModal
+              key={consultModalKey}
+              open={consultModalOpen}
+              onClose={() => setConsultModalOpen(false)}
+            />
+          </>
+        ) : null}
+
+        <footer className="mx-auto mt-10 max-w-7xl border-t border-acg-border px-4 pt-8 sm:mt-12 sm:px-6">
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="min-w-0 text-xs text-foreground/50 sm:text-sm">
+                {resolvedNote}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:gap-x-6">
+                <a
+                  href={ACG_TELEGRAM_LEADS_URL}
+                  {...externalLinkProps(ACG_TELEGRAM_LEADS_URL)}
+                  className="inline-flex items-center gap-2 text-foreground/70 transition hover:text-[#229ED9]"
+                  aria-label="Telegram @acg_leads_bot"
+                >
+                  <Send className="size-5 shrink-0 text-[#229ED9]" aria-hidden />
+                  <span className="text-sm font-medium">Telegram</span>
+                </a>
+                {phoneDisplay?.trim() && footerPhoneHref ? (
+                  <a
+                    href={footerPhoneHref}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-foreground/75 transition hover:text-acg-blue"
+                  >
+                    <Phone className="size-4 shrink-0 text-acg-blue" aria-hidden />
+                    <span>{phoneDisplay.trim()}</span>
+                  </a>
+                ) : null}
+              </div>
+            </div>
+            <nav aria-label="Додаткові посилання" className="border-t border-foreground/[0.06] pt-4">
+              <ul className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground/45">
+                {STATIC_FOOTER_NAV_LINKS.map((link, i) => {
+                  const href = link.href;
                   return (
                     <li key={i}>
                       <a
                         href={href}
                         {...externalLinkProps(href)}
-                        className="text-acg-blue/80 underline-offset-4 hover:text-acg-blue hover:underline"
+                        className="underline-offset-2 hover:text-acg-blue/90 hover:underline"
                       >
-                        {textOr(link.label, "Посилання")}
+                        {link.label}
                       </a>
                     </li>
                   );

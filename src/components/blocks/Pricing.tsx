@@ -6,22 +6,32 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { Check } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import ConsultationModal from "./ConsultationModal";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
-import { externalLinkProps } from "@/src/lib/externalLink";
+import { resolveFeatureIcon } from "@/src/lib/featureIcons";
+import {
+  prepareConsultationFromPricingTier,
+  prepareConsultationGeneral,
+} from "@/src/lib/leadIntent";
+import {
+  ACG_PRICING_PRESET_EVENT,
+  findTierIndexForPreset,
+  type PricingTierPreset,
+} from "@/src/lib/pricingTierNavigation";
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
+
+import type { ServiceItem } from "./Services";
 
 export interface PricingTier {
   name?: string;
-  price?: string;
-  cadence?: string;
+  /** Повний рядок ціни з CMS (або дефолтів), як показано на сторінці. */
+  priceText?: string;
   description?: string;
-  features?: string[];
-  extraSections?: Array<{ title?: string; items?: string[] }>;
-  ctaLabel?: string;
-  ctaHref?: string;
-  highlighted?: boolean;
+  /** Пункти тарифу з Sanity (`featureItem`). */
+  features?: ServiceItem[];
+  isPopular?: boolean;
 }
 
 export interface PricingProps {
@@ -29,83 +39,98 @@ export interface PricingProps {
   heading?: string;
   intro?: string;
   tiers?: PricingTier[];
+  /** Текст над нижньою кнопкою консультації (Sanity `pricing.ctaText`). */
+  ctaText?: string;
+  /** Підпис синьої кнопки замовлення у картці тарифу (`pricing.globalButtonLabel`). */
+  globalButtonLabel?: string;
 }
+
+const DEFAULT_GLOBAL_ORDER_LABEL = "Замовити";
+
+const DEFAULT_PRICING_CTA_BOTTOM_TEXT =
+  "Потрібна допомога з вибором? Залиште заявку на загальну консультацію — підкажемо оптимальний формат без прив’язки до конкретного тарифу.";
 
 const defaultTiers: PricingTier[] = [
   {
     name: "Консультація",
-    price: "2000 грн",
-    cadence: "",
+    priceText: "2000 грн / разово",
     description:
       "Детальна консультація з бухгалтером та юристом. Тривалість 1 година. Формат: онлайн або офлайн. Повний розбір вашої ситуації та розробка стратегії",
     features: [],
-    ctaLabel: "Отримати консультацію",
-    ctaHref: "#contact",
-    highlighted: false,
+    isPopular: false,
   },
   {
     name: "Реєстрація ФОП",
-    price: "1500 грн",
-    cadence: "",
+    priceText: "1500 грн / разово",
     description:
       "Включає підбір КВЕД, подачу документів, вибір системи оподаткування та супровід до отримання витягу з реєстру",
     features: [],
-    ctaLabel: "Отримати консультацію",
-    ctaHref: "#contact",
-    highlighted: false,
+    isPopular: false,
   },
   {
     name: "ФОП 1 група",
-    price: "1000 грн",
-    cadence: " / міс.",
+    priceText: "1000 грн / міс.",
     description: "",
     features: [
-      "Подання звітності (річна, ЄСВ та ПДФО)",
-      "Формування реквізитів на сплату",
-      "Відслідковування своєчасності оплат",
-      "Консультування з питань діяльності",
-      "Формування книги обліку доходів",
-      "Відслідковування лімітів доходів",
-      "Складання рахунків та актів",
-      "Допомога в створенні ЕЦП",
+      { title: "Подання звітності (річна, ЄСВ та ПДФО)" },
+      { title: "Формування реквізитів на сплату" },
+      { title: "Відслідковування своєчасності оплат" },
+      { title: "Консультування з питань діяльності" },
+      { title: "Формування книги обліку доходів" },
+      { title: "Відслідковування лімітів доходів" },
+      { title: "Складання рахунків та актів" },
+      { title: "Допомога в створенні ЕЦП" },
     ],
-    ctaLabel: "Отримати консультацію",
-    ctaHref: "#contact",
-    highlighted: false,
+    isPopular: false,
   },
   {
     name: "ФОП 2 та 3 групи",
-    price: "від 1500 грн",
-    cadence: " / міс.",
+    priceText: "від 1500 грн / міс.",
     description: "",
     features: [
-      "Всі послуги з 1-ї групи",
-      "Подання заяв до податкової",
-      "Подання квартальної звітності",
-      "Формування реквізитів на сплату",
-      "Взаємодія з контролюючими органами",
-      "Складання первинних документів",
-      "Допомога в створенні ЕЦП",
+      { title: "Всі послуги з 1-ї групи" },
+      { title: "Подання заяв до податкової" },
+      { title: "Подання квартальної звітності" },
+      { title: "Формування реквізитів на сплату" },
+      { title: "Взаємодія з контролюючими органами" },
+      { title: "Складання первинних документів" },
+      { title: "Допомога в створенні ЕЦП" },
     ],
-    extraSections: [
-      {
-        title: "Окремий функціонал з ПРРО",
-        items: [
-          "Перевірка даних Z-звіту з кабінетом (ПРРО)",
-          "Інформування про помилки (ПРРО)",
-          "Акти виправлення помилок (ПРРО)",
-        ],
-      },
-    ],
-    ctaLabel: "Отримати консультацію",
-    ctaHref: "#contact",
-    highlighted: true,
+    isPopular: true,
   },
 ];
 
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
   return t || fallback;
+}
+
+/** Якщо в CMS є хоч один пункт — показуємо лише їх, без змішування з дефолтами. */
+function featuresFromCmsOnly(cms: ServiceItem[]): ServiceItem[] {
+  return cms.map((item) => {
+    const row: ServiceItem = {
+      title: typeof item.title === "string" ? item.title.trim() : "",
+      description:
+        typeof item.description === "string" ? item.description.trim() : "",
+      note: typeof item.note === "string" ? item.note.trim() : "",
+      icon: typeof item.icon === "string" ? item.icon.trim() : "",
+    };
+    if (item.isHeader === true) {
+      row.isHeader = true;
+    }
+    return row;
+  });
+}
+
+function tierHasCmsFeatures(tier: PricingTier): boolean {
+  return (tier.features ?? []).some(
+    (x) =>
+      x?.isHeader === true ||
+      Boolean(x.title?.trim()) ||
+      Boolean(x.description?.trim()) ||
+      Boolean(x.note?.trim()) ||
+      Boolean(x.icon?.trim()),
+  );
 }
 
 function mergePricingTiers(
@@ -115,29 +140,26 @@ function mergePricingTiers(
   if (!cms?.length) return defaults;
   return cms.map((t, i) => {
     const d = defaults[Math.min(i, defaults.length - 1)];
-    const cmsFeatures = (t.features ?? []).filter((x) => Boolean(x?.trim()));
-    const features = cmsFeatures.length ? cmsFeatures : (d.features ?? []);
-    const extraFromCms = t.extraSections?.filter(
-      (s) =>
-        Boolean(s.title?.trim()) &&
-        (s.items ?? []).some((line) => Boolean(line?.trim())),
-    );
-    const extraSections =
-      extraFromCms && extraFromCms.length > 0 ? extraFromCms : d.extraSections;
+    const hasCmsFeatures = tierHasCmsFeatures(t);
+    const features = hasCmsFeatures
+      ? featuresFromCmsOnly(t.features ?? [])
+      : (d.features ?? []);
+
+    const isPopularMerged =
+      typeof t.isPopular === "boolean" ? t.isPopular : Boolean(d.isPopular);
+
+    const cmsDescriptionRaw =
+      typeof t.description === "string" ? t.description.trim() : "";
+    const description = hasCmsFeatures
+      ? cmsDescriptionRaw
+      : textOr(t.description, d.description ?? "");
 
     return {
       name: textOr(t.name, d.name ?? ""),
-      price: textOr(t.price, d.price ?? ""),
-      cadence: t.cadence?.trim() || d.cadence || "",
-      description: textOr(t.description, d.description ?? ""),
+      priceText: textOr(t.priceText, d.priceText ?? ""),
+      description,
       features,
-      extraSections,
-      ctaLabel: textOr(t.ctaLabel, d.ctaLabel ?? "Отримати консультацію"),
-      ctaHref: textOr(t.ctaHref, d.ctaHref ?? "#contact"),
-      highlighted:
-        typeof t.highlighted === "boolean"
-          ? t.highlighted
-          : Boolean(d.highlighted),
+      isPopular: Boolean(isPopularMerged),
     };
   });
 }
@@ -251,6 +273,21 @@ const featuresListVariantsMobile = {
   },
 };
 
+/**
+ * Стилі рядків після `isHeader`: щільний блок, текст 15px — на крок менший за основний список на `sm` (`text-base`).
+ */
+const pricingSubsectionItem = {
+  row: "flex gap-2 py-1",
+  icon: "mt-0.5 h-4 w-4 shrink-0 text-acg-blue/65",
+  stack: "min-w-0 flex-1 space-y-1.5",
+  title: "text-[15px] font-medium leading-snug text-slate-700",
+  bulletList: "space-y-1",
+  bulletRow:
+    "flex gap-2 text-[15px] font-normal leading-relaxed text-slate-700",
+  bulletMark: "mt-2 h-px w-2.5 shrink-0 bg-slate-400/55",
+  note: "mt-0.5 border-t border-slate-200/90 pt-2 text-[11px] font-normal uppercase tracking-[0.18em] text-slate-600",
+} as const;
+
 function splitDescriptionToLines(text: string): string[] {
   const trimmed = text.trim();
   if (!trimmed) return [];
@@ -262,46 +299,33 @@ function splitDescriptionToLines(text: string): string[] {
   return chunks.length ? chunks : [trimmed];
 }
 
-function getPriceParts(tier: PricingTier): {
-  prefix?: string;
-  figure: string;
-  showCurrency: boolean;
-  cadenceSuffix: string;
-} {
-  const raw = (tier.price ?? "").trim();
-  const cadRaw = (tier.cadence ?? "").trim();
-  const cadenceSuffix = cadRaw.replace(/^\s*\/?\s*/, "").trim();
-
-  let prefix: string | undefined;
-  let rest = raw;
-  if (/^від\s+/i.test(rest)) {
-    prefix = "Від";
-    rest = rest.replace(/^від\s+/i, "").trim();
-  }
-
-  const m = rest.match(/^([\d\s]+)\s*(грн)?\.?$/i);
-  if (m) {
-    const figure = m[1].replace(/\s/g, "");
-    return {
-      prefix,
-      figure,
-      showCurrency: true,
-      cadenceSuffix,
-    };
-  }
-
-  return {
-    prefix,
-    figure: raw,
-    showCurrency: false,
-    cadenceSuffix,
-  };
+function pricingFeatureRowIsRenderable(f: ServiceItem): boolean {
+  return (
+    f.isHeader === true ||
+    Boolean(f.title?.trim()) ||
+    Boolean(f.description?.trim()) ||
+    Boolean(f.note?.trim())
+  );
 }
 
-function tierShowsPopularBadge(tier: PricingTier): boolean {
-  if (tier.highlighted) return true;
-  const n = tier.name ?? "";
-  return n.includes("2") && n.includes("3") && n.toLowerCase().includes("фоп");
+/** Усі звичайні пункти після останнього `isHeader` (до наступного заголовка) — компактний підсписок. */
+function followsPricingSubsectionHeader(
+  items: ServiceItem[],
+  index: number,
+): boolean {
+  let lastHeaderIndex = -1;
+  for (let i = 0; i < index; i++) {
+    const row = items[i];
+    if (!pricingFeatureRowIsRenderable(row)) continue;
+    if (row.isHeader === true) {
+      lastHeaderIndex = i;
+    }
+  }
+  return lastHeaderIndex >= 0;
+}
+
+function isPopularTier(tier: PricingTier): boolean {
+  return tier.isPopular === true;
 }
 
 export default function Pricing({
@@ -309,12 +333,24 @@ export default function Pricing({
   heading,
   intro,
   tiers,
+  ctaText,
+  globalButtonLabel,
 }: PricingProps) {
   const displayEyebrow = textOr(eyebrow, DEFAULT_PRICING_EYEBROW);
   const displayHeading = textOr(heading, DEFAULT_PRICING_HEADING);
   const displayIntro = textOr(intro, DEFAULT_PRICING_INTRO);
+  const displayCtaText = textOr(ctaText, DEFAULT_PRICING_CTA_BOTTOM_TEXT);
+  const displayOrderLabel = textOr(
+    globalButtonLabel,
+    DEFAULT_GLOBAL_ORDER_LABEL,
+  );
   const resolvedTiers = mergePricingTiers(tiers, defaultTiers);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const preferredPopularIdx = resolvedTiers.findIndex((t) => isPopularTier(t));
+  const [selectedIndex, setSelectedIndex] = useState(
+    preferredPopularIdx >= 0 ? preferredPopularIdx : 0,
+  );
+  const [consultModalOpen, setConsultModalOpen] = useState(false);
+  const [consultModalKey, setConsultModalKey] = useState(0);
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
 
@@ -333,14 +369,25 @@ export default function Pricing({
     }
   }, [safeIndex, resolvedTiers]);
 
-  const selectTier = useCallback(
-    (index: number) => {
-      if (index >= 0 && index < resolvedTiers.length) {
-        setSelectedIndex(index);
+  const selectTier = (index: number) => {
+    if (index >= 0 && index < resolvedTiers.length) {
+      setSelectedIndex(index);
+    }
+  };
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
+      const preset = ce.detail?.preset;
+      if (preset !== "fop-registration") return;
+      const idx = findTierIndexForPreset(resolvedTiers, preset);
+      if (idx >= 0 && idx < resolvedTiers.length) {
+        setSelectedIndex(idx);
       }
-    },
-    [resolvedTiers.length],
-  );
+    };
+    window.addEventListener(ACG_PRICING_PRESET_EVENT, handler);
+    return () => window.removeEventListener(ACG_PRICING_PRESET_EVENT, handler);
+  }, [resolvedTiers]);
 
   const panelMotionProps = useMemo(
     () =>
@@ -400,7 +447,7 @@ export default function Pricing({
       aria-labelledby="pricing-heading"
       className="overflow-x-hidden bg-acg-light text-foreground"
     >
-      <div className="mx-auto max-w-6xl min-w-0 px-4 py-24 sm:px-6 sm:py-28 lg:py-32">
+      <div className="mx-auto max-w-6xl min-w-0 px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
         <motion.div
           variants={headerContainerResolved}
           initial="hidden"
@@ -432,7 +479,7 @@ export default function Pricing({
           <motion.div
             role="tablist"
             aria-label="Тарифи та послуги"
-            className="mt-10 flex w-full min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-px-1 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:justify-center md:gap-2 md:overflow-x-visible md:scroll-px-0 md:pb-2 lg:justify-start [&::-webkit-scrollbar]:hidden"
+            className="mt-8 flex w-full min-w-0 snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-4 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 md:mt-10 md:flex-wrap md:justify-center md:gap-2 md:overflow-x-visible md:scroll-px-0 md:pb-2 md:pt-0 lg:justify-start [&::-webkit-scrollbar]:hidden"
             initial={isMdUp ? { opacity: 0, y: 12 } : { opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -452,11 +499,11 @@ export default function Pricing({
                   aria-controls="pricing-tier-panel"
                   id={`pricing-tier-tab-${i}`}
                   onClick={() => selectTier(i)}
-                  className={`snap-start shrink-0 touch-manipulation whitespace-nowrap rounded-full border font-semibold transition-colors min-h-[48px] px-5 py-4 text-base leading-snug md:min-h-0 md:px-4 md:py-2.5 md:text-sm md:font-medium ${
+                  className={`snap-start shrink-0 touch-manipulation rounded-full border font-semibold transition-colors min-h-[48px] max-w-[calc(100vw-2.5rem)] px-4 py-3.5 text-left text-sm leading-snug sm:max-w-none sm:px-5 sm:py-4 sm:text-base md:min-h-0 md:max-w-none md:px-4 md:py-2.5 md:text-center md:text-sm md:font-medium ${
                     isActive
                       ? "border-acg-blue bg-acg-blue text-white shadow-md shadow-acg-blue/30 ring-1 ring-black/[0.06] md:shadow-acg-blue/25 md:ring-0"
                       : "border-foreground/20 bg-white text-foreground/85 hover:border-acg-blue/50 hover:bg-acg-blue/[0.08] hover:text-acg-blue md:border-acg-blue/20 md:text-acg-blue md:hover:border-acg-blue/40 md:hover:bg-acg-blue/5"
-                  }`}
+                  } ${isPopularTier(t) ? "ring-2 ring-amber-400/60 ring-offset-2 ring-offset-white" : ""}`}
                   layout={isMdUp}
                   transition={
                     isMdUp
@@ -469,14 +516,26 @@ export default function Pricing({
                       : undefined
                   }
                 >
-                  {t.name}
+                  <span className="inline-flex w-full flex-col items-start gap-1 md:items-center">
+                    <span className="inline-flex flex-wrap items-center gap-1.5 break-words md:justify-center">
+                      <span className="break-words">{t.name}</span>
+                      {isPopularTier(t) ? (
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${isActive ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"}`}
+                          aria-label="Рекомендовано"
+                        >
+                          Топ
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
                 </motion.button>
               );
             })}
           </motion.div>
         ) : null}
 
-        <div className="relative mx-auto mt-10 max-w-4xl">
+        <div className="relative mx-auto mt-6 min-w-0 max-w-4xl sm:mt-10">
           <AnimatePresence mode="wait" initial={false}>
             <motion.article
               key={safeIndex}
@@ -489,7 +548,11 @@ export default function Pricing({
               }
               aria-live="polite"
               {...panelMotionProps}
-              className="relative overflow-hidden rounded-3xl border border-acg-blue/10 bg-white shadow-lg shadow-acg-blue/[0.07]"
+              className={`relative min-w-0 overflow-hidden rounded-3xl border bg-white shadow-lg transition-[box-shadow,border-color] ${
+                isPopularTier(tier)
+                  ? "border-acg-blue/45 shadow-2xl shadow-amber-500/10 ring-2 ring-amber-400/55"
+                  : "border-acg-blue/12 shadow-md shadow-acg-blue/[0.06]"
+              }`}
             >
               {reduceMotionPreferred || !isMdUp ? (
                 <span
@@ -516,62 +579,245 @@ export default function Pricing({
                 </motion.span>
               )}
               <div className="relative z-[1]">
-                <PricingCheckoutPanel tier={tier} />
+                <PricingCheckoutPanel
+                  tier={tier}
+                  orderButtonLabel={displayOrderLabel}
+                  onOrderClick={() => {
+                    prepareConsultationFromPricingTier(tier.name ?? "");
+                    setConsultModalKey((k) => k + 1);
+                    setConsultModalOpen(true);
+                  }}
+                />
               </div>
             </motion.article>
           </AnimatePresence>
         </div>
+
+        <motion.div
+          className="mt-10 flex flex-col items-center justify-center gap-3 px-1 sm:mt-12"
+          initial={isMdUp ? { opacity: 0, y: 12 } : { opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.35 }}
+          transition={{ duration: 0.45, ease: tierSwitchEase }}
+        >
+          <p className="max-w-xl text-center text-sm leading-relaxed text-foreground/65">
+            {displayCtaText}
+          </p>
+          <motion.button
+            type="button"
+            onClick={() => {
+              prepareConsultationGeneral();
+              setConsultModalKey((k) => k + 1);
+              setConsultModalOpen(true);
+            }}
+            className="inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-full bg-acg-red px-8 py-3.5 text-center text-sm font-semibold text-white shadow-md ring-1 ring-white/25 transition hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/35 focus-visible:ring-offset-2 focus-visible:ring-offset-acg-light sm:w-auto"
+          >
+            Отримати консультацію
+          </motion.button>
+        </motion.div>
       </div>
+
+      <ConsultationModal
+        key={consultModalKey}
+        open={consultModalOpen}
+        onClose={() => setConsultModalOpen(false)}
+      />
     </section>
   );
 }
 
-function PricingCheckoutPanel({ tier }: { tier: PricingTier }) {
+function PricingCheckoutPanel({
+  tier,
+  orderButtonLabel,
+  onOrderClick,
+}: {
+  tier: PricingTier;
+  orderButtonLabel: string;
+  onOrderClick: () => void;
+}) {
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
   const mainFeatures = tier.features ?? [];
-  const sections = tier.extraSections ?? [];
+  const hasFeatureRows = mainFeatures.some(
+    (f) =>
+      f.isHeader === true ||
+      Boolean(f.title?.trim()) ||
+      Boolean(f.description?.trim()) ||
+      Boolean(f.note?.trim()),
+  );
   const descLines =
-    mainFeatures.length === 0 && tier.description?.trim()
+    !hasFeatureRows && tier.description?.trim()
       ? splitDescriptionToLines(tier.description)
       : [];
-  const allLines = mainFeatures.length > 0 ? mainFeatures : descLines;
-  const gapClass = allLines.length > 6 ? "gap-2.5" : "gap-3";
-  const priceParts = getPriceParts(tier);
-  const popular = tierShowsPopularBadge(tier);
-  const ctaBase = "bg-acg-blue hover:brightness-110";
-  const ctaHref = textOr(tier.ctaHref, "#contact");
+  const gapClass = Math.max(mainFeatures.length, descLines.length) > 6 ? "gap-2.5" : "gap-3";
+  const priceDisplayRaw = tier.priceText?.trim() ?? "";
+  const popular = isPopularTier(tier);
+  const ctaBase = popular
+    ? "bg-acg-blue ring-2 ring-amber-300/60 hover:brightness-105"
+    : "bg-acg-blue hover:brightness-110";
+  const showEmptyFallback =
+    !hasFeatureRows &&
+    descLines.length === 0 &&
+    !tier.description?.trim();
 
   const ctaPulseAnimate =
     reduceMotionPreferred || !isMdUp ? {} : { boxShadow: ctaPulseShadowBlue };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3">
-      <div className="flex flex-col md:col-span-2 md:border-r md:border-acg-blue/[0.08] p-8 sm:p-10">
+    <div className="flex min-h-[min(28rem,82svh)] flex-col md:min-h-[26rem] md:flex-row md:items-stretch">
+      <div className="relative flex min-h-0 flex-1 flex-col border-b border-acg-blue/[0.1] p-6 sm:p-8 md:border-b-0 md:border-r lg:basis-[62%] lg:p-10 lg:pl-11">
         {popular ? (
-          <span className="mb-3 inline-flex w-fit rounded-full bg-acg-blue/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-acg-blue">
-            Найчастіший вибір
+          <span className="mb-3 inline-flex w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-950 ring-1 ring-amber-300/70">
+            Рекомендовано
           </span>
-        ) : null}
-        <h3 className="text-xl font-semibold tracking-tight text-acg-blue sm:text-2xl">
+        ) : (
+          <span className="sr-only">Тарифний пакет</span>
+        )}
+        <h3 className="break-words text-xl font-semibold tracking-tight text-acg-blue sm:text-2xl">
           {tier.name}
         </h3>
-        <div className="mt-4 h-px w-full bg-acg-border" aria-hidden />
-        {tier.description?.trim() && mainFeatures.length > 0 ? (
+        <div className="mt-4 h-px w-full min-w-0 bg-acg-border" aria-hidden />
+        {tier.description?.trim() && hasFeatureRows ? (
           <p className="mt-5 text-sm leading-relaxed text-foreground/72">
             {tier.description}
           </p>
         ) : null}
-        {allLines.length > 0 ? (
+        {hasFeatureRows ? (
           <motion.ul
             variants={isMdUp ? featuresListVariants : featuresListVariantsMobile}
             initial="hidden"
             animate="visible"
-            className={`mt-6 flex flex-col text-sm text-foreground/85 ${gapClass}`}
+            className="mt-6 flex min-h-0 flex-1 flex-col"
           >
-            {allLines.map((f, j) => (
+            {mainFeatures.map((f, j) => {
+              if (
+                f.isHeader !== true &&
+                !f.title?.trim() &&
+                !f.description?.trim() &&
+                !f.note?.trim()
+              ) {
+                return null;
+              }
+
+              if (f.isHeader === true) {
+                const headline = f.title?.trim() ?? "";
+                if (!headline) return null;
+                return (
+                  <motion.li
+                    key={`hdr-${headline}-${j}`}
+                    variants={
+                      isMdUp ? featureItemVariants : featureItemVariantsMobile
+                    }
+                    className="mt-6 mb-2 first:mt-0"
+                  >
+                    <p className="text-base font-bold leading-snug text-acg-blue sm:text-[1.0625rem]">
+                      {headline}
+                    </p>
+                  </motion.li>
+                );
+              }
+
+              const compact = followsPricingSubsectionHeader(mainFeatures, j);
+              const headline = f.title?.trim() ?? "";
+              const descRaw = f.description?.trim() ?? "";
+              const FeatureIcon = resolveFeatureIcon(f.icon);
+              const bullets =
+                headline && descRaw
+                  ? splitDescriptionToLines(descRaw)
+                  : !headline && descRaw
+                    ? splitDescriptionToLines(descRaw)
+                    : [];
+              const showNote = Boolean(f.note?.trim());
+              return (
+                <motion.li
+                  key={`${headline}-${j}`}
+                  variants={isMdUp ? featureItemVariants : featureItemVariantsMobile}
+                  className={
+                    compact ? pricingSubsectionItem.row : "flex gap-4 py-5 first:pt-0 lg:gap-5 lg:py-6"
+                  }
+                >
+                  <FeatureIcon
+                    className={
+                      compact
+                        ? pricingSubsectionItem.icon
+                        : "mt-1 h-4 w-4 shrink-0 text-acg-blue"
+                    }
+                    aria-hidden
+                    strokeWidth={2.25}
+                  />
+                  <div
+                    className={
+                      compact
+                        ? pricingSubsectionItem.stack
+                        : "min-w-0 flex-1 space-y-2.5"
+                    }
+                  >
+                    {headline ? (
+                      <p
+                        className={
+                          compact
+                            ? pricingSubsectionItem.title
+                            : "text-[0.9375rem] font-semibold leading-snug text-acg-blue sm:text-base"
+                        }
+                      >
+                        {headline}
+                      </p>
+                    ) : null}
+                    {bullets.length ? (
+                      <ul
+                        className={
+                          compact ? pricingSubsectionItem.bulletList : "space-y-2"
+                        }
+                      >
+                        {bullets.map((line, idx) => (
+                          <li
+                            key={idx}
+                            className={
+                              compact
+                                ? pricingSubsectionItem.bulletRow
+                                : "flex gap-2.5 text-sm font-light leading-relaxed text-foreground/72"
+                            }
+                          >
+                            <span
+                              className={
+                                compact
+                                  ? pricingSubsectionItem.bulletMark
+                                  : "mt-2 h-px w-2.5 shrink-0 bg-foreground/20"
+                              }
+                              aria-hidden
+                            />
+                            <span>{line}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {showNote ? (
+                      <p
+                        className={
+                          compact
+                            ? pricingSubsectionItem.note
+                            : "mt-1 border-t border-foreground/[0.08] pt-3 text-[11px] font-normal uppercase tracking-[0.2em] text-foreground/42"
+                        }
+                      >
+                        {f.note}
+                      </p>
+                    ) : null}
+                  </div>
+                </motion.li>
+              );
+            })}
+          </motion.ul>
+        ) : null}
+        {!hasFeatureRows && descLines.length > 0 ? (
+          <motion.ul
+            variants={isMdUp ? featuresListVariants : featuresListVariantsMobile}
+            initial="hidden"
+            animate="visible"
+            className={`mt-6 flex flex-col text-sm text-foreground/82 ${gapClass}`}
+          >
+            {descLines.map((f, j) => (
               <motion.li
-                key={j}
+                key={`${f}-${j}`}
                 variants={isMdUp ? featureItemVariants : featureItemVariantsMobile}
                 className="flex gap-3 leading-relaxed"
               >
@@ -580,76 +826,45 @@ function PricingCheckoutPanel({ tier }: { tier: PricingTier }) {
                   strokeWidth={2.25}
                   aria-hidden
                 />
-                <span>{f}</span>
+                <span className="min-w-0 break-words">{f}</span>
               </motion.li>
             ))}
           </motion.ul>
         ) : null}
-        {sections.map((block, si) => {
-          const lines = (block.items ?? []).filter((x) => Boolean(x?.trim()));
-          const title = block.title?.trim();
-          if (!title || lines.length === 0) return null;
-          return (
-            <div key={`${title}-${si}`} className="mt-8">
-              <p className="text-sm font-semibold text-acg-blue">{title}</p>
-              <motion.ul
-                variants={isMdUp ? featuresListVariants : featuresListVariantsMobile}
-                initial="hidden"
-                animate="visible"
-                className={`mt-3 flex flex-col text-sm text-foreground/85 ${gapClass}`}
-              >
-                {lines.map((f, j) => (
-                  <motion.li
-                    key={j}
-                    variants={isMdUp ? featureItemVariants : featureItemVariantsMobile}
-                    className="flex gap-3 leading-relaxed"
-                  >
-                    <Check
-                      className="mt-0.5 h-5 w-5 shrink-0 text-acg-blue"
-                      strokeWidth={2.25}
-                      aria-hidden
-                    />
-                    <span>{f}</span>
-                  </motion.li>
-                ))}
-              </motion.ul>
-            </div>
-          );
-        })}
+        {showEmptyFallback ? (
+          <p className="mt-6 rounded-2xl border border-dashed border-foreground/20 bg-white/70 px-4 py-4 text-sm leading-relaxed text-foreground/62">
+            Деталі пакета уточнюйте у менеджера — підкажемо оптимальний формат супроводу під ваш ФОП чи ТОВ.
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex flex-col justify-between gap-8 border-t border-acg-blue/[0.08] bg-acg-blue/[0.05] p-8 sm:p-10 md:col-span-1 md:border-t-0 md:rounded-none">
-        <div>
-          {priceParts.prefix ? (
-            <p className="text-base font-medium tracking-wide text-acg-muted">
-              {priceParts.prefix}
+      <aside
+        className={`relative flex flex-1 flex-col border-t border-acg-blue/[0.1] p-6 sm:p-8 md:border-l md:border-t-0 lg:max-w-sm lg:basis-[38%] lg:p-10 ${
+          popular
+            ? "bg-[linear-gradient(165deg,color-mix(in_oklab,var(--color-acg-blue)_6%,transparent)_0%,#fff_38%,rgb(254_252_232/0.7)_100%)]"
+            : "bg-gradient-to-b from-acg-blue/[0.035] to-white"
+        }`}
+      >
+        <div className="min-w-0 flex-1 pb-6">
+          {priceDisplayRaw ? (
+            <p className="break-words text-[1.625rem] font-bold leading-snug tracking-tight text-acg-blue sm:text-4xl md:text-[2.25rem] lg:text-[2.75rem]">
+              {priceDisplayRaw}
+            </p>
+          ) : (
+            <p className="max-w-[18rem] text-base font-semibold leading-snug tracking-tight text-acg-blue sm:text-xl">
+              На запит
+            </p>
+          )}
+          {!priceDisplayRaw ? (
+            <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-foreground/65">
+              Ціна залежить від об&apos;єму послуг; залишіть заявку — узгодимо умови.
             </p>
           ) : null}
-          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-6xl font-semibold tracking-tighter text-acg-blue sm:text-7xl">
-              {priceParts.figure}
-            </span>
-            {priceParts.showCurrency ? (
-              <span className="text-base font-normal tracking-wide text-acg-muted">
-                грн
-                {priceParts.cadenceSuffix ? (
-                  <span className="text-acg-muted">
-                    {" "}
-                    / {priceParts.cadenceSuffix}
-                  </span>
-                ) : null}
-              </span>
-            ) : priceParts.cadenceSuffix ? (
-              <span className="text-base font-normal tracking-wide text-acg-muted">
-                {priceParts.cadenceSuffix}
-              </span>
-            ) : null}
-          </p>
         </div>
-        <motion.a
-          href={ctaHref}
-          {...externalLinkProps(ctaHref)}
-          className={`inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-center text-sm font-semibold text-white transition-[transform,filter] duration-300 ease-out md:hover:-translate-y-px ${ctaBase}`}
+        <motion.button
+          type="button"
+          onClick={onOrderClick}
+          className={`mt-auto inline-flex min-h-[52px] w-full shrink-0 items-center justify-center rounded-full px-6 py-3.5 text-center text-sm font-semibold text-white transition-[transform,filter] duration-300 ease-out md:hover:-translate-y-px ${ctaBase}`}
           initial={false}
           animate={ctaPulseAnimate}
           transition={
@@ -658,9 +873,9 @@ function PricingCheckoutPanel({ tier }: { tier: PricingTier }) {
               : ctaPulseTransition
           }
         >
-          {textOr(tier.ctaLabel, "Почати")}
-        </motion.a>
-      </div>
+          {orderButtonLabel}
+        </motion.button>
+      </aside>
     </div>
   );
 }

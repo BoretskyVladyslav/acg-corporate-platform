@@ -4,11 +4,16 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
 
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import { resolveFeatureIcon } from "@/src/lib/featureIcons";
 
 export interface ServiceItem {
   title?: string;
   description?: string;
   note?: string;
+  /** Ключ іконки (sanity `featureItem.icon`, див. `resolveFeatureIcon`). */
+  icon?: string;
+  /** Рядок-заголовок підсекції в тарифах (Sanity `featureItem.isHeader`). */
+  isHeader?: boolean;
 }
 
 export interface ServicesProps {
@@ -33,14 +38,15 @@ function mergeServiceItems(
   defaults: ServiceItem[],
 ): ServiceItem[] {
   if (!cms?.length) return defaults;
-  return cms.map((item, i) => {
-    const d = defaults[Math.min(i, defaults.length - 1)];
-    return {
-      title: textOr(item.title, d.title ?? ""),
-      description: textOr(item.description, d.description ?? ""),
-      note: textOr(item.note, d.note ?? ""),
-    };
-  });
+    return cms.map((item, i) => {
+      const d = defaults[Math.min(i, defaults.length - 1)];
+      return {
+        title: textOr(item.title, d.title ?? ""),
+        description: textOr(item.description, d.description ?? ""),
+        note: textOr(item.note, d.note ?? ""),
+        icon: textOr(item.icon, d.icon ?? ""),
+      };
+    });
 }
 
 const defaultItems: ServiceItem[] = [
@@ -161,7 +167,7 @@ export default function Services({
       aria-labelledby="services-title"
       className="border-y border-foreground/[0.07] bg-white text-foreground"
     >
-      <div className="mx-auto max-w-7xl px-6 py-24 sm:px-8 sm:py-28 lg:px-10 lg:py-36">
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
         <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-foreground/45">
           {displayEyebrow}
         </p>
@@ -175,7 +181,7 @@ export default function Services({
           {displayIntro}
         </p>
         <motion.ul
-          className="mt-16 grid w-full grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:mt-20 lg:gap-x-14 lg:gap-y-14"
+          className="mt-12 grid w-full grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:mt-16 lg:gap-x-14 lg:gap-y-14"
           variants={listVariants}
           initial="hidden"
           whileInView="visible"
@@ -186,6 +192,7 @@ export default function Services({
               ? splitDescriptionToLines(item.description)
               : [];
             const ordinal = String(i + 1).padStart(2, "0");
+            const ItemIcon = resolveFeatureIcon(item.icon);
 
             return (
               <motion.li
@@ -201,8 +208,13 @@ export default function Services({
                 </span>
                 <div className="pointer-events-none absolute left-0 top-10 h-[calc(100%-2.5rem)] w-px bg-gradient-to-b from-foreground/12 via-foreground/6 to-transparent" />
                 <div className="relative z-[1] flex min-h-0 flex-1 flex-col pl-8 sm:pl-9 lg:pl-10">
-                  <h3 className="text-[1.375rem] font-normal leading-snug tracking-[-0.015em] text-foreground sm:text-2xl lg:text-[1.625rem] lg:leading-tight">
-                    {item.title}
+                  <h3 className="flex items-start gap-3 text-[1.375rem] font-normal leading-snug tracking-[-0.015em] text-foreground sm:text-2xl lg:text-[1.625rem] lg:leading-tight">
+                    <ItemIcon
+                      className="mt-0.5 size-7 shrink-0 text-acg-blue/90 sm:size-8"
+                      aria-hidden
+                      strokeWidth={1.75}
+                    />
+                    <span className="min-w-0">{item.title}</span>
                   </h3>
                   {bullets.length ? (
                     <ul className="mt-6 flex flex-1 flex-col gap-3.5">
