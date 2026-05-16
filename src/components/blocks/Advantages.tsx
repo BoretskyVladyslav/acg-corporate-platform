@@ -4,6 +4,12 @@ import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import {
+  LANDING_SECTION_EYEBROW,
+  LANDING_SECTION_H2_GRADIENT,
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_SHELL,
+} from "@/src/lib/landingSectionRhythm";
 
 export interface AdvantageItem {
   title: string;
@@ -108,16 +114,16 @@ export default function Advantages({
       aria-labelledby="advantages-heading"
       className="overflow-x-clip bg-white text-foreground"
     >
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-12 lg:items-stretch lg:gap-12 lg:py-24">
+      <div className={`${LANDING_SECTION_SHELL} relative grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12`}>
         <div className="col-span-1 flex min-h-0 flex-col lg:col-span-5 lg:h-full">
           <div className="relative isolate w-full max-w-none min-w-0 shrink-0 break-words lg:sticky lg:top-32 lg:z-10 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:min-h-0 lg:flex-col lg:self-start">
             <div className="shrink-0">
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
+              <p className={LANDING_SECTION_EYEBROW}>
                 {displayEyebrow}
               </p>
               <h2
                 id="advantages-heading"
-                className="mt-3 bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/80 bg-clip-text text-5xl font-black leading-[0.92] tracking-tighter text-transparent [background-clip:text] [-webkit-background-clip:text] lg:text-7xl"
+                className={`${LANDING_SECTION_H2_GRADIENT} ${LANDING_SECTION_H2_SIZE} mt-3`}
               >
                 {displayHeading}
               </h2>

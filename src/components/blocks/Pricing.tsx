@@ -21,6 +21,16 @@ import {
   type PricingTierPreset,
 } from "@/src/lib/pricingTierNavigation";
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
+import {
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_SHELL,
+  LANDING_PRICING_SECTION_CLASS,
+  LANDING_PRICING_SECTION_GLOW,
+  LANDING_PRICING_EYEBROW_ON_DARK,
+  LANDING_PRICING_H2_ON_DARK,
+  LANDING_PRICING_LEDE_ON_DARK,
+  LANDING_PRICING_TAB_IDLE,
+} from "@/src/lib/landingSectionRhythm";
 
 import type { ServiceItem } from "./Services";
 
@@ -195,9 +205,6 @@ const ctaPulseShadowBlue = [
   "0 12px 42px -10px rgba(36, 84, 148, 0.42)",
   "0 10px 26px -14px rgba(36, 84, 148, 0.22)",
 ];
-
-const headingGradientClass =
-  "bg-linear-to-b from-acg-blue via-acg-blue to-acg-blue/75 bg-clip-text font-black uppercase leading-[0.95] tracking-tighter text-transparent [background-clip:text] [-webkit-background-clip:text]";
 
 const headerContainerVariants = {
   hidden: {},
@@ -445,9 +452,13 @@ export default function Pricing({
     <section
       id="pricing"
       aria-labelledby="pricing-heading"
-      className="overflow-x-hidden bg-acg-light text-foreground"
+      className={LANDING_PRICING_SECTION_CLASS}
     >
-      <div className="mx-auto max-w-6xl min-w-0 px-4 py-16 sm:px-6 sm:py-20 lg:py-24">
+      <div
+        className={`${LANDING_PRICING_SECTION_GLOW}`}
+        aria-hidden
+      />
+      <div className={`relative z-[1] ${LANDING_SECTION_SHELL} min-w-0`}>
         <motion.div
           variants={headerContainerResolved}
           initial="hidden"
@@ -456,20 +467,20 @@ export default function Pricing({
         >
           <motion.p
             variants={headerItemResolved}
-            className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60"
+            className={LANDING_PRICING_EYEBROW_ON_DARK}
           >
             {displayEyebrow}
           </motion.p>
           <motion.h2
             id="pricing-heading"
             variants={headerItemResolved}
-            className={`${headingGradientClass} mt-3 max-w-[min(100%,28rem)] text-4xl sm:text-5xl lg:text-6xl`}
+            className={`${LANDING_PRICING_H2_ON_DARK} ${LANDING_SECTION_H2_SIZE} mt-3 max-w-[min(100%,28rem)]`}
           >
             {displayHeading}
           </motion.h2>
           <motion.p
             variants={headerItemResolved}
-            className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/75"
+            className={`mt-4 max-w-3xl ${LANDING_PRICING_LEDE_ON_DARK}`}
           >
             {displayIntro}
           </motion.p>
@@ -501,9 +512,9 @@ export default function Pricing({
                   onClick={() => selectTier(i)}
                   className={`snap-start shrink-0 touch-manipulation rounded-full border font-semibold transition-colors min-h-[48px] max-w-[calc(100vw-2.5rem)] px-4 py-3.5 text-left text-sm leading-snug sm:max-w-none sm:px-5 sm:py-4 sm:text-base md:min-h-0 md:max-w-none md:px-4 md:py-2.5 md:text-center md:text-sm md:font-medium ${
                     isActive
-                      ? "border-acg-blue bg-acg-blue text-white shadow-md shadow-acg-blue/30 ring-1 ring-black/[0.06] md:shadow-acg-blue/25 md:ring-0"
-                      : "border-foreground/20 bg-white text-foreground/85 hover:border-acg-blue/50 hover:bg-acg-blue/[0.08] hover:text-acg-blue md:border-acg-blue/20 md:text-acg-blue md:hover:border-acg-blue/40 md:hover:bg-acg-blue/5"
-                  } ${isPopularTier(t) ? "ring-2 ring-amber-400/60 ring-offset-2 ring-offset-white" : ""}`}
+                      ? "border-sky-300/70 bg-acg-blue text-white shadow-lg shadow-black/40 ring-1 ring-white/15 md:shadow-acg-blue/40 md:ring-0"
+                      : LANDING_PRICING_TAB_IDLE
+                  } ${isPopularTier(t) ? "ring-2 ring-amber-400/70 ring-offset-2 ring-offset-slate-950" : ""}`}
                   layout={isMdUp}
                   transition={
                     isMdUp
@@ -548,10 +559,10 @@ export default function Pricing({
               }
               aria-live="polite"
               {...panelMotionProps}
-              className={`relative min-w-0 overflow-hidden rounded-3xl border bg-white shadow-lg transition-[box-shadow,border-color] ${
+              className={`relative min-w-0 overflow-hidden rounded-3xl border bg-white shadow-2xl shadow-black/30 transition-[box-shadow,border-color] ${
                 isPopularTier(tier)
-                  ? "border-acg-blue/45 shadow-2xl shadow-amber-500/10 ring-2 ring-amber-400/55"
-                  : "border-acg-blue/12 shadow-md shadow-acg-blue/[0.06]"
+                  ? "border-acg-blue/45 shadow-[0_28px_80px_-32px_rgba(0,0,0,0.55)] ring-2 ring-amber-400/55"
+                  : "border-white/70 shadow-black/25"
               }`}
             >
               {reduceMotionPreferred || !isMdUp ? (
@@ -600,7 +611,7 @@ export default function Pricing({
           viewport={{ once: true, amount: 0.35 }}
           transition={{ duration: 0.45, ease: tierSwitchEase }}
         >
-          <p className="max-w-xl text-center text-sm leading-relaxed text-foreground/65">
+          <p className="max-w-xl text-center text-sm leading-relaxed text-slate-400">
             {displayCtaText}
           </p>
           <motion.button
@@ -610,7 +621,7 @@ export default function Pricing({
               setConsultModalKey((k) => k + 1);
               setConsultModalOpen(true);
             }}
-            className="inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-full bg-acg-red px-8 py-3.5 text-center text-sm font-semibold text-white shadow-md ring-1 ring-white/25 transition hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/35 focus-visible:ring-offset-2 focus-visible:ring-offset-acg-light sm:w-auto"
+            className="inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-full bg-acg-red px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-black/35 ring-1 ring-white/20 transition hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto"
           >
             Отримати консультацію
           </motion.button>

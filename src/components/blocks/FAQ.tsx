@@ -6,6 +6,15 @@ import { useCallback, useId, useState } from "react";
 
 import ConsultationModal from "./ConsultationModal";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import {
+  LANDING_CARD_BASE,
+  LANDING_CARD_BODY,
+  LANDING_CARD_PADDING,
+  LANDING_SECTION_EYEBROW,
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_LEDE,
+  LANDING_SECTION_SHELL,
+} from "@/src/lib/landingSectionRhythm";
 import { externalLinkProps } from "@/src/lib/externalLink";
 import { prepareConsultationGeneral } from "@/src/lib/leadIntent";
 import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
@@ -141,10 +150,10 @@ export default function FAQ({
     <section
       id="faq"
       aria-labelledby="faq-heading"
-      className="bg-acg-light text-foreground"
+      className="border-t border-slate-200 bg-white text-foreground"
     >
       <motion.div
-        className="py-16 sm:py-20 lg:py-24"
+        className={LANDING_SECTION_SHELL}
         initial={
           isMdUp ? { opacity: 0, y: 24 } : { opacity: 0, y: 10 }
         }
@@ -155,23 +164,21 @@ export default function FAQ({
           ease: revealEase,
         }}
       >
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 md:gap-10 lg:grid-cols-12 lg:gap-14">
+        <div className="grid w-full grid-cols-1 gap-8 px-0 md:gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="pb-8 lg:col-span-5 lg:sticky lg:top-32 lg:h-fit lg:pb-0">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
-              {displayEyebrow}
-            </p>
+            <p className={LANDING_SECTION_EYEBROW}>{displayEyebrow}</p>
             <h2
               id="faq-heading"
-              className="mt-4 max-w-[min(100%,18ch)] text-4xl font-semibold tracking-tight text-acg-blue lg:mt-5 lg:text-5xl lg:leading-[1.12]"
+              className={`${LANDING_SECTION_H2_SIZE} mt-3 max-w-[min(100%,18ch)] text-acg-blue`}
             >
               {displayHeading}
             </h2>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-foreground/65 md:mt-8 md:text-lg">
+            <p className={`mt-4 max-w-md ${LANDING_SECTION_LEDE} md:max-w-xl`}>
               {displayIntro}
             </p>
           </div>
 
-          <div className="lg:col-span-7">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:col-span-7">
             {resolvedItems.map((item, i) => {
               const isOpen = openIndex === i;
               const questionId = `faq-q-${faqIdPrefix}-${i}`;
@@ -182,11 +189,11 @@ export default function FAQ({
               return (
                 <div
                   key={`${q}-${i}`}
-                  className="border-b border-acg-border first:border-t first:border-acg-border"
+                  className={`${LANDING_CARD_BASE} overflow-hidden`}
                 >
-                  <div className="flex gap-3 sm:gap-5">
+                  <div className={`flex gap-3 sm:gap-5 ${LANDING_CARD_PADDING}`}>
                     <span
-                      className="w-8 shrink-0 pt-4 text-right text-2xl font-light tabular-nums leading-none text-acg-blue/20 sm:w-10 sm:pt-4 sm:text-4xl"
+                      className="w-8 shrink-0 pt-1 text-right text-2xl font-light tabular-nums leading-none text-acg-blue/20 sm:w-10 sm:pt-0.5 sm:text-4xl"
                       aria-hidden
                     >
                       {formatItemIndex(i)}
@@ -198,10 +205,10 @@ export default function FAQ({
                         aria-expanded={isOpen}
                         aria-controls={answerId}
                         onClick={() => toggle(i)}
-                        className="flex min-h-11 w-full cursor-pointer items-start gap-3 py-3.5 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-acg-blue/25 focus-visible:ring-offset-2 focus-visible:ring-offset-acg-light sm:min-h-0 sm:gap-4 sm:py-4 md:gap-5"
+                        className="flex min-h-11 w-full cursor-pointer items-start gap-3 py-1 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-acg-blue/25 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:-my-1 sm:min-h-0 sm:gap-4 sm:py-3 md:gap-5"
                       >
                         <span
-                          className={`min-w-0 flex-1 text-[1.0625rem] font-medium leading-snug tracking-tight sm:text-lg sm:leading-snug md:transition-all md:duration-300 ${
+                          className={`min-w-0 flex-1 text-base font-semibold leading-snug tracking-tight text-foreground sm:text-lg md:transition-all md:duration-300 ${
                             isOpen
                               ? "translate-x-0 text-foreground"
                               : "translate-x-0 text-foreground/85 md:hover:translate-x-1 md:hover:text-foreground"
@@ -249,7 +256,9 @@ export default function FAQ({
                         }}
                         className="overflow-hidden"
                       >
-                        <p className="max-w-3xl pb-4 pt-1.5 text-sm leading-relaxed text-acg-muted sm:pb-4 sm:pt-2 sm:text-[1.0625rem]">
+                        <p
+                          className={`max-w-3xl pb-0 pt-1.5 sm:pt-2 ${LANDING_CARD_BODY}`}
+                        >
                           {a}
                         </p>
                       </motion.div>
@@ -263,9 +272,9 @@ export default function FAQ({
 
         {showFaqConsultCta ? (
           <>
-            <div className="mx-auto mt-10 max-w-7xl px-4 sm:mt-12 sm:px-6">
-              <div className="rounded-2xl border border-acg-border bg-white/90 px-4 py-5 shadow-sm sm:px-6 sm:py-6">
-                <p className="text-center text-sm leading-relaxed text-foreground/75 sm:text-base">
+            <div className="mt-10 sm:mt-12 w-full">
+              <div className={`${LANDING_CARD_BASE} ${LANDING_CARD_PADDING}`}>
+                <p className={`text-center ${LANDING_CARD_BODY}`}>
                   {FAQ_INDIVIDUAL_CTA_COPY}
                 </p>
                 <div className="mt-4 flex justify-center">
@@ -292,7 +301,7 @@ export default function FAQ({
           </>
         ) : null}
 
-        <footer className="mx-auto mt-10 max-w-7xl border-t border-acg-border px-4 pt-8 sm:mt-12 sm:px-6">
+        <footer className="mt-10 border-t border-acg-border pt-8 sm:mt-12 w-full">
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <p className="min-w-0 text-xs text-foreground/50 sm:text-sm">

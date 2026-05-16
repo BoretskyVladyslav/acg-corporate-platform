@@ -64,7 +64,7 @@ const SECONDARY_CTA_LABEL_FALLBACK = "ШВИДКА ВІДПОВІДЬ У TELEGRA
 
 const FALLBACK_HERO_CARDS: HeroCardContent[] = [
   { title: "Реєстрація ФОП", subtitle: "Тарифи та вартість" },
-  { title: "Бухгалтерія ТОВ", subtitle: "Напрями послуг" },
+  { title: "Бухгалтерія для ФОП", subtitle: "Напрями послуг" },
 ];
 
 function splitHeroHeading(heading: string): {
@@ -160,9 +160,6 @@ const contentVariantsMobile = {
     },
   },
 };
-
-const figureImageShadowClass =
-  "[filter:drop-shadow(0_22px_44px_rgba(0,0,0,0.09))]";
 
 const headlineAccentClass =
   "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.06] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-[clamp(1.375rem,5.2vw,1.75rem)] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-6xl xl:text-7xl";
@@ -355,7 +352,7 @@ export default function HeroClient({
     });
   }, [lenis]);
 
-  const goToTovServices = useCallback(() => {
+  const goToServicesSection = useCallback(() => {
     requestAnimationFrame(() => {
       scrollToSectionById("services", lenis);
     });
@@ -373,10 +370,10 @@ export default function HeroClient({
   const onHeroCardClick = useCallback(
     (index: number) => {
       if (index === 0) goToFopPricing();
-      else if (index === 1) goToTovServices();
+      else if (index === 1) goToServicesSection();
       else goToPricingSection();
     },
-    [goToFopPricing, goToTovServices, goToPricingSection],
+    [goToFopPricing, goToServicesSection, goToPricingSection],
   );
 
   return (
@@ -524,7 +521,7 @@ export default function HeroClient({
             </motion.div>
           </div>
 
-          {/* Фігура: заповнює висоту клітини сітки; низ до низу секції; object-cover + object-bottom для масштабу й візуальної ваги поруч із заголовком. */}
+          {/* Фігура: висота задається контейнером; object-cover усередині округленого блоку — фото зберігає пропорції (зручно для знімку команди). */}
           <div className="relative z-10 col-span-1 hidden min-h-0 overflow-x-clip overflow-y-visible md:col-span-5 md:flex md:h-full md:min-h-[min(36rem,62svh)] md:flex-col md:items-stretch md:justify-end md:self-stretch md:pb-0 md:pl-0 lg:-ml-10 lg:min-h-0 xl:-ml-14">
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 top-[12%] bg-[radial-gradient(ellipse_80%_55%_at_50%_78%,color-mix(in_oklab,var(--color-acg-blue)_14%,transparent)_0%,transparent_68%)]"
@@ -541,7 +538,7 @@ export default function HeroClient({
                 <div className="relative h-full min-h-0 w-full overflow-visible">
                   <div className="pointer-events-none absolute inset-0 z-0 flex min-h-0 flex-col justify-end">
                     <motion.div
-                      className={`relative z-[5] h-full min-h-[min(24rem,50svh)] w-full origin-bottom md:min-h-full ${figureImageShadowClass}`}
+                      className="relative z-[5] h-full min-h-[min(24rem,50svh)] w-full origin-bottom md:min-h-full"
                       initial={
                         isMdUp ? { opacity: 0, y: 80 } : { opacity: 0, y: 12 }
                       }
@@ -552,14 +549,17 @@ export default function HeroClient({
                         delay: isMdUp ? 0.3 : 0.08,
                       }}
                     >
-                      <Image
-                        src={resolvedFigureSrc}
-                        alt={heroImageAlt}
-                        fill
-                        priority
-                        sizes="(min-width: 1536px) 48vw, (min-width: 1280px) 46vw, (min-width: 1024px) 44vw, (min-width: 768px) 46vw, 100vw"
-                        className="pointer-events-auto rounded-t-2xl object-cover object-bottom"
-                      />
+                      {/* Окремий блок з overflow + radius + тінню: фото команди зберігає пропорції (object-cover), без «розтягування». */}
+                      <div className="relative h-full w-full overflow-hidden rounded-2xl shadow-[0_22px_48px_-14px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.05] md:rounded-3xl md:shadow-[0_26px_55px_-16px_rgba(15,23,42,0.18)]">
+                        <Image
+                          src={resolvedFigureSrc}
+                          alt={heroImageAlt}
+                          fill
+                          priority
+                          sizes="(min-width: 1536px) 48vw, (min-width: 1280px) 46vw, (min-width: 1024px) 44vw, (min-width: 768px) 46vw, 100vw"
+                          className="pointer-events-auto object-cover object-[center_20%]"
+                        />
+                      </div>
                     </motion.div>
                   </div>
 

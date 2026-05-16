@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import AdditionalServices from "@/src/components/blocks/AdditionalServices";
 import AboutCompany from "@/src/components/blocks/AboutCompany";
 import Advantages from "@/src/components/blocks/Advantages";
 import FAQ from "@/src/components/blocks/FAQ";
@@ -41,8 +42,17 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { hero, about, services, pricing, advantages, trust, faq, contact } =
-    await loadLandingPageForHome();
+  const {
+    hero,
+    about,
+    services,
+    additionalServices,
+    pricing,
+    advantages,
+    trust,
+    faq,
+    contact,
+  } = await loadLandingPageForHome();
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -51,6 +61,7 @@ export default async function Home() {
         <Hero {...hero} />
         <AboutCompany {...about} />
         <Services {...services} />
+        <AdditionalServices {...additionalServices} />
         <Pricing {...pricing} /> 
         <Advantages {...advantages} />
         <TrustBlock {...trust} />

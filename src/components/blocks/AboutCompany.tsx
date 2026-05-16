@@ -4,6 +4,15 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
 
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import {
+  LANDING_CARD_BASE,
+  LANDING_CARD_BODY,
+  LANDING_CARD_HOVER,
+  LANDING_CARD_PADDING,
+  LANDING_SECTION_EYEBROW,
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_SHELL,
+} from "@/src/lib/landingSectionRhythm";
 
 export interface AboutCompanyProps {
   eyebrow?: string;
@@ -190,10 +199,10 @@ export default function AboutCompany({
     <section
       id="about"
       aria-labelledby="about-heading"
-      className="bg-acg-light text-foreground"
+      className="bg-slate-50 text-foreground"
     >
       <motion.div
-        className="mx-auto max-w-6xl px-6 py-12 sm:px-6 sm:py-16 lg:py-20"
+        className={LANDING_SECTION_SHELL}
         variants={revealVariants}
         initial="hidden"
         whileInView="visible"
@@ -201,19 +210,19 @@ export default function AboutCompany({
       >
         <motion.p
           variants={itemVariants}
-          className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/55"
+          className={LANDING_SECTION_EYEBROW}
         >
           {displayEyebrow}
         </motion.p>
 
-        <motion.div variants={itemVariants} className="mt-8 flex gap-6 sm:mt-10 md:mt-12 md:gap-8">
+        <motion.div variants={itemVariants} className="mt-3 flex gap-6 sm:mt-4 md:gap-8">
           <div
             className="mt-1 hidden h-[40px] w-px shrink-0 bg-foreground/12 sm:block"
             aria-hidden
           />
           <h2
             id="about-heading"
-            className="max-w-2xl text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
+            className={`${LANDING_SECTION_H2_SIZE} max-w-2xl text-acg-blue`}
           >
             {displayHeading}
           </h2>
@@ -221,7 +230,7 @@ export default function AboutCompany({
 
         <motion.p
           variants={itemVariants}
-          className="mt-8 max-w-3xl text-lg leading-relaxed whitespace-pre-line text-acg-body sm:mt-10 sm:pl-[calc(1px+1.5rem)] md:mt-11"
+          className="mt-6 max-w-3xl text-lg leading-relaxed whitespace-pre-line text-acg-body sm:mt-8 sm:pl-[calc(1px+1.5rem)] md:mt-10"
         >
           {displayBody}
         </motion.p>
@@ -230,7 +239,7 @@ export default function AboutCompany({
           variants={metricsRevealVariants}
           role="list"
           aria-label="Ключові показники"
-          className="mt-14 grid min-w-0 grid-cols-1 gap-x-8 gap-y-9 sm:gap-y-10 md:grid-cols-2 lg:mt-16 lg:grid-cols-3 lg:gap-x-10"
+          className="mt-10 grid min-w-0 grid-cols-2 gap-x-4 gap-y-4 sm:gap-x-5 sm:gap-y-5 md:mt-12 md:gap-x-8 md:gap-y-10 lg:mt-14 lg:grid-cols-3 lg:gap-x-10"
         >
           {resolvedMetrics.slice(0, 3).map((m, i) => {
             const { figure, caption } = resolveMetricPresentation(m);
@@ -240,14 +249,14 @@ export default function AboutCompany({
                 key={`${figure}__${caption}__${i}`}
                 role="listitem"
                 variants={itemVariants}
-                className="min-w-0 rounded-3xl border border-white/20 bg-white/40 p-7 shadow-none backdrop-blur-md transition-[background-color,box-shadow] duration-500 ease-out hover:bg-white/55 hover:shadow-sm sm:p-9 lg:p-10"
+                className={`min-w-0 overflow-hidden ${LANDING_CARD_BASE} ${LANDING_CARD_HOVER} ${LANDING_CARD_PADDING} ${i === 2 ? "max-md:col-span-2 max-md:mx-auto max-md:w-full max-md:max-w-[min(100%,17.5rem)]" : ""}`}
               >
-                <div className="flex min-w-0 flex-col gap-2.5 sm:gap-3">
-                  <p className="break-words text-[1.75rem] font-bold leading-[1.1] tracking-tight text-acg-blue sm:text-[2rem] lg:text-[2.25rem]">
+                <div className="flex min-w-0 flex-col gap-2 sm:gap-2.5 md:gap-3">
+                  <p className="break-words text-[1.35rem] font-bold leading-[1.12] tracking-tight text-acg-blue sm:text-[2rem] lg:text-[2.25rem]">
                     {figure}
                   </p>
                   {caption ? (
-                    <p className="text-[0.9375rem] font-normal leading-relaxed tracking-normal text-foreground/72 sm:text-base">
+                    <p className={LANDING_CARD_BODY}>
                       {caption}
                     </p>
                   ) : null}

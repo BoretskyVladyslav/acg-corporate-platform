@@ -5,6 +5,12 @@ import { motion } from "framer-motion";
 import Reviews from "@/src/components/blocks/Reviews";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import type { GoogleReviewItem } from "@/src/components/blocks/Reviews";
+import {
+  LANDING_SECTION_EYEBROW,
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_LEDE,
+  LANDING_SECTION_SHELL,
+} from "@/src/lib/landingSectionRhythm";
 
 export interface TrustQuote {
   quote?: string;
@@ -101,7 +107,7 @@ function GoogleRatingBadge({
 }) {
   return (
     <div
-      className="inline-flex items-center gap-2.5 rounded-full border border-acg-border bg-white px-4 py-2 shadow-sm ring-1 ring-foreground/[0.03]"
+      className="inline-flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white px-4 py-2 shadow-sm"
       role="status"
     >
       <GoogleGlyphCompact className="size-5 shrink-0" aria-hidden />
@@ -144,10 +150,10 @@ export default function TrustBlock({
     <section
       id="trust"
       aria-labelledby="trust-heading"
-      className="overflow-x-hidden bg-acg-light text-foreground"
+      className="bg-slate-50 text-foreground"
     >
       <motion.div
-        className="mx-auto max-w-6xl overflow-x-hidden px-4 py-16 sm:px-6 sm:py-20 lg:py-24"
+        className={`${LANDING_SECTION_SHELL} overflow-x-hidden`}
         initial={
           isMdUp ? { opacity: 0, y: 28 } : { opacity: 0, y: 10 }
         }
@@ -159,16 +165,16 @@ export default function TrustBlock({
         }}
       >
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
+          <p className={LANDING_SECTION_EYEBROW}>
             {displayEyebrow}
           </p>
           <h2
             id="trust-heading"
-            className="mt-3 text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-6xl"
+            className={`${LANDING_SECTION_H2_SIZE} mt-3 text-acg-blue`}
           >
             {displayHeading}
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-foreground/75">
+          <p className={`mt-4 ${LANDING_SECTION_LEDE}`}>
             {displayIntro}
           </p>
           <motion.div

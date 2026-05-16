@@ -4,6 +4,18 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
 
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import {
+  LANDING_CARD_BASE,
+  LANDING_CARD_BODY,
+  LANDING_CARD_HOVER,
+  LANDING_CARD_PADDING_COMFORTABLE,
+  LANDING_CARD_TITLE,
+  LANDING_SECTION_AFTER_HEADER,
+  LANDING_SECTION_EYEBROW,
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_LEDE,
+  LANDING_SECTION_SHELL,
+} from "@/src/lib/landingSectionRhythm";
 import { resolveFeatureIcon } from "@/src/lib/featureIcons";
 
 export interface ServiceItem {
@@ -165,23 +177,21 @@ export default function Services({
     <section
       id="services"
       aria-labelledby="services-title"
-      className="border-y border-foreground/[0.07] bg-white text-foreground"
+      className="bg-white text-foreground"
     >
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
-        <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-foreground/45">
-          {displayEyebrow}
-        </p>
+      <div className={LANDING_SECTION_SHELL}>
+        <p className={LANDING_SECTION_EYEBROW}>{displayEyebrow}</p>
         <h2
           id="services-title"
-          className="mt-5 max-w-4xl text-4xl font-light leading-[1.08] tracking-[-0.02em] text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.06]"
+          className={`${LANDING_SECTION_H2_SIZE} mt-3 max-w-4xl text-foreground`}
         >
           {displayHeading}
         </h2>
-        <p className="mt-7 max-w-2xl text-[1.0625rem] font-light leading-[1.75] text-foreground/65">
+        <p className={`mt-4 max-w-2xl ${LANDING_SECTION_LEDE}`}>
           {displayIntro}
         </p>
         <motion.ul
-          className="mt-12 grid w-full grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:mt-16 lg:gap-x-14 lg:gap-y-14"
+          className={`${LANDING_SECTION_AFTER_HEADER} grid w-full grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:gap-x-14 lg:gap-y-14`}
           variants={listVariants}
           initial="hidden"
           whileInView="visible"
@@ -198,7 +208,7 @@ export default function Services({
               <motion.li
                 key={i}
                 variants={itemVariants}
-                className="group relative isolate flex h-full min-h-0 w-full overflow-hidden rounded-2xl border border-foreground/[0.08] bg-white p-10 shadow-none transition-[border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:p-11 lg:min-h-[19rem] lg:p-12 xl:p-14 hover:border-foreground/[0.14] hover:shadow-[0_24px_64px_-40px_rgba(15,23,42,0.18)]"
+                className={`group relative isolate flex h-full min-h-0 w-full overflow-hidden ${LANDING_CARD_BASE} ${LANDING_CARD_HOVER} ${LANDING_CARD_PADDING_COMFORTABLE} lg:min-h-[19rem]`}
               >
                 <span
                   className="pointer-events-none absolute -right-2 top-6 select-none font-extralight tabular-nums text-foreground/[0.055] text-[clamp(4.5rem,14vw,8.5rem)] leading-none tracking-[-0.04em] transition-opacity duration-500 group-hover:text-foreground/[0.07] sm:right-2 sm:top-8"
@@ -208,7 +218,7 @@ export default function Services({
                 </span>
                 <div className="pointer-events-none absolute left-0 top-10 h-[calc(100%-2.5rem)] w-px bg-gradient-to-b from-foreground/12 via-foreground/6 to-transparent" />
                 <div className="relative z-[1] flex min-h-0 flex-1 flex-col pl-8 sm:pl-9 lg:pl-10">
-                  <h3 className="flex items-start gap-3 text-[1.375rem] font-normal leading-snug tracking-[-0.015em] text-foreground sm:text-2xl lg:text-[1.625rem] lg:leading-tight">
+                  <h3 className={`flex items-start gap-3 ${LANDING_CARD_TITLE} leading-snug sm:text-2xl`}>
                     <ItemIcon
                       className="mt-0.5 size-7 shrink-0 text-acg-blue/90 sm:size-8"
                       aria-hidden
@@ -221,7 +231,7 @@ export default function Services({
                       {bullets.map((line, j) => (
                         <li
                           key={j}
-                          className="flex gap-3.5 text-[0.9375rem] font-light leading-[1.7] text-foreground/68"
+                          className={`flex gap-3.5 ${LANDING_CARD_BODY}`}
                         >
                           <span
                             className="mt-[0.62rem] h-px w-3 shrink-0 bg-foreground/20"
