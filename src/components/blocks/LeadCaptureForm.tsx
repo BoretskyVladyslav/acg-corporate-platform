@@ -5,6 +5,18 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { type FormEvent, useCallback, useState } from "react";
 
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import {
+  LANDING_SECTION_H2_SIZE,
+  LANDING_SECTION_SHELL,
+  LANDING_LEAD_SECTION_CLASS,
+  LANDING_LEAD_SECTION_GLOW,
+  LANDING_LEAD_EYEBROW_ON_ACCENT,
+  LANDING_LEAD_H2_ON_ACCENT,
+  LANDING_LEAD_LEDE_ON_ACCENT,
+  LANDING_LEAD_META_DT,
+  LANDING_LEAD_META_DD,
+  LANDING_LEAD_LINK,
+} from "@/src/lib/landingSectionRhythm";
 
 import {
   LEAD_EMAIL_INVALID_MESSAGE,
@@ -200,10 +212,11 @@ export default function LeadCaptureForm({
     <section
       id="contact"
       aria-labelledby="lead-form-heading"
-      className="border-t border-foreground/10 bg-acg-light text-foreground"
+      className={LANDING_LEAD_SECTION_CLASS}
     >
+      <div className={LANDING_LEAD_SECTION_GLOW} aria-hidden />
       <motion.div
-        className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24"
+        className={`relative z-[1] ${LANDING_SECTION_SHELL}`}
         initial={isMdUp ? { opacity: 0, y: 30 } : { opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
@@ -214,41 +227,33 @@ export default function LeadCaptureForm({
       >
         <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="max-w-xl lg:pt-2">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/60">
-              {eyebrow}
-            </p>
+            <p className={LANDING_LEAD_EYEBROW_ON_ACCENT}>{eyebrow}</p>
             <h2
               id="lead-form-heading"
-              className="mt-4 text-4xl font-bold tracking-tight text-acg-blue sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]"
+              className={`${LANDING_SECTION_H2_SIZE} mt-3 ${LANDING_LEAD_H2_ON_ACCENT}`}
             >
               {heading}
             </h2>
-            <p className="mt-6 text-lg leading-[1.75] text-foreground/75">
+            <p className={`mt-4 ${LANDING_LEAD_LEDE_ON_ACCENT}`}>
               {description}
             </p>
             <dl className="mt-12 space-y-10">
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/50">
-                  Адреса
-                </dt>
-                <dd className="mt-3 text-base leading-relaxed text-foreground/85">
-                  {addressLine}
-                </dd>
+                <dt className={LANDING_LEAD_META_DT}>Адреса</dt>
+                <dd className={LANDING_LEAD_META_DD}>{addressLine}</dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/50">
-                  Телефон
-                </dt>
+                <dt className={LANDING_LEAD_META_DT}>Телефон</dt>
                 <dd className="mt-3">
                   {phoneTelHref ? (
                     <a
                       href={phoneTelHref}
-                      className="text-lg font-medium text-acg-blue underline-offset-[6px] transition hover:underline"
+                      className={LANDING_LEAD_LINK}
                     >
                       {phoneDisplay}
                     </a>
                   ) : (
-                    <span className="text-lg font-medium text-acg-blue">
+                    <span className="text-lg font-medium text-white drop-shadow-sm">
                       {phoneDisplay}
                     </span>
                   )}
@@ -257,7 +262,7 @@ export default function LeadCaptureForm({
             </dl>
           </div>
 
-          <div className="rounded-2xl border border-acg-border bg-white p-8 shadow-xl shadow-acg-blue/[0.06] sm:p-10">
+          <div className="rounded-3xl border-2 border-white/25 bg-white p-8 shadow-2xl shadow-black/35 ring-1 ring-black/10 sm:p-10">
             {isSuccess ? (
               <motion.div
                 initial={

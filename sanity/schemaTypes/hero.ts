@@ -53,7 +53,7 @@ export const landingHeroSectionType = defineType({
       type: "array",
       of: [defineArrayMember({ type: heroCardItemObject.name })],
       description:
-        "Тільки текст; дії при кліку (тарифи / послуги) задаються на сайті по порядку карток.",
+        "Тільки текст; дії при кліку задаються в коді: 1-й клік — тарифи реєстрації ФОП, 2-й — секція послуг (бухгалтерія для ФОП).",
     }),
     defineField({
       name: "primaryCtaLabel",

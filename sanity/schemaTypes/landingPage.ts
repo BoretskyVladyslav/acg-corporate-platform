@@ -9,6 +9,7 @@ export const landingPageType = defineType({
     { name: "hero", title: "Головний екран (Hero)", default: true },
     { name: "about", title: "Про компанію" },
     { name: "services", title: "Послуги" },
+    { name: "additionalServices", title: "Додаткові послуги" },
     { name: "pricing", title: "Тарифи" },
     { name: "advantages", title: "Переваги" },
     { name: "trust", title: "Довіра та відгуки" },
@@ -36,6 +37,14 @@ export const landingPageType = defineType({
       title: "Послуги",
       type: "landingServicesSection",
       group: "services",
+    }),
+    defineField({
+      name: "additionalServices",
+      title: "Додаткові послуги",
+      type: "landingAdditional",
+      group: "additionalServices",
+      description:
+        "Короткий перелік додаткових послуг (окремо від основного блоку «Послуги»).",
     }),
     defineField({
       name: "pricing",

@@ -17,6 +17,7 @@ import type { TrustBlockProps } from "@/src/components/blocks/TrustBlock";
 import {
   landingPageQuery,
   type LandingAboutQueryResult,
+  type LandingAdditionalServicesQueryResult,
   type LandingAdvantagesQueryResult,
   type LandingContactQueryResult,
   type LandingFaqQueryResult,
@@ -55,10 +56,24 @@ export type LandingHeroPageProps = {
 /** Дані блоку контактної форми з Sanity; порожні поля доповнює LeadCaptureForm. */
 export type LandingContactResolved = Partial<LeadCaptureFormProps>;
 
+/** Після мапінгу з вкладки «Додаткові послуги» документа лендингу. */
+export type LandingAdditionalItemResolved = {
+  title: string;
+  description?: string;
+  price?: string;
+};
+
+export type LandingAdditionalServicesResolved = {
+  title?: string;
+  subtitle?: string;
+  items?: LandingAdditionalItemResolved[];
+};
+
 export type LandingPageData = {
   hero: LandingHeroPageProps;
   about: AboutCompanyProps;
   services: ServicesProps;
+  additionalServices: LandingAdditionalServicesResolved;
   pricing: PricingProps;
   advantages: AdvantagesProps;
   trust: TrustBlockProps;
@@ -71,6 +86,7 @@ export const EMPTY_LANDING_PAGE: LandingPageData = {
   hero: {},
   about: {},
   services: {},
+  additionalServices: {},
   pricing: {},
   advantages: {},
   trust: {},
@@ -96,6 +112,7 @@ export function mapLandingPageDocToLandingData(
     hero: mapHero(doc.hero, urlBuilder),
     about: mapAbout(doc.about),
     services: mapServices(doc.services),
+    additionalServices: mapAdditionalServices(doc.additionalServices),
     pricing: mapPricing(doc.pricing),
     advantages: mapAdvantages(doc.advantages, urlBuilder),
     trust: mapTrust(doc.trust),
@@ -191,6 +208,32 @@ function mapServices(doc: LandingServicesQueryResult | undefined): ServicesProps
     heading: pickNonEmpty(doc.heading),
     intro: pickNonEmpty(doc.intro),
     items: items?.length ? items : undefined,
+  };
+}
+
+function mapAdditionalServices(
+  doc: LandingAdditionalServicesQueryResult | undefined,
+): LandingAdditionalServicesResolved {
+  if (!doc) return {};
+  const rawItems =
+    doc.items?.map((it) => ({
+      title: pickNonEmpty(it.title),
+      description: pickNonEmpty(it.description),
+      price: pickNonEmpty(it.price),
+    })) ?? [];
+  const items: LandingAdditionalItemResolved[] = [];
+  for (const row of rawItems) {
+    if (!row.title) continue;
+    items.push({
+      title: row.title,
+      ...(row.description ? { description: row.description } : {}),
+      ...(row.price ? { price: row.price } : {}),
+    });
+  }
+  return {
+    title: pickNonEmpty(doc.title),
+    subtitle: pickNonEmpty(doc.subtitle),
+    items: items.length ? items : undefined,
   };
 }
 

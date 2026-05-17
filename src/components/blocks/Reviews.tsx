@@ -2,6 +2,13 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 
+import {
+  LANDING_CARD_BASE,
+  LANDING_CARD_BODY,
+  LANDING_CARD_HOVER,
+  LANDING_CARD_PADDING,
+} from "@/src/lib/landingSectionRhythm";
+
 export type GoogleReviewItem = {
   id: string;
   authorName: string;
@@ -176,8 +183,10 @@ export interface ReviewsProps {
 function ReviewCardGoogleStyle({ review }: { review: GoogleReviewItem }) {
   return (
     <article className="w-[320px] shrink-0 md:w-[400px]">
-      <div className="flex h-full flex-col rounded-2xl border border-[#dadce0] bg-white px-4 pb-4 pt-4 shadow-sm">
-        <h3 className="text-left text-sm font-medium leading-tight text-[#202124]">
+      <div
+        className={`flex h-full flex-col ${LANDING_CARD_BASE} ${LANDING_CARD_HOVER} ${LANDING_CARD_PADDING}`}
+      >
+        <h3 className="text-left text-sm font-semibold leading-tight tracking-tight text-foreground">
           {review.authorName}
         </h3>
         <div
@@ -191,7 +200,7 @@ function ReviewCardGoogleStyle({ review }: { review: GoogleReviewItem }) {
             ))}
           </div>
         </div>
-        <p className="mt-3 text-left text-sm leading-[1.6] text-[#3c4043]">
+        <p className={`mt-3 text-left ${LANDING_CARD_BODY}`}>
           {review.text}
         </p>
       </div>
@@ -266,7 +275,7 @@ export default function Reviews({
     >
       <div className="space-y-4 sm:space-y-5">
         {reduceMotion ? (
-          <div className="space-y-6 px-4 sm:px-6">
+          <div className="space-y-6">
             <div className="flex flex-wrap justify-center gap-4">
               {topRow.map((r) => (
                 <ReviewCardGoogleStyle key={r.id} review={r} />
@@ -279,7 +288,7 @@ export default function Reviews({
             </div>
           </div>
         ) : (
-          <div className="-mx-4 sm:-mx-6">
+          <div className="-mx-6 lg:-mx-8">
             <div aria-label="Відгуки клієнтів, верхній ряд">
               <InfiniteMarqueeRow items={topRow} direction="left" />
             </div>
@@ -290,12 +299,12 @@ export default function Reviews({
         )}
       </div>
 
-      <div className="mt-10 flex justify-center px-4 sm:px-6">
+      <div className="mt-10 flex justify-center px-0 sm:mt-12">
         <a
           href={resolvedUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="group inline-flex max-w-full items-center justify-center gap-3 rounded-2xl border border-foreground/[0.1] bg-white px-8 py-4 text-center text-base font-normal tracking-wide text-foreground shadow-[0_2px_20px_-12px_rgba(15,23,42,0.12)] transition-[border-color,box-shadow,background-color] duration-300 hover:border-foreground/[0.16] hover:bg-foreground/[0.02] hover:shadow-[0_12px_36px_-16px_rgba(15,23,42,0.14)] sm:px-10 sm:py-5 sm:text-[1.0625rem]"
+          className={`group inline-flex max-w-full items-center justify-center gap-3 px-8 py-4 text-center text-base font-normal tracking-wide text-foreground sm:px-10 sm:py-5 ${LANDING_CARD_BASE} ${LANDING_CARD_HOVER}`}
         >
           <GoogleGlyphButton className="size-6 shrink-0 transition-transform duration-300 group-hover:scale-105 sm:size-7" />
           <span className="min-w-0 leading-snug">{ctaLabel}</span>

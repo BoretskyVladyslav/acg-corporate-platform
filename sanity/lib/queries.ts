@@ -23,6 +23,11 @@ export const landingPageQuery = groq`
       intro,
       items[]{title, description, note, icon}
     },
+    additionalServices{
+      title,
+      subtitle,
+      items[]{title, description, price}
+    },
     pricing{
       eyebrow,
       heading,
@@ -106,6 +111,16 @@ export type LandingServicesQueryResult = {
   }> | null;
 } | null;
 
+export type LandingAdditionalServicesQueryResult = {
+  title?: string | null;
+  subtitle?: string | null;
+  items?: Array<{
+    title?: string | null;
+    description?: string | null;
+    price?: string | null;
+  }> | null;
+} | null;
+
 export type LandingPricingQueryResult = {
   eyebrow?: string | null;
   heading?: string | null;
@@ -179,6 +194,7 @@ export type LandingPageQueryResult = {
   hero?: LandingHeroQueryResult;
   about?: LandingAboutQueryResult;
   services?: LandingServicesQueryResult;
+  additionalServices?: LandingAdditionalServicesQueryResult;
   pricing?: LandingPricingQueryResult;
   advantages?: LandingAdvantagesQueryResult;
   trust?: LandingTrustQueryResult;

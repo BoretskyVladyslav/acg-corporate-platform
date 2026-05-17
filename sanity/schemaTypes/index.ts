@@ -9,6 +9,10 @@ import { featureItemType } from "./featureItem";
 import { faqItemType, landingFaqSectionType } from "./landingFaq";
 import { heroCardItemType, landingHeroSectionType } from "./hero";
 import { landingContactSectionType } from "./landingContact";
+import {
+  landingAdditionalItemType,
+  landingAdditionalSectionType,
+} from "./landingAdditional";
 import { landingPageType } from "./landingPage";
 import {
   landingPricingSectionType,
@@ -33,6 +37,8 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     landingHeroSectionType,
     landingAboutSectionType,
     landingServicesSectionType,
+    landingAdditionalItemType,
+    landingAdditionalSectionType,
     landingPricingSectionType,
     landingAdvantagesSectionType,
     landingTrustSectionType,
