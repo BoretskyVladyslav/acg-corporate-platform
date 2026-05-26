@@ -23,6 +23,8 @@ import {
   type PricingTierPreset,
 } from "@/src/lib/pricingTierNavigation";
 
+import teamPhoto from "@/public/images/hero-team.png";
+
 import ConsultationModal from "./ConsultationModal";
 
 export type HeroCardContent = {
@@ -39,11 +41,7 @@ export interface HeroProps {
   backgroundImageUrl?: string;
 }
 
-const HERO_TEAM_IMAGE = "/images/hero-team.png";
 const HERO_TEAM_IMAGE_ALT = "Команда ACG Accounting";
-/** Нативна роздільність hero-team.png — не масштабуємо вище, щоб уникнути пікселізації. */
-const HERO_TEAM_IMAGE_WIDTH = 552;
-const HERO_TEAM_IMAGE_HEIGHT = 553;
 
 const FREE_CTA_LABEL = "Безкоштовна консультація";
 const PAID_CTA_LABEL = "Платна консультація";
@@ -196,7 +194,7 @@ const ctaShineClass =
   "relative overflow-hidden after:pointer-events-none after:absolute after:inset-0 after:z-10 after:bg-gradient-to-r after:from-transparent after:via-white/35 after:to-transparent after:content-[''] md:after:animate-[hero-cta-shine_6.5s_ease-in-out_infinite] motion-reduce:after:animate-none";
 
 const heroPhotoCardClass =
-  "relative mx-auto w-full max-w-[min(100%,34.5rem)] aspect-square min-w-0";
+  "relative mx-auto w-full max-w-[min(100%,36rem)] aspect-square min-w-0";
 
 const heroPhotoFrameClass =
   "relative h-full w-full overflow-hidden rounded-[2rem] bg-gradient-to-br from-white/90 via-acg-light/45 to-acg-blue/[0.05] shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/[0.06] md:rounded-3xl";
@@ -332,7 +330,6 @@ export default function HeroClient({
   const springY = useSpring(mouseY, { stiffness: 90, damping: 22 });
   const reduceMotion = Boolean(reduceMotionPreferred);
 
-  const resolvedFigureSrc = HERO_TEAM_IMAGE;
   const heroImageAlt = HERO_TEAM_IMAGE_ALT;
 
   const contentMotion = isMdUp ? contentVariants : contentVariantsMobile;
@@ -531,10 +528,10 @@ export default function HeroClient({
               >
                 <div className={`${heroPhotoFrameClass} aspect-square`}>
                   <Image
-                    src={resolvedFigureSrc}
+                    src={teamPhoto}
                     alt={heroImageAlt}
-                    width={HERO_TEAM_IMAGE_WIDTH}
-                    height={HERO_TEAM_IMAGE_HEIGHT}
+                    width={teamPhoto.width}
+                    height={teamPhoto.height}
                     priority
                     sizes="(max-width: 767px) 80vw, 0px"
                     className={heroPhotoImageClass}
@@ -558,12 +555,12 @@ export default function HeroClient({
             >
               <div className={heroPhotoFrameClass}>
                 <Image
-                  src={resolvedFigureSrc}
+                  src={teamPhoto}
                   alt={heroImageAlt}
-                  width={HERO_TEAM_IMAGE_WIDTH}
-                  height={HERO_TEAM_IMAGE_HEIGHT}
+                  width={teamPhoto.width}
+                  height={teamPhoto.height}
                   priority
-                  sizes="(min-width: 1280px) 552px, (min-width: 1024px) 42vw, (min-width: 768px) 45vw, 100vw"
+                  sizes="(min-width: 1280px) 576px, (min-width: 1024px) 42vw, (min-width: 768px) 45vw, 100vw"
                   className={heroPhotoImageClass}
                 />
               </div>
