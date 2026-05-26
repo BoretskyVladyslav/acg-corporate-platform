@@ -1,12 +1,17 @@
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
 
-/** Якщо `general_consultation` — заявка без прив’язки до тарифу (див. LeadCaptureForm + `/api/sendpulse`). */
+/** Тип консультації для лідів (Hero, Pricing, `/api/sendpulse`). */
 export const ACG_LEAD_INTENT_KEY = "acg_lead_intent";
 
-export type LeadIntentValue = "general_consultation";
+export type LeadIntentValue =
+  | "free_consultation"
+  | "paid_consultation"
+  /** Зворотна сумісність з попередніми CTA. */
+  | "general_consultation";
 
-/** Загальна консультація: без тарифу в ліді (Hero, червона кнопка під тарифами). */
-export function prepareConsultationGeneral(): void {
+const PAID_CONSULTATION_TIER = "Консультація";
+
+function clearSelectedPricingTier(): void {
   try {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem(ACG_SELECTED_PRICING_TIER_KEY);
@@ -14,6 +19,34 @@ export function prepareConsultationGeneral(): void {
   } catch {
     /* ignore */
   }
+}
+
+function setSelectedPricingTier(tierName: string): void {
+  const t = tierName.trim();
+  if (!t) return;
+  try {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(ACG_SELECTED_PRICING_TIER_KEY, t);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Hero / Pricing: безкоштовна або платна консультація з чітким типом у ліді. */
+export function prepareConsultation(
+  type: "free_consultation" | "paid_consultation",
+): void {
+  clearSelectedPricingTier();
+  if (type === "paid_consultation") {
+    setSelectedPricingTier(PAID_CONSULTATION_TIER);
+  }
+  setLeadIntent(type);
+}
+
+/** Загальна консультація: без тарифу в ліді (Pricing, FAQ). */
+export function prepareConsultationGeneral(): void {
+  clearSelectedPricingTier();
   setLeadIntent("general_consultation");
 }
 
@@ -45,10 +78,25 @@ export function getLeadIntent(): LeadIntentValue | undefined {
   try {
     if (typeof window === "undefined") return undefined;
     const v = sessionStorage.getItem(ACG_LEAD_INTENT_KEY)?.trim();
-    return v === "general_consultation" ? "general_consultation" : undefined;
+    if (
+      v === "free_consultation" ||
+      v === "paid_consultation" ||
+      v === "general_consultation"
+    ) {
+      return v;
+    }
+    return undefined;
   } catch {
     return undefined;
   }
+}
+
+export function isTierlessConsultationIntent(
+  intent: LeadIntentValue | undefined,
+): boolean {
+  return (
+    intent === "free_consultation" || intent === "general_consultation"
+  );
 }
 
 export function clearLeadIntent(): void {

@@ -26,13 +26,46 @@ function escapeTelegramHtml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
+type LeadIntentKind =
+  | "free_consultation"
+  | "paid_consultation"
+  | "general_consultation";
+
+function parseLeadIntent(raw: string): LeadIntentKind | undefined {
+  if (
+    raw === "free_consultation" ||
+    raw === "paid_consultation" ||
+    raw === "general_consultation"
+  ) {
+    return raw;
+  }
+  return undefined;
+}
+
+function isTierlessConsultationIntent(
+  intent: LeadIntentKind | undefined,
+): boolean {
+  return intent === "free_consultation" || intent === "general_consultation";
+}
+
+function leadIntentStatusLabel(intent: LeadIntentKind): string {
+  switch (intent) {
+    case "free_consultation":
+      return "Безкоштовна консультація";
+    case "paid_consultation":
+      return "Платна консультація";
+    case "general_consultation":
+      return "Запит на загальну консультацію";
+  }
+}
+
 function buildTelegramLeadText(input: {
   name: string;
   phone: string;
   email?: string;
   service?: string;
   tier?: string;
-  leadIntentGeneral?: boolean;
+  leadIntent?: LeadIntentKind;
 }): string {
   const name = escapeTelegramHtml(input.name);
   const phone = escapeTelegramHtml(input.phone);
@@ -41,11 +74,15 @@ function buildTelegramLeadText(input: {
     `👤 <b>Ім'я:</b> ${name}`,
     `📞 <b>Телефон:</b> ${phone}`,
   ];
-  if (input.leadIntentGeneral) {
+  if (input.leadIntent) {
     lines.push(
-      "📋 <b>Статус:</b> Запит на загальну консультацію",
+      `📋 <b>Консультація:</b> ${escapeTelegramHtml(leadIntentStatusLabel(input.leadIntent))}`,
     );
-  } else if (input.tier?.trim()) {
+  }
+  if (
+    input.tier?.trim() &&
+    !isTierlessConsultationIntent(input.leadIntent)
+  ) {
     lines.push(
       `📦 <b>Тариф:</b> ${escapeTelegramHtml(input.tier.trim())}`,
     );
@@ -55,7 +92,10 @@ function buildTelegramLeadText(input: {
       `✉️ <b>Email:</b> ${escapeTelegramHtml(input.email.trim())}`,
     );
   }
-  if (input.service?.trim() && !input.leadIntentGeneral) {
+  if (
+    input.service?.trim() &&
+    !isTierlessConsultationIntent(input.leadIntent)
+  ) {
     lines.push(
       `🎯 <b>Послуга:</b> ${escapeTelegramHtml(input.service.trim())}`,
     );
@@ -201,7 +241,7 @@ async function createCrmContactAndDeal(input: {
   email?: string;
   tier?: string;
   service?: string;
-  leadIntentGeneral?: boolean;
+  leadIntent?: LeadIntentKind;
 }): Promise<boolean> {
   try {
     const ids = parseCrmIds();
@@ -213,14 +253,14 @@ async function createCrmContactAndDeal(input: {
 
     const attributes: Array<{ name: string; value: string; type: number }> =
       [];
-    if (input.tier?.trim() && !input.leadIntentGeneral) {
+    if (input.tier?.trim() && !isTierlessConsultationIntent(input.leadIntent)) {
       attributes.push({
         name: "Тариф",
         value: input.tier.trim().slice(0, 500),
         type: 0,
       });
     }
-    if (input.service?.trim() && !input.leadIntentGeneral) {
+    if (input.service?.trim() && !isTierlessConsultationIntent(input.leadIntent)) {
       attributes.push({
         name: "Послуга",
         value: input.service.trim().slice(0, 500),
@@ -271,8 +311,8 @@ async function createCrmContactAndDeal(input: {
       return false;
     }
 
-    const dealNameBase = input.leadIntentGeneral
-      ? `${input.name} — загальна консультація`
+    const dealNameBase = input.leadIntent
+      ? `${input.name} — ${leadIntentStatusLabel(input.leadIntent)}`
       : input.tier?.trim()
         ? `${input.name} — ${input.tier.trim()}`
         : input.name;
@@ -317,7 +357,7 @@ async function addEmailToSendPulseAddressBook(input: {
   phone: string;
   service?: string;
   tier?: string;
-  leadIntentGeneral?: boolean;
+  leadIntent?: LeadIntentKind;
 }): Promise<boolean> {
   try {
     const listId = process.env.SENDPULSE_LIST_ID?.trim();
@@ -327,10 +367,10 @@ async function addEmailToSendPulseAddressBook(input: {
       name: input.name,
       phone: input.phone,
     };
-    if (input.service?.trim() && !input.leadIntentGeneral) {
+    if (input.service?.trim() && !isTierlessConsultationIntent(input.leadIntent)) {
       variables.service = input.service.trim();
     }
-    if (input.tier?.trim() && !input.leadIntentGeneral) {
+    if (input.tier?.trim() && !isTierlessConsultationIntent(input.leadIntent)) {
       variables.tier = input.tier.trim();
     }
 
@@ -385,7 +425,8 @@ export async function POST(req: Request) {
     typeof body.tier === "string" ? body.tier.trim() : undefined;
   const leadIntentRaw =
     typeof body.leadIntent === "string" ? body.leadIntent.trim() : "";
-  const isGeneralConsultation = leadIntentRaw === "general_consultation";
+  const leadIntent = parseLeadIntent(leadIntentRaw);
+  const tierlessConsultation = isTierlessConsultationIntent(leadIntent);
   const honeypot =
     typeof body.website === "string" ? body.website.trim() : "";
 
@@ -460,9 +501,9 @@ export async function POST(req: Request) {
       name,
       phone,
       ...(emailRaw ? { email: emailRaw } : {}),
-      ...(!isGeneralConsultation && tier ? { tier } : {}),
-      ...(!isGeneralConsultation && service ? { service } : {}),
-      ...(isGeneralConsultation ? { leadIntentGeneral: true } : {}),
+      ...(!tierlessConsultation && tier ? { tier } : {}),
+      ...(!tierlessConsultation && service ? { service } : {}),
+      ...(leadIntent ? { leadIntent } : {}),
     });
     if (!crmOk) {
       console.warn("[sendpulse] CRM save failed; trying list sync / Telegram");
@@ -478,9 +519,9 @@ export async function POST(req: Request) {
       email: emailRaw,
       name,
       phone,
-      ...(!isGeneralConsultation && service ? { service } : {}),
-      ...(!isGeneralConsultation && tier ? { tier } : {}),
-      ...(isGeneralConsultation ? { leadIntentGeneral: true } : {}),
+      ...(!tierlessConsultation && service ? { service } : {}),
+      ...(!tierlessConsultation && tier ? { tier } : {}),
+      ...(leadIntent ? { leadIntent } : {}),
     });
     if (!listOk && crmOk) {
       console.warn(
@@ -500,9 +541,9 @@ export async function POST(req: Request) {
         name,
         phone,
         ...(emailRaw ? { email: emailRaw } : {}),
-        ...(!isGeneralConsultation && service ? { service } : {}),
-        ...(!isGeneralConsultation && tier ? { tier } : {}),
-        ...(isGeneralConsultation ? { leadIntentGeneral: true } : {}),
+        ...(!tierlessConsultation && service ? { service } : {}),
+        ...(!tierlessConsultation && tier ? { tier } : {}),
+        ...(leadIntent ? { leadIntent } : {}),
       }),
     );
     if (!telegramOk && (crmOk || listOk)) {

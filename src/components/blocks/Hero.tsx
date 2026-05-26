@@ -5,10 +5,8 @@ export type { HeroCardContent, HeroProps };
 const HEADING_FALLBACK =
   "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.";
 
-const PRIMARY_CTA_LABEL_FALLBACK =
-  "ОТРИМАТИ ПЕРВИННУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО";
-
-const SECONDARY_CTA_LABEL_FALLBACK = "ШВИДКА ВІДПОВІДЬ У TELEGRAM";
+const FREE_CTA_LABEL_FALLBACK = "Безкоштовна консультація";
+const PAID_CTA_LABEL_FALLBACK = "Платна консультація";
 
 function pickNonEmptyText(value: string | undefined, fallback: string): string {
   const trimmed = value?.trim();
@@ -39,11 +37,11 @@ export function resolveHeroProps(partial: Partial<HeroProps> = {}): HeroProps {
     subheading,
     primaryCtaLabel: pickNonEmptyText(
       partial.primaryCtaLabel,
-      PRIMARY_CTA_LABEL_FALLBACK,
+      FREE_CTA_LABEL_FALLBACK,
     ),
     secondaryCtaLabel: pickNonEmptyText(
       partial.secondaryCtaLabel,
-      SECONDARY_CTA_LABEL_FALLBACK,
+      PAID_CTA_LABEL_FALLBACK,
     ),
     ...(heroCards?.length ? { heroCards } : {}),
     ...(bgUrl ? { backgroundImageUrl: bgUrl } : {}),

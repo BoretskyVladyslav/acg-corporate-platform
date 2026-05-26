@@ -55,10 +55,12 @@ export interface PricingProps {
   globalButtonLabel?: string;
 }
 
-const DEFAULT_GLOBAL_ORDER_LABEL = "Замовити";
+const DEFAULT_GLOBAL_ORDER_LABEL = "Обрати тариф";
 
 const DEFAULT_PRICING_CTA_BOTTOM_TEXT =
-  "Потрібна допомога з вибором? Залиште заявку на загальну консультацію — підкажемо оптимальний формат без прив’язки до конкретного тарифу.";
+  "Не знаєте, який тариф обрати? Напишіть нам — підкажемо оптимальний пакет під ваші задачі, без зайвих опцій.";
+
+const DEFAULT_PRICING_CTA_BOTTOM_BUTTON = "Отримати допомогу з вибором";
 
 const defaultTiers: PricingTier[] = [
   {
@@ -185,6 +187,12 @@ const tierSwitchTransition = {
   ease: tierSwitchEase,
 };
 
+const SECTION_SCROLL_EASE_OUT = [0, 0, 0.2, 1] as const;
+const SECTION_ITEM_REVEAL_TRANSITION = {
+  duration: 0.5,
+  ease: SECTION_SCROLL_EASE_OUT,
+} as const;
+
 const watermarkOutlineStyle = {
   color: "transparent",
   WebkitTextFillColor: "transparent",
@@ -205,43 +213,6 @@ const ctaPulseShadowBlue = [
   "0 12px 42px -10px rgba(36, 84, 148, 0.42)",
   "0 10px 26px -14px rgba(36, 84, 148, 0.22)",
 ];
-
-const headerContainerVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const headerContainerVariantsMobile = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.06, delayChildren: 0 },
-  },
-};
-
-const headerItemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 105,
-      damping: 20,
-      mass: 1,
-    },
-  },
-};
-
-const headerItemVariantsMobile = {
-  hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.48, ease: tierSwitchEase },
-  },
-};
 
 const featuresListVariants = {
   hidden: {},
@@ -386,7 +357,7 @@ export default function Pricing({
     const handler = (e: Event) => {
       const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
       const preset = ce.detail?.preset;
-      if (preset !== "fop-registration") return;
+      if (preset !== "fop-registration" && preset !== "tov-accounting") return;
       const idx = findTierIndexForPreset(resolvedTiers, preset);
       if (idx >= 0 && idx < resolvedTiers.length) {
         setSelectedIndex(idx);
@@ -421,27 +392,44 @@ export default function Pricing({
     [reduceMotionPreferred, isMdUp],
   );
 
-  const headerContainerResolved = useMemo(
+  const shellContainerVariants = useMemo(
     () =>
       reduceMotionPreferred
-        ? { hidden: {}, visible: { transition: { staggerChildren: 0 } } }
-        : isMdUp
-          ? headerContainerVariants
-          : headerContainerVariantsMobile,
-    [reduceMotionPreferred, isMdUp],
+        ? {
+            hidden: {},
+            show: {
+              transition: { staggerChildren: 0, delayChildren: 0 },
+            },
+          }
+        : {
+            hidden: {},
+            show: {
+              transition: { staggerChildren: 0.15, delayChildren: 0 },
+            },
+          },
+    [reduceMotionPreferred],
   );
 
-  const headerItemResolved = useMemo(
+  const shellItemVariants = useMemo(
     () =>
       reduceMotionPreferred
         ? {
             hidden: { opacity: 1, y: 0 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0 } },
+            show: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0 },
+            },
           }
-        : isMdUp
-          ? headerItemVariants
-          : headerItemVariantsMobile,
-    [reduceMotionPreferred, isMdUp],
+        : {
+            hidden: { opacity: 0, y: 50 },
+            show: {
+              opacity: 1,
+              y: 0,
+              transition: SECTION_ITEM_REVEAL_TRANSITION,
+            },
+          },
+    [reduceMotionPreferred],
   );
 
   if (!tier) {
@@ -460,44 +448,31 @@ export default function Pricing({
       />
       <div className={`relative z-[1] ${LANDING_SECTION_SHELL} min-w-0`}>
         <motion.div
-          variants={headerContainerResolved}
+          className="min-w-0"
+          variants={shellContainerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
         >
-          <motion.p
-            variants={headerItemResolved}
-            className={LANDING_PRICING_EYEBROW_ON_DARK}
-          >
-            {displayEyebrow}
-          </motion.p>
-          <motion.h2
-            id="pricing-heading"
-            variants={headerItemResolved}
-            className={`${LANDING_PRICING_H2_ON_DARK} ${LANDING_SECTION_H2_SIZE} mt-3 max-w-[min(100%,28rem)]`}
-          >
-            {displayHeading}
-          </motion.h2>
-          <motion.p
-            variants={headerItemResolved}
-            className={`mt-4 max-w-3xl ${LANDING_PRICING_LEDE_ON_DARK}`}
-          >
-            {displayIntro}
-          </motion.p>
-        </motion.div>
+          <motion.div variants={shellItemVariants}>
+            <p className={LANDING_PRICING_EYEBROW_ON_DARK}>{displayEyebrow}</p>
+            <h2
+              id="pricing-heading"
+              className={`${LANDING_PRICING_H2_ON_DARK} ${LANDING_SECTION_H2_SIZE} mt-3 max-w-[min(100%,28rem)]`}
+            >
+              {displayHeading}
+            </h2>
+            <p className={`mt-4 max-w-3xl ${LANDING_PRICING_LEDE_ON_DARK}`}>
+              {displayIntro}
+            </p>
+          </motion.div>
 
         {resolvedTiers.length > 1 ? (
           <motion.div
+            variants={shellItemVariants}
             role="tablist"
             aria-label="Тарифи та послуги"
             className="mt-8 flex w-full min-w-0 snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-4 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 md:mt-10 md:flex-wrap md:justify-center md:gap-2 md:overflow-x-visible md:scroll-px-0 md:pb-2 md:pt-0 lg:justify-start [&::-webkit-scrollbar]:hidden"
-            initial={isMdUp ? { opacity: 0, y: 12 } : { opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{
-              duration: isMdUp ? 0.45 : 0.32,
-              ease: tierSwitchEase,
-            }}
           >
             {resolvedTiers.map((t, i) => {
               const isActive = i === safeIndex;
@@ -546,7 +521,10 @@ export default function Pricing({
           </motion.div>
         ) : null}
 
-        <div className="relative mx-auto mt-6 min-w-0 max-w-4xl sm:mt-10">
+        <motion.div
+          variants={shellItemVariants}
+          className="relative mx-auto mt-6 min-w-0 max-w-4xl sm:mt-10"
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.article
               key={safeIndex}
@@ -602,19 +580,16 @@ export default function Pricing({
               </div>
             </motion.article>
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         <motion.div
+          variants={shellItemVariants}
           className="mt-10 flex flex-col items-center justify-center gap-3 px-1 sm:mt-12"
-          initial={isMdUp ? { opacity: 0, y: 12 } : { opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.35 }}
-          transition={{ duration: 0.45, ease: tierSwitchEase }}
         >
           <p className="max-w-xl text-center text-sm leading-relaxed text-slate-400">
             {displayCtaText}
           </p>
-          <motion.button
+          <button
             type="button"
             onClick={() => {
               prepareConsultationGeneral();
@@ -623,8 +598,9 @@ export default function Pricing({
             }}
             className="inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-full bg-acg-red px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-black/35 ring-1 ring-white/20 transition hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto"
           >
-            Отримати консультацію
-          </motion.button>
+            {DEFAULT_PRICING_CTA_BOTTOM_BUTTON}
+          </button>
+        </motion.div>
         </motion.div>
       </div>
 
