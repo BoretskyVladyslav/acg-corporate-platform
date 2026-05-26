@@ -20,6 +20,7 @@ import {
 import {
   clearLeadIntent,
   getLeadIntent,
+  isTierlessConsultationIntent,
 } from "@/src/lib/leadIntent";
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
 import {
@@ -144,7 +145,7 @@ export default function ConsultationModal({
         }
 
         const leadIntent = getLeadIntent();
-        const isGeneralConsultation = leadIntent === "general_consultation";
+        const tierlessConsultation = isTierlessConsultationIntent(leadIntent);
 
         const res = await fetch("/api/sendpulse", {
           method: "POST",
@@ -154,12 +155,10 @@ export default function ConsultationModal({
             phone: phoneE164,
             website: honeypot,
             ...(email.trim() ? { email: email.trim() } : {}),
-            ...(!isGeneralConsultation && tierFromPricing
+            ...(!tierlessConsultation && tierFromPricing
               ? { tier: tierFromPricing }
               : {}),
-            ...(isGeneralConsultation
-              ? { leadIntent: "general_consultation" }
-              : {}),
+            ...(leadIntent ? { leadIntent } : {}),
           }),
         });
         const data = (await res.json().catch(() => ({}))) as {

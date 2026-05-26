@@ -3,7 +3,7 @@ import type { PricingTier } from "@/src/components/blocks/Pricing";
 /** Подія вибору вкладки тарифу з інших блоків (наприклад, Hero). */
 export const ACG_PRICING_PRESET_EVENT = "acg-pricing-select-preset";
 
-export type PricingTierPreset = "fop-registration";
+export type PricingTierPreset = "fop-registration" | "tov-accounting";
 
 export function findTierIndexForPreset(
   tiers: PricingTier[],
@@ -25,6 +25,16 @@ export function findTierIndexForPreset(
     );
     if (fopNamed >= 0) return fopNamed;
     return Math.min(1, tiers.length - 1);
+  }
+
+  if (preset === "tov-accounting") {
+    const byTov = tiers.findIndex((_, i) => /тов|юридичн/i.test(names[i]));
+    if (byTov >= 0) return byTov;
+    const byGeneral = tiers.findIndex((_, i) =>
+      /загальн|прибут/i.test(names[i]),
+    );
+    if (byGeneral >= 0) return byGeneral;
+    return Math.max(0, tiers.length - 1);
   }
 
   return 0;
