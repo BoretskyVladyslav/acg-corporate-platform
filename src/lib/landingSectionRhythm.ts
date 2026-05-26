@@ -49,30 +49,42 @@ export const LANDING_CARD_BODY =
 export const LANDING_CARD_PADDING_COMFORTABLE =
   "p-8 sm:p-10 lg:p-11 xl:p-12";
 
-/** --- Темна конверсійна секція «Тарифи» --- */
+/** --- Секція «Тарифи» (фірмовий синій, як у «Контактах») --- */
 
 export const LANDING_PRICING_SECTION_CLASS =
-  "relative overflow-x-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-[#0f2138] text-slate-100";
+  "relative overflow-x-hidden border-t border-white/10 bg-gradient-to-br from-[#1a4f9c] via-[#245494] to-slate-950 text-white";
 
-/** Glow поверх темного фону Pricing (не текст). */
+/** Glow поверх синього фону Pricing (не текст). */
 export const LANDING_PRICING_SECTION_GLOW =
-  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_75%_55%_at_50%_0%,color-mix(in_oklab,var(--color-acg-blue)_42%,transparent)_0%,transparent_55%)] opacity-70";
+  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_100%_0%,rgba(255,255,255,0.14)_0%,transparent_50%)]";
 
-/** Eyebrow на темному тлі секції тарифів. */
+/** Eyebrow на синьому тлі секції тарифів. */
 export const LANDING_PRICING_EYEBROW_ON_DARK =
-  "text-xs font-medium uppercase tracking-[0.2em] text-slate-400";
+  "text-xs font-medium uppercase tracking-[0.2em] text-white/70";
 
-/** Заголовок h2: світлий gradient clip (читабельний на темному). */
+/** Заголовок h2 на синьому фоні. */
 export const LANDING_PRICING_H2_ON_DARK =
-  "bg-gradient-to-b from-white via-slate-100 to-white/85 bg-clip-text font-bold uppercase leading-[0.95] tracking-tighter text-transparent [background-clip:text] [-webkit-background-clip:text]";
+  "text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.25)]";
 
 /** Підводка під заголовком тарифів. */
 export const LANDING_PRICING_LEDE_ON_DARK =
-  "text-lg leading-relaxed text-slate-300";
+  "text-lg leading-relaxed text-white/90";
 
-/** Неактивна вкладка тарифів (темний фон секції). */
+/** Неактивна вкладка тарифів (синій фон секції). */
 export const LANDING_PRICING_TAB_IDLE =
-  "border-white/20 bg-white/5 text-white/90 hover:border-white/35 hover:bg-white/10 hover:text-white md:border-white/25 md:bg-white/[0.07] md:text-white md:hover:border-white/40 md:hover:bg-white/12";
+  "border-white/25 bg-white/10 text-white/90 hover:border-white/40 hover:bg-white/15 hover:text-white";
+
+/** Активна головна вкладка тарифів. */
+export const LANDING_PRICING_TAB_ACTIVE =
+  "border-white bg-white text-acg-blue shadow-lg shadow-black/20 ring-1 ring-white/80";
+
+/** Неактивна підвкладка «Бухгалтерія для ФОП». */
+export const LANDING_PRICING_SUBTAB_IDLE =
+  "border-white/20 bg-white/5 text-white/85 hover:border-white/35 hover:bg-white/10 hover:text-white";
+
+/** Активна підвкладка «Бухгалтерія для ФОП». */
+export const LANDING_PRICING_SUBTAB_ACTIVE =
+  "border-sky-200/80 bg-white/95 text-acg-blue shadow-md shadow-black/15 ring-1 ring-white/60";
 
 /** --- Акцентна секція форми захоплення лидів --- */
 

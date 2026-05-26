@@ -12,15 +12,21 @@ import ConsultationModal from "./ConsultationModal";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import { resolveFeatureIcon } from "@/src/lib/featureIcons";
 import {
-  prepareConsultationFromPricingTier,
+  prepareConsultation,
   prepareConsultationGeneral,
 } from "@/src/lib/leadIntent";
+import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
 import {
   ACG_PRICING_PRESET_EVENT,
-  findTierIndexForPreset,
-  type PricingTierPreset,
-} from "@/src/lib/pricingTierNavigation";
-import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
+  DEFAULT_PRICING_TIERS,
+  FOP_ACCOUNTING_SUB_TABS,
+  PRICING_MAIN_TABS,
+  findInitialPricingNavigation,
+  mainTabIdForPreset,
+  mergePricingTierCatalog,
+  resolveActiveTierIndex,
+  type PricingMainTabId,
+} from "@/src/lib/pricingCatalog";
 import {
   LANDING_SECTION_H2_SIZE,
   LANDING_SECTION_SHELL,
@@ -29,7 +35,10 @@ import {
   LANDING_PRICING_EYEBROW_ON_DARK,
   LANDING_PRICING_H2_ON_DARK,
   LANDING_PRICING_LEDE_ON_DARK,
+  LANDING_PRICING_TAB_ACTIVE,
   LANDING_PRICING_TAB_IDLE,
+  LANDING_PRICING_SUBTAB_ACTIVE,
+  LANDING_PRICING_SUBTAB_IDLE,
 } from "@/src/lib/landingSectionRhythm";
 
 import type { ServiceItem } from "./Services";
@@ -42,6 +51,8 @@ export interface PricingTier {
   /** Пункти тарифу з Sanity (`featureItem`). */
   features?: ServiceItem[];
   isPopular?: boolean;
+  /** Тимчасова заглушка (наприклад, тарифна сітка ТОВ). */
+  isPlaceholder?: boolean;
 }
 
 export interface PricingProps {
@@ -55,125 +66,16 @@ export interface PricingProps {
   globalButtonLabel?: string;
 }
 
-const DEFAULT_GLOBAL_ORDER_LABEL = "Обрати тариф";
+const DEFAULT_GLOBAL_ORDER_LABEL = "Отримати консультацію безкоштовно";
 
 const DEFAULT_PRICING_CTA_BOTTOM_TEXT =
   "Не знаєте, який тариф обрати? Напишіть нам — підкажемо оптимальний пакет під ваші задачі, без зайвих опцій.";
 
 const DEFAULT_PRICING_CTA_BOTTOM_BUTTON = "Отримати допомогу з вибором";
 
-const defaultTiers: PricingTier[] = [
-  {
-    name: "Консультація",
-    priceText: "2000 грн / разово",
-    description:
-      "Детальна консультація з бухгалтером та юристом. Тривалість 1 година. Формат: онлайн або офлайн. Повний розбір вашої ситуації та розробка стратегії",
-    features: [],
-    isPopular: false,
-  },
-  {
-    name: "Реєстрація ФОП",
-    priceText: "1500 грн / разово",
-    description:
-      "Включає підбір КВЕД, подачу документів, вибір системи оподаткування та супровід до отримання витягу з реєстру",
-    features: [],
-    isPopular: false,
-  },
-  {
-    name: "ФОП 1 група",
-    priceText: "1000 грн / міс.",
-    description: "",
-    features: [
-      { title: "Подання звітності (річна, ЄСВ та ПДФО)" },
-      { title: "Формування реквізитів на сплату" },
-      { title: "Відслідковування своєчасності оплат" },
-      { title: "Консультування з питань діяльності" },
-      { title: "Формування книги обліку доходів" },
-      { title: "Відслідковування лімітів доходів" },
-      { title: "Складання рахунків та актів" },
-      { title: "Допомога в створенні ЕЦП" },
-    ],
-    isPopular: false,
-  },
-  {
-    name: "ФОП 2 та 3 групи",
-    priceText: "від 1500 грн / міс.",
-    description: "",
-    features: [
-      { title: "Всі послуги з 1-ї групи" },
-      { title: "Подання заяв до податкової" },
-      { title: "Подання квартальної звітності" },
-      { title: "Формування реквізитів на сплату" },
-      { title: "Взаємодія з контролюючими органами" },
-      { title: "Складання первинних документів" },
-      { title: "Допомога в створенні ЕЦП" },
-    ],
-    isPopular: true,
-  },
-];
-
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
   return t || fallback;
-}
-
-/** Якщо в CMS є хоч один пункт — показуємо лише їх, без змішування з дефолтами. */
-function featuresFromCmsOnly(cms: ServiceItem[]): ServiceItem[] {
-  return cms.map((item) => {
-    const row: ServiceItem = {
-      title: typeof item.title === "string" ? item.title.trim() : "",
-      description:
-        typeof item.description === "string" ? item.description.trim() : "",
-      note: typeof item.note === "string" ? item.note.trim() : "",
-      icon: typeof item.icon === "string" ? item.icon.trim() : "",
-    };
-    if (item.isHeader === true) {
-      row.isHeader = true;
-    }
-    return row;
-  });
-}
-
-function tierHasCmsFeatures(tier: PricingTier): boolean {
-  return (tier.features ?? []).some(
-    (x) =>
-      x?.isHeader === true ||
-      Boolean(x.title?.trim()) ||
-      Boolean(x.description?.trim()) ||
-      Boolean(x.note?.trim()) ||
-      Boolean(x.icon?.trim()),
-  );
-}
-
-function mergePricingTiers(
-  cms: PricingTier[] | undefined,
-  defaults: PricingTier[],
-): PricingTier[] {
-  if (!cms?.length) return defaults;
-  return cms.map((t, i) => {
-    const d = defaults[Math.min(i, defaults.length - 1)];
-    const hasCmsFeatures = tierHasCmsFeatures(t);
-    const features = hasCmsFeatures
-      ? featuresFromCmsOnly(t.features ?? [])
-      : (d.features ?? []);
-
-    const isPopularMerged =
-      typeof t.isPopular === "boolean" ? t.isPopular : Boolean(d.isPopular);
-
-    const cmsDescriptionRaw =
-      typeof t.description === "string" ? t.description.trim() : "";
-    const description = hasCmsFeatures
-      ? cmsDescriptionRaw
-      : textOr(t.description, d.description ?? "");
-
-    return {
-      name: textOr(t.name, d.name ?? ""),
-      priceText: textOr(t.priceText, d.priceText ?? ""),
-      description,
-      features,
-      isPopular: Boolean(isPopularMerged),
-    };
-  });
 }
 
 const DEFAULT_PRICING_EYEBROW = "Тарифи";
@@ -208,10 +110,10 @@ const ctaPulseTransition = {
   ease: "easeInOut" as const,
 };
 
-const ctaPulseShadowBlue = [
-  "0 10px 26px -14px rgba(36, 84, 148, 0.22)",
-  "0 12px 42px -10px rgba(36, 84, 148, 0.42)",
-  "0 10px 26px -14px rgba(36, 84, 148, 0.22)",
+const ctaPulseShadowRed = [
+  "0 10px 26px -14px rgba(196, 30, 58, 0.22)",
+  "0 12px 42px -10px rgba(196, 30, 58, 0.42)",
+  "0 10px 26px -14px rgba(196, 30, 58, 0.22)",
 ];
 
 const featuresListVariants = {
@@ -322,18 +224,25 @@ export default function Pricing({
     globalButtonLabel,
     DEFAULT_GLOBAL_ORDER_LABEL,
   );
-  const resolvedTiers = mergePricingTiers(tiers, defaultTiers);
-  const preferredPopularIdx = resolvedTiers.findIndex((t) => isPopularTier(t));
-  const [selectedIndex, setSelectedIndex] = useState(
-    preferredPopularIdx >= 0 ? preferredPopularIdx : 0,
+  const resolvedTiers = mergePricingTierCatalog(tiers, DEFAULT_PRICING_TIERS);
+  const initialNavigation = useMemo(
+    () => findInitialPricingNavigation(resolvedTiers),
+    [resolvedTiers],
   );
+  const [mainTabId, setMainTabId] = useState<PricingMainTabId>(
+    initialNavigation.mainTabId,
+  );
+  const [fopSubIndex, setFopSubIndex] = useState(initialNavigation.fopSubIndex);
   const [consultModalOpen, setConsultModalOpen] = useState(false);
   const [consultModalKey, setConsultModalKey] = useState(0);
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
 
-  const maxTierIndex = Math.max(0, resolvedTiers.length - 1);
-  const safeIndex = Math.min(Math.max(0, selectedIndex), maxTierIndex);
+  const safeIndex = resolveActiveTierIndex(
+    resolvedTiers,
+    mainTabId,
+    fopSubIndex,
+  );
   const tier = resolvedTiers[safeIndex] ?? resolvedTiers[0];
 
   useEffect(() => {
@@ -347,25 +256,26 @@ export default function Pricing({
     }
   }, [safeIndex, resolvedTiers]);
 
-  const selectTier = (index: number) => {
-    if (index >= 0 && index < resolvedTiers.length) {
-      setSelectedIndex(index);
+  const selectMainTab = (nextTabId: PricingMainTabId) => {
+    setMainTabId(nextTabId);
+  };
+
+  const selectFopSubTab = (index: number) => {
+    if (index >= 0 && index < FOP_ACCOUNTING_SUB_TABS.length) {
+      setFopSubIndex(index);
     }
   };
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
+      const ce = e as CustomEvent<{ preset?: "fop-registration" | "tov-accounting" }>;
       const preset = ce.detail?.preset;
       if (preset !== "fop-registration" && preset !== "tov-accounting") return;
-      const idx = findTierIndexForPreset(resolvedTiers, preset);
-      if (idx >= 0 && idx < resolvedTiers.length) {
-        setSelectedIndex(idx);
-      }
+      setMainTabId(mainTabIdForPreset(preset));
     };
     window.addEventListener(ACG_PRICING_PRESET_EVENT, handler);
     return () => window.removeEventListener(ACG_PRICING_PRESET_EVENT, handler);
-  }, [resolvedTiers]);
+  }, []);
 
   const panelMotionProps = useMemo(
     () =>
@@ -467,57 +377,105 @@ export default function Pricing({
             </p>
           </motion.div>
 
-        {resolvedTiers.length > 1 ? (
-          <motion.div
-            variants={shellItemVariants}
-            role="tablist"
-            aria-label="Тарифи та послуги"
-            className="mt-8 flex w-full min-w-0 snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-4 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 md:mt-10 md:flex-wrap md:justify-center md:gap-2 md:overflow-x-visible md:scroll-px-0 md:pb-2 md:pt-0 lg:justify-start [&::-webkit-scrollbar]:hidden"
-          >
-            {resolvedTiers.map((t, i) => {
-              const isActive = i === safeIndex;
-              return (
-                <motion.button
-                  key={`${t.name}-${i}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-controls="pricing-tier-panel"
-                  id={`pricing-tier-tab-${i}`}
-                  onClick={() => selectTier(i)}
-                  className={`snap-start shrink-0 touch-manipulation rounded-full border font-semibold transition-colors min-h-[48px] max-w-[calc(100vw-2.5rem)] px-4 py-3.5 text-left text-sm leading-snug sm:max-w-none sm:px-5 sm:py-4 sm:text-base md:min-h-0 md:max-w-none md:px-4 md:py-2.5 md:text-center md:text-sm md:font-medium ${
-                    isActive
-                      ? "border-sky-300/70 bg-acg-blue text-white shadow-lg shadow-black/40 ring-1 ring-white/15 md:shadow-acg-blue/40 md:ring-0"
-                      : LANDING_PRICING_TAB_IDLE
-                  } ${isPopularTier(t) ? "ring-2 ring-amber-400/70 ring-offset-2 ring-offset-slate-950" : ""}`}
-                  layout={isMdUp}
-                  transition={
-                    isMdUp
-                      ? { type: "spring", stiffness: 400, damping: 30 }
-                      : { duration: 0.2 }
-                  }
-                  whileTap={
-                    isMdUp && !reduceMotionPreferred
-                      ? { scale: 0.97 }
-                      : undefined
-                  }
-                >
-                  <span className="inline-flex w-full flex-col items-start gap-1 md:items-center">
-                    <span className="inline-flex flex-wrap items-center gap-1.5 break-words md:justify-center">
-                      <span className="break-words">{t.name}</span>
-                      {isPopularTier(t) ? (
-                        <span
-                          className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${isActive ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"}`}
-                          aria-label="Рекомендовано"
-                        >
-                          Топ
-                        </span>
-                      ) : null}
+        {PRICING_MAIN_TABS.length > 1 ? (
+          <motion.div variants={shellItemVariants} className="mt-8 md:mt-10">
+            <div
+              role="tablist"
+              aria-label="Категорії тарифів"
+              className="flex w-full min-w-0 snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 md:flex-wrap md:justify-center md:gap-2 md:overflow-x-visible md:scroll-px-0 lg:justify-start [&::-webkit-scrollbar]:hidden"
+            >
+              {PRICING_MAIN_TABS.map((tab) => {
+                const isActive = tab.id === mainTabId;
+                const tabTierIndex = resolveActiveTierIndex(
+                  resolvedTiers,
+                  tab.id,
+                  tab.id === "fop-accounting" ? fopSubIndex : 0,
+                );
+                const tabTier = resolvedTiers[tabTierIndex];
+                const isPopular = tabTier ? isPopularTier(tabTier) : false;
+
+                return (
+                  <motion.button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls="pricing-tier-panel"
+                    id={`pricing-main-tab-${tab.id}`}
+                    onClick={() => selectMainTab(tab.id)}
+                    className={`snap-start shrink-0 touch-manipulation rounded-full border font-semibold transition-colors min-h-[48px] max-w-[calc(100vw-2.5rem)] px-4 py-3.5 text-left text-sm leading-snug sm:max-w-none sm:px-5 sm:py-4 sm:text-base md:min-h-0 md:max-w-none md:px-4 md:py-2.5 md:text-center md:text-sm md:font-medium ${
+                      isActive ? LANDING_PRICING_TAB_ACTIVE : LANDING_PRICING_TAB_IDLE
+                    } ${isPopular ? "ring-2 ring-amber-300/75 ring-offset-2 ring-offset-[#245494]" : ""}`}
+                    layout={isMdUp}
+                    transition={
+                      isMdUp
+                        ? { type: "spring", stiffness: 400, damping: 30 }
+                        : { duration: 0.2 }
+                    }
+                    whileTap={
+                      isMdUp && !reduceMotionPreferred
+                        ? { scale: 0.97 }
+                        : undefined
+                    }
+                  >
+                    <span className="inline-flex w-full flex-col items-start gap-1 md:items-center">
+                      <span className="inline-flex flex-wrap items-center gap-1.5 break-words md:justify-center">
+                        <span className="break-words">{tab.label}</span>
+                        {isPopular ? (
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${isActive ? "bg-acg-blue/10 text-acg-blue" : "bg-amber-100 text-amber-900"}`}
+                            aria-label="Рекомендовано"
+                          >
+                            Топ
+                          </span>
+                        ) : null}
+                      </span>
                     </span>
-                  </span>
-                </motion.button>
-              );
-            })}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {mainTabId === "fop-accounting" ? (
+              <div className="mt-4 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4 md:mt-5">
+                <p className="mb-3 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-white/60 md:text-left">
+                  Оберіть групу ФОП
+                </p>
+                <div
+                  role="tablist"
+                  aria-label="Групи ФОП"
+                  className="flex w-full min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:justify-center md:justify-start [&::-webkit-scrollbar]:hidden"
+                >
+                  {FOP_ACCOUNTING_SUB_TABS.map((subTab, index) => {
+                    const isSubActive = index === fopSubIndex;
+                    const subTier =
+                      resolvedTiers[
+                        resolveActiveTierIndex(resolvedTiers, "fop-accounting", index)
+                      ];
+                    const isSubPopular = subTier ? isPopularTier(subTier) : false;
+
+                    return (
+                      <button
+                        key={subTab.label}
+                        type="button"
+                        role="tab"
+                        aria-selected={isSubActive}
+                        aria-controls="pricing-tier-panel"
+                        id={`pricing-fop-subtab-${index}`}
+                        onClick={() => selectFopSubTab(index)}
+                        className={`snap-start shrink-0 touch-manipulation rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors sm:px-4 sm:py-2.5 sm:text-sm ${
+                          isSubActive
+                            ? LANDING_PRICING_SUBTAB_ACTIVE
+                            : LANDING_PRICING_SUBTAB_IDLE
+                        } ${isSubPopular ? "ring-1 ring-amber-300/70" : ""}`}
+                      >
+                        {subTab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </motion.div>
         ) : null}
 
@@ -531,8 +489,10 @@ export default function Pricing({
               id="pricing-tier-panel"
               role="tabpanel"
               aria-labelledby={
-                resolvedTiers.length > 1
-                  ? `pricing-tier-tab-${safeIndex}`
+                PRICING_MAIN_TABS.length > 1
+                  ? mainTabId === "fop-accounting"
+                    ? `pricing-fop-subtab-${fopSubIndex}`
+                    : `pricing-main-tab-${mainTabId}`
                   : "pricing-heading"
               }
               aria-live="polite"
@@ -572,7 +532,18 @@ export default function Pricing({
                   tier={tier}
                   orderButtonLabel={displayOrderLabel}
                   onOrderClick={() => {
-                    prepareConsultationFromPricingTier(tier.name ?? "");
+                    prepareConsultation("free_consultation");
+                    const tierName = tier.name?.trim() ?? "";
+                    if (tierName) {
+                      try {
+                        sessionStorage.setItem(
+                          ACG_SELECTED_PRICING_TIER_KEY,
+                          tierName,
+                        );
+                      } catch {
+                        /* sessionStorage недоступний */
+                      }
+                    }
                     setConsultModalKey((k) => k + 1);
                     setConsultModalOpen(true);
                   }}
@@ -586,7 +557,7 @@ export default function Pricing({
           variants={shellItemVariants}
           className="mt-10 flex flex-col items-center justify-center gap-3 px-1 sm:mt-12"
         >
-          <p className="max-w-xl text-center text-sm leading-relaxed text-slate-400">
+          <p className="max-w-xl text-center text-sm leading-relaxed text-white/75">
             {displayCtaText}
           </p>
           <button
@@ -596,7 +567,7 @@ export default function Pricing({
               setConsultModalKey((k) => k + 1);
               setConsultModalOpen(true);
             }}
-            className="inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-full bg-acg-red px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-black/35 ring-1 ring-white/20 transition hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto"
+            className="inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-full bg-acg-red px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-black/25 ring-1 ring-white/20 transition hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#245494] sm:w-auto"
           >
             {DEFAULT_PRICING_CTA_BOTTOM_BUTTON}
           </button>
@@ -625,6 +596,7 @@ function PricingCheckoutPanel({
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
   const mainFeatures = tier.features ?? [];
+  const isPlaceholder = tier.isPlaceholder === true;
   const hasFeatureRows = mainFeatures.some(
     (f) =>
       f.isHeader === true ||
@@ -633,22 +605,25 @@ function PricingCheckoutPanel({
       Boolean(f.note?.trim()),
   );
   const descLines =
-    !hasFeatureRows && tier.description?.trim()
+    !hasFeatureRows && tier.description?.trim() && !isPlaceholder
       ? splitDescriptionToLines(tier.description)
       : [];
+  const isSimpleOffer =
+    !isPlaceholder && !hasFeatureRows && descLines.length > 0;
   const gapClass = Math.max(mainFeatures.length, descLines.length) > 6 ? "gap-2.5" : "gap-3";
   const priceDisplayRaw = tier.priceText?.trim() ?? "";
   const popular = isPopularTier(tier);
   const ctaBase = popular
-    ? "bg-acg-blue ring-2 ring-amber-300/60 hover:brightness-105"
-    : "bg-acg-blue hover:brightness-110";
+    ? "bg-acg-red ring-2 ring-amber-300/60 hover:bg-acg-red/92"
+    : "bg-acg-red shadow-lg shadow-acg-red/25 hover:bg-acg-red/92";
   const showEmptyFallback =
+    !isPlaceholder &&
     !hasFeatureRows &&
     descLines.length === 0 &&
     !tier.description?.trim();
 
   const ctaPulseAnimate =
-    reduceMotionPreferred || !isMdUp ? {} : { boxShadow: ctaPulseShadowBlue };
+    reduceMotionPreferred || !isMdUp ? {} : { boxShadow: ctaPulseShadowRed };
 
   return (
     <div className="flex min-h-[min(28rem,82svh)] flex-col md:min-h-[26rem] md:flex-row md:items-stretch">
@@ -668,6 +643,13 @@ function PricingCheckoutPanel({
           <p className="mt-5 text-sm leading-relaxed text-foreground/72">
             {tier.description}
           </p>
+        ) : null}
+        {isPlaceholder && tier.description?.trim() ? (
+          <div className="mt-6 flex min-h-0 flex-1 items-center justify-center py-4 sm:py-8">
+            <p className="w-full max-w-xl rounded-2xl border border-dashed border-acg-blue/30 bg-acg-blue/[0.04] px-6 py-8 text-center text-base leading-relaxed text-foreground/72 sm:px-8 sm:py-10 sm:text-lg">
+              {tier.description}
+            </p>
+          </div>
         ) : null}
         {hasFeatureRows ? (
           <motion.ul
@@ -800,13 +782,17 @@ function PricingCheckoutPanel({
             variants={isMdUp ? featuresListVariants : featuresListVariantsMobile}
             initial="hidden"
             animate="visible"
-            className={`mt-6 flex flex-col text-sm text-foreground/82 ${gapClass}`}
+            className={`mt-6 flex flex-col text-sm text-foreground/82 ${gapClass} ${
+              isSimpleOffer
+                ? "rounded-2xl border border-acg-blue/10 bg-acg-blue/[0.03] p-5 sm:p-6"
+                : ""
+            }`}
           >
             {descLines.map((f, j) => (
               <motion.li
                 key={`${f}-${j}`}
                 variants={isMdUp ? featureItemVariants : featureItemVariantsMobile}
-                className="flex gap-3 leading-relaxed"
+                className={`flex gap-3 leading-relaxed ${isSimpleOffer ? "text-[0.9375rem] sm:text-base" : ""}`}
               >
                 <Check
                   className="mt-0.5 h-5 w-5 shrink-0 text-acg-blue"
@@ -833,7 +819,11 @@ function PricingCheckoutPanel({
         }`}
       >
         <div className="min-w-0 flex-1 pb-6">
-          {priceDisplayRaw ? (
+          {isPlaceholder ? (
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-foreground/45">
+              Оновлюється
+            </p>
+          ) : priceDisplayRaw ? (
             <p className="break-words text-[1.625rem] font-bold leading-snug tracking-tight text-acg-blue sm:text-4xl md:text-[2.25rem] lg:text-[2.75rem]">
               {priceDisplayRaw}
             </p>
@@ -842,7 +832,7 @@ function PricingCheckoutPanel({
               На запит
             </p>
           )}
-          {!priceDisplayRaw ? (
+          {!isPlaceholder && !priceDisplayRaw ? (
             <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-foreground/65">
               Ціна залежить від об&apos;єму послуг; залишіть заявку — узгодимо умови.
             </p>
@@ -851,7 +841,7 @@ function PricingCheckoutPanel({
         <motion.button
           type="button"
           onClick={onOrderClick}
-          className={`mt-auto inline-flex min-h-[52px] w-full shrink-0 items-center justify-center rounded-full px-6 py-3.5 text-center text-sm font-semibold text-white transition-[transform,filter] duration-300 ease-out md:hover:-translate-y-px ${ctaBase}`}
+          className={`mt-auto inline-flex min-h-[52px] w-full shrink-0 items-center justify-center rounded-full px-5 py-3.5 text-center text-sm font-semibold leading-snug text-white transition-[transform,filter] duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 md:hover:-translate-y-px sm:px-6 sm:text-[0.9375rem] ${ctaBase}`}
           initial={false}
           animate={ctaPulseAnimate}
           transition={
