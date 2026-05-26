@@ -1,14 +1,17 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import {
+  Layers,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+  CalendarRange,
+} from "lucide-react";
 import { useMemo } from "react";
 
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import {
-  LANDING_CARD_BASE,
-  LANDING_CARD_BODY,
-  LANDING_CARD_HOVER,
-  LANDING_CARD_PADDING,
   LANDING_SECTION_EYEBROW,
   LANDING_SECTION_H2_SIZE,
   LANDING_SECTION_SHELL,
@@ -21,10 +24,17 @@ export interface AboutCompanyProps {
   metrics?: Array<{ label?: string; value?: string }>;
 }
 
-export const DEFAULT_ABOUT_METRICS: NonNullable<AboutCompanyProps["metrics"]> = [
-  { value: "900+ клієнтів у різних сферах" },
-  { value: "10+ років досвіду" },
-  { value: "100% захист від штрафів" },
+type AboutMetricConfig = {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+export const DEFAULT_ABOUT_METRICS: AboutMetricConfig[] = [
+  { value: "1000+", label: "клієнтів", icon: Users },
+  { value: "14", label: "років досвіду", icon: CalendarRange },
+  { value: "50+", label: "видів послуг", icon: Layers },
+  { value: "3", label: "рівні контролю", icon: ShieldCheck },
 ];
 
 const DEFAULT_EYEBROW = "Про нас";
@@ -36,22 +46,6 @@ const DEFAULT_BODY =
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
   return t || fallback;
-}
-
-function resolveAboutMetrics(
-  metrics: AboutCompanyProps["metrics"],
-): NonNullable<AboutCompanyProps["metrics"]> {
-  const cleaned = metrics?.filter(
-    (m) => Boolean(m?.label?.trim()) || Boolean(m?.value?.trim()),
-  );
-  if (!cleaned?.length) return DEFAULT_ABOUT_METRICS;
-  return cleaned.slice(0, 3).map((m, i) => {
-    const d = DEFAULT_ABOUT_METRICS[i] ?? DEFAULT_ABOUT_METRICS[2];
-    return {
-      label: textOr(m?.label, d?.label ?? ""),
-      value: textOr(m?.value, d?.value ?? ""),
-    };
-  });
 }
 
 function splitMetricFigure(value: string): { figure: string; caption: string } {
@@ -71,22 +65,48 @@ function splitMetricFigure(value: string): { figure: string; caption: string } {
   return { figure: trimmed, caption: "" };
 }
 
-/** Одне поле тексту або явна пара «Значення + Підпис» з CMS. */
 function resolveMetricPresentation(
-  m: NonNullable<AboutCompanyProps["metrics"]>[number],
-) {
+  m: { label?: string; value?: string },
+  fallback: AboutMetricConfig,
+): AboutMetricConfig {
   const labelLine = typeof m.label === "string" ? m.label.trim() : "";
   const valueLine = typeof m.value === "string" ? m.value.trim() : "";
 
   if (labelLine && valueLine) {
-    return { figure: valueLine, caption: labelLine };
+    return { value: valueLine, label: labelLine, icon: fallback.icon };
   }
   if (valueLine) {
     const split = splitMetricFigure(valueLine);
-    return { figure: split.figure, caption: split.caption.trim() };
+    return {
+      value: split.figure,
+      label: split.caption.trim() || fallback.label,
+      icon: fallback.icon,
+    };
   }
-  const splitLabel = splitMetricFigure(labelLine);
-  return { figure: splitLabel.figure, caption: splitLabel.caption.trim() };
+  if (labelLine) {
+    const split = splitMetricFigure(labelLine);
+    return {
+      value: split.figure,
+      label: split.caption.trim() || fallback.label,
+      icon: fallback.icon,
+    };
+  }
+  return fallback;
+}
+
+function resolveAboutMetrics(
+  metrics: AboutCompanyProps["metrics"],
+): AboutMetricConfig[] {
+  const cleaned = metrics?.filter(
+    (m) => Boolean(m?.label?.trim()) || Boolean(m?.value?.trim()),
+  );
+  if (!cleaned?.length) return DEFAULT_ABOUT_METRICS;
+
+  return DEFAULT_ABOUT_METRICS.map((fallback, index) => {
+    const cmsMetric = cleaned[index];
+    if (!cmsMetric) return fallback;
+    return resolveMetricPresentation(cmsMetric, fallback);
+  });
 }
 
 const sectionReveal = {
@@ -146,6 +166,24 @@ const metricsGridReveal = {
     },
   },
 };
+
+function MetricIconBadge({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <div className="relative mx-auto mb-4 flex size-[4.25rem] items-center justify-center sm:size-[4.75rem]">
+      <span
+        className="absolute inset-0 rounded-full border border-acg-blue/20"
+        aria-hidden
+      />
+      <span
+        className="absolute inset-[0.45rem] rounded-full border border-acg-blue/30 sm:inset-2"
+        aria-hidden
+      />
+      <span className="relative flex size-10 items-center justify-center rounded-full bg-acg-blue/[0.08] text-acg-blue sm:size-11">
+        <Icon className="size-5 sm:size-[1.35rem]" strokeWidth={1.75} aria-hidden />
+      </span>
+    </div>
+  );
+}
 
 export default function AboutCompany({
   eyebrow,
@@ -208,10 +246,7 @@ export default function AboutCompany({
         whileInView="visible"
         viewport={viewportOpts}
       >
-        <motion.p
-          variants={itemVariants}
-          className={LANDING_SECTION_EYEBROW}
-        >
+        <motion.p variants={itemVariants} className={LANDING_SECTION_EYEBROW}>
           {displayEyebrow}
         </motion.p>
 
@@ -239,31 +274,39 @@ export default function AboutCompany({
           variants={metricsRevealVariants}
           role="list"
           aria-label="Ключові показники"
-          className="mt-10 grid min-w-0 grid-cols-2 gap-x-4 gap-y-4 sm:gap-x-5 sm:gap-y-5 md:mt-12 md:gap-x-8 md:gap-y-10 lg:mt-14 lg:grid-cols-3 lg:gap-x-10"
+          className="relative mt-10 md:mt-12"
         >
-          {resolvedMetrics.slice(0, 3).map((m, i) => {
-            const { figure, caption } = resolveMetricPresentation(m);
+          <div
+            className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-[2.125rem] hidden border-t border-dashed border-acg-blue/30 lg:block"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-[2.375rem] hidden h-px bg-gradient-to-r from-transparent via-acg-blue/20 to-transparent lg:block"
+            aria-hidden
+          />
 
-            return (
-              <motion.article
-                key={`${figure}__${caption}__${i}`}
-                role="listitem"
-                variants={itemVariants}
-                className={`min-w-0 overflow-hidden ${LANDING_CARD_BASE} ${LANDING_CARD_HOVER} ${LANDING_CARD_PADDING} ${i === 2 ? "max-md:col-span-2 max-md:mx-auto max-md:w-full max-md:max-w-[min(100%,17.5rem)]" : ""}`}
-              >
-                <div className="flex min-w-0 flex-col gap-2 sm:gap-2.5 md:gap-3">
-                  <p className="break-words text-[1.35rem] font-bold leading-[1.12] tracking-tight text-acg-blue sm:text-[2rem] lg:text-[2.25rem]">
-                    {figure}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4 lg:gap-x-8">
+            {resolvedMetrics.map((metric, i) => {
+              const Icon = metric.icon;
+
+              return (
+                <motion.article
+                  key={`${metric.value}__${metric.label}__${i}`}
+                  role="listitem"
+                  variants={itemVariants}
+                  className="relative flex min-w-0 flex-col items-center px-1 text-center"
+                >
+                  <MetricIconBadge icon={Icon} />
+                  <p className="text-[1.65rem] font-bold leading-none tracking-tight text-acg-blue sm:text-[2rem] lg:text-[2.125rem]">
+                    {metric.value}
                   </p>
-                  {caption ? (
-                    <p className={LANDING_CARD_BODY}>
-                      {caption}
-                    </p>
-                  ) : null}
-                </div>
-              </motion.article>
-            );
-          })}
+                  <p className="mt-2 max-w-[9rem] text-sm leading-snug text-foreground/55 sm:text-[0.9375rem]">
+                    {metric.label}
+                  </p>
+                </motion.article>
+              );
+            })}
+          </div>
         </motion.div>
       </motion.div>
     </section>

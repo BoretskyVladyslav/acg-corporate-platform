@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import AdditionalServices from "@/src/components/blocks/AdditionalServices";
 import AboutCompany from "@/src/components/blocks/AboutCompany";
+import AdditionalServices from "@/src/components/blocks/AdditionalServices";
 import Advantages from "@/src/components/blocks/Advantages";
 import FAQ from "@/src/components/blocks/FAQ";
 import Hero from "@/src/components/blocks/Hero";
@@ -73,12 +73,12 @@ export default async function Home() {
       <main className="min-w-0 flex-1 overflow-x-clip">
         <Hero {...hero} />
         <AboutCompany {...about} />
-        <Services {...services} />
-        <AdditionalServices {...additionalServices} />
-        <Pricing {...pricing} /> 
         <Advantages {...advantages} />
+        <Pricing {...pricing} />
+        <Services {...services} />
         <TrustBlock {...trust} />
         <LeadCaptureForm {...contact} />
+        <AdditionalServices {...additionalServices} />
         <FAQ {...faq} phoneDisplay={contact.phoneDisplay} />
       </main>
     </div>

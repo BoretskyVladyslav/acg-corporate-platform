@@ -46,10 +46,10 @@ export const landingAboutSectionType = defineType({
     }),
     defineField({
       name: "metrics",
-      title: "Показники (до 3)",
+      title: "Показники (до 4)",
       type: "array",
       of: [defineArrayMember({ type: aboutMetricObject.name })],
-      validation: (Rule) => Rule.max(3),
+      validation: (Rule) => Rule.max(4),
     }),
   ],
 });

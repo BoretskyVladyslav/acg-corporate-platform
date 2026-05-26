@@ -8,7 +8,6 @@ import {
   LANDING_SECTION_EYEBROW,
   LANDING_SECTION_H2_GRADIENT,
   LANDING_SECTION_H2_SIZE,
-  LANDING_SECTION_SHELL,
 } from "@/src/lib/landingSectionRhythm";
 
 export interface AdvantageItem {
@@ -70,6 +69,9 @@ const DEFAULT_ADVANTAGES_ITEMS: AdvantageItem[] = [
       "В нашому штаті працює команда юристів, яка допоможе в вирішенні будь-якої ситуації.",
   },
 ];
+
+const ADVANTAGES_SECTION_SHELL =
+  "mx-auto w-full min-w-0 max-w-7xl px-6 py-12 md:py-16 lg:px-8";
 
 const advantageIndexOutlineStyle = {
   color: "transparent",
@@ -164,7 +166,7 @@ export default function Advantages({
       className="overflow-x-clip bg-white text-foreground"
     >
       <motion.div
-        className={`${LANDING_SECTION_SHELL} relative grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12`}
+        className={`${ADVANTAGES_SECTION_SHELL} relative grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:items-stretch lg:gap-8`}
         variants={containerVariants}
         initial="hidden"
         whileInView="show"
@@ -186,7 +188,7 @@ export default function Advantages({
                 {displayHeading}
               </h2>
             </div>
-            <div className="relative mt-10 min-h-0 w-full flex-1 overflow-x-clip lg:mt-12">
+            <div className="relative mt-6 min-h-0 w-full flex-1 overflow-x-clip lg:mt-8">
               <div
                 className="pointer-events-none absolute left-[-14%] top-[6%] -z-10 h-[76%] w-[92%] rounded-[54%_46%_40%_60%] bg-gradient-to-tr from-acg-blue/[0.09] via-acg-light to-white blur-3xl max-lg:max-w-[110%]"
                 aria-hidden
@@ -215,18 +217,18 @@ export default function Advantages({
             <motion.div
               key={item.title}
               variants={itemVariants}
-              className={`py-8 ${i > 0 ? "border-t border-acg-border" : ""}`}
+              className={`py-5 md:py-6 ${i > 0 ? "border-t border-acg-border" : ""}`}
             >
               <span
                 style={advantageIndexOutlineStyle}
-                className="mb-5 block text-5xl font-light tabular-nums opacity-[0.52] sm:text-6xl"
+                className="mb-3 block text-5xl font-light tabular-nums opacity-[0.52] sm:text-6xl"
               >
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="text-3xl font-bold tracking-wide text-acg-blue">
                 {item.title}
               </h3>
-              <p className="mt-5 max-w-2xl text-xl leading-relaxed text-foreground/75">
+              <p className="mt-3 max-w-2xl text-xl leading-relaxed text-foreground/75">
                 {item.description}
               </p>
             </motion.div>

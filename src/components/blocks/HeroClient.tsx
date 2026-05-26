@@ -343,11 +343,11 @@ export default function HeroClient({
 
     return HERO_NAV_CARDS.map((card, index) => {
       const cmsCard = heroCards[index];
-      if (!cmsCard?.title?.trim() || !cmsCard?.subtitle?.trim()) return card;
+      const cmsSubtitle = cmsCard?.subtitle?.trim();
+      if (!cmsSubtitle) return card;
       return {
         ...card,
-        title: cmsCard.title.trim(),
-        subtitle: cmsCard.subtitle.trim(),
+        subtitle: cmsSubtitle,
       };
     });
   }, [heroCards]);
