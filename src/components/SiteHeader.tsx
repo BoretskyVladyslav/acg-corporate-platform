@@ -74,7 +74,9 @@ const BURGER_MORPH_TWEEN = {
 
 const MOBILE_MENU_EASE = [0.22, 1, 0.36, 1] as const;
 
-const MOBILE_OVERLAY_EXIT_DELAY = 0.4;
+/** Плавна поява / закриття повноекранного мобільного меню (без затримки перед exit). */
+const MOBILE_OVERLAY_ENTER_DURATION = 0.38;
+const MOBILE_OVERLAY_EXIT_DURATION = 0.34;
 
 const COLOR_FLOW_TRANSITION = {
   duration: 0.7,
@@ -338,22 +340,31 @@ export default function SiteHeader() {
   const overlayVariants = useMemo(
     () => ({
       hidden: reduceMotionPreferred
-        ? { opacity: 0 }
+        ? {
+            opacity: 0,
+            transition: { duration: 0.15, ease: FLUID_EASE },
+          }
         : {
             opacity: 0,
+            y: -50,
+            scale: 0.98,
             transition: {
-              duration: 0.2,
-              ease: FLUID_EASE,
-              delay: MOBILE_OVERLAY_EXIT_DELAY,
+              duration: MOBILE_OVERLAY_EXIT_DURATION,
+              ease: MOBILE_MENU_EASE,
             },
           },
       show: reduceMotionPreferred
-        ? { opacity: 1 }
+        ? {
+            opacity: 1,
+            transition: { duration: 0.15, ease: FLUID_EASE },
+          }
         : {
             opacity: 1,
+            y: 0,
+            scale: 1,
             transition: {
-              duration: 0.2,
-              ease: FLUID_EASE,
+              duration: MOBILE_OVERLAY_ENTER_DURATION,
+              ease: MOBILE_MENU_EASE,
             },
           },
     }),
@@ -760,30 +771,14 @@ export default function SiteHeader() {
             initial="hidden"
             animate="show"
             exit="hidden"
-            className="pointer-events-auto fixed inset-0 z-40 flex min-h-0 flex-col overflow-hidden bg-white/90 backdrop-blur-2xl will-change-[opacity] lg:hidden"
+            className="pointer-events-auto fixed inset-0 z-40 flex min-h-0 flex-col overflow-hidden bg-white/90 backdrop-blur-2xl will-change-[transform,opacity] lg:hidden"
           >
-            <div className="flex shrink-0 justify-start px-8 pb-4 pt-[max(8rem,calc(env(safe-area-inset-top,0px)+6rem))]">
-              <Link
-                href="/"
-                className="inline-flex min-w-[138px] shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
-                onClick={closeMobile}
-              >
-                <Image
-                  src="/images/logo.svg"
-                  alt="Alex Consulting Group"
-                  width={176}
-                  height={46}
-                  className="h-10 w-auto min-w-[138px] max-w-none object-contain object-left opacity-90"
-                />
-              </Link>
-            </div>
-
             <motion.nav
               aria-label="Мобільна навігація"
               variants={mobileMenuListVariants}
               initial="hidden"
               animate="show"
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pb-[max(2rem,env(safe-area-inset-bottom,0px))] text-left"
+              className="flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pb-[max(2rem,env(safe-area-inset-bottom,0px))] pt-[max(1.25rem,calc(var(--header-offset,88px)+1rem))] text-left"
             >
               {NAV.map((item) => {
                 const id = anchorFromHash(item.href);

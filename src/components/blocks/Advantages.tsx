@@ -2,8 +2,8 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import { useMemo } from "react";
 
-import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 import {
   LANDING_SECTION_EYEBROW,
   LANDING_SECTION_H2_GRADIENT,
@@ -77,7 +77,12 @@ const advantageIndexOutlineStyle = {
   WebkitTextStroke: "1px rgb(36 84 148)",
 } as const;
 
-const itemRevealEase = [0.22, 1, 0.36, 1] as const;
+const SECTION_ITEM_EASE_OUT = [0, 0, 0.2, 1] as const;
+
+const SECTION_ITEM_TRANSITION = {
+  duration: 0.5,
+  ease: SECTION_ITEM_EASE_OUT,
+} as const;
 
 export default function Advantages({
   eyebrow,
@@ -87,7 +92,6 @@ export default function Advantages({
   sideImageAlt,
 }: AdvantagesProps) {
   const reduceMotionPreferred = useReducedMotion();
-  const isMdUp = useIsMdUp();
   const displayEyebrow = textOr(eyebrow, DEFAULT_ADVANTAGES_EYEBROW);
   const displayHeading = textOr(heading, DEFAULT_ADVANTAGES_HEADING);
   const resolvedItems = mergeAdvantageItems(items, DEFAULT_ADVANTAGES_ITEMS);
@@ -95,18 +99,63 @@ export default function Advantages({
   const resolvedImageSrc = textOr(sideImageUrl, DEFAULT_SIDE_IMAGE);
   const resolvedImageAlt = textOr(sideImageAlt, DEFAULT_SIDE_IMAGE_ALT);
 
-  const itemTransition = {
-    duration:
-      reduceMotionPreferred ? 0 : isMdUp ? 0.56 : 0.38,
-    ease: itemRevealEase,
-  };
+  const containerVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? {
+            hidden: {},
+            show: {
+              transition: { staggerChildren: 0, delayChildren: 0 },
+            },
+          }
+        : {
+            hidden: {},
+            show: {
+              transition: { staggerChildren: 0.15, delayChildren: 0 },
+            },
+          },
+    [reduceMotionPreferred],
+  );
 
-  const itemInitial =
-    reduceMotionPreferred
-      ? { opacity: 1, y: 0 }
-      : isMdUp
-        ? { opacity: 0, y: 20 }
-        : { opacity: 0, y: 10 };
+  const listColumnVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? {
+            hidden: {},
+            show: {
+              transition: { staggerChildren: 0, delayChildren: 0 },
+            },
+          }
+        : {
+            hidden: {},
+            show: {
+              transition: { staggerChildren: 0.15, delayChildren: 0 },
+            },
+          },
+    [reduceMotionPreferred],
+  );
+
+  const itemVariants = useMemo(
+    () =>
+      reduceMotionPreferred
+        ? {
+            hidden: { opacity: 1, y: 0 },
+            show: {
+              opacity: 1,
+              y: 0,
+              transition: { duration: 0 },
+            },
+          }
+        : {
+            hidden: { opacity: 0, y: 50 },
+            show: {
+              opacity: 1,
+              y: 0,
+              transition: SECTION_ITEM_TRANSITION,
+            },
+          },
+    [reduceMotionPreferred],
+  );
 
   return (
     <section
@@ -114,8 +163,17 @@ export default function Advantages({
       aria-labelledby="advantages-heading"
       className="overflow-x-clip bg-white text-foreground"
     >
-      <div className={`${LANDING_SECTION_SHELL} relative grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12`}>
-        <div className="col-span-1 flex min-h-0 flex-col lg:col-span-5 lg:h-full">
+      <motion.div
+        className={`${LANDING_SECTION_SHELL} relative grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12`}
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-100px" }}
+      >
+        <motion.div
+          variants={itemVariants}
+          className="col-span-1 flex min-h-0 flex-col lg:col-span-5 lg:h-full"
+        >
           <div className="relative isolate w-full max-w-none min-w-0 shrink-0 break-words lg:sticky lg:top-32 lg:z-10 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:min-h-0 lg:flex-col lg:self-start">
             <div className="shrink-0">
               <p className={LANDING_SECTION_EYEBROW}>
@@ -147,16 +205,16 @@ export default function Advantages({
               />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="col-span-1 flex min-h-0 flex-col lg:col-span-7">
+        <motion.div
+          variants={listColumnVariants}
+          className="col-span-1 flex min-h-0 flex-col lg:col-span-7"
+        >
           {resolvedItems.map((item, i) => (
             <motion.div
               key={item.title}
-              initial={itemInitial}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={itemTransition}
+              variants={itemVariants}
               className={`py-8 ${i > 0 ? "border-t border-acg-border" : ""}`}
             >
               <span
@@ -173,8 +231,8 @@ export default function Advantages({
               </p>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
