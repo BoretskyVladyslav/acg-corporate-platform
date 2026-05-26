@@ -54,7 +54,7 @@ export const landingPageQuery = groq`
       intro,
       googleRatingScore,
       googleReviewsLabel,
-      quotes[]{quote, author, rating}
+      quotes[]{quote, author, rating, avatar}
     },
     contact{
       eyebrow,
@@ -162,6 +162,7 @@ export type LandingTrustQueryResult = {
     quote?: string | null;
     author?: string | null;
     rating?: number | null;
+    avatar?: Record<string, unknown> | null;
   }> | null;
 } | null;
 

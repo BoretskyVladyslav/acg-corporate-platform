@@ -14,6 +14,14 @@ const trustQuoteObject = defineType({
     }),
     defineField({ name: "author", title: "Автор", type: "string" }),
     defineField({
+      name: "avatar",
+      title: "Фото автора",
+      type: "image",
+      options: { hotspot: true },
+      description:
+        "Необов'язково. Якщо не завантажено — на сайті показується ініціал імені.",
+    }),
+    defineField({
       name: "rating",
       title: "Оцінка (зірочки)",
       type: "number",

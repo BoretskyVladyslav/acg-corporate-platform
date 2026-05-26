@@ -220,10 +220,8 @@ export default function Pricing({
   const displayHeading = textOr(heading, DEFAULT_PRICING_HEADING);
   const displayIntro = textOr(intro, DEFAULT_PRICING_INTRO);
   const displayCtaText = textOr(ctaText, DEFAULT_PRICING_CTA_BOTTOM_TEXT);
-  const displayOrderLabel = textOr(
-    globalButtonLabel,
-    DEFAULT_GLOBAL_ORDER_LABEL,
-  );
+  /** Текст CTA у картках тарифів — фіксований згідно з ТЗ клієнта. */
+  const cardOrderLabel = DEFAULT_GLOBAL_ORDER_LABEL;
   const resolvedTiers = mergePricingTierCatalog(tiers, DEFAULT_PRICING_TIERS);
   const initialNavigation = useMemo(
     () => findInitialPricingNavigation(resolvedTiers),
@@ -530,7 +528,7 @@ export default function Pricing({
               <div className="relative z-[1]">
                 <PricingCheckoutPanel
                   tier={tier}
-                  orderButtonLabel={displayOrderLabel}
+                  orderButtonLabel={cardOrderLabel}
                   onOrderClick={() => {
                     prepareConsultation("free_consultation");
                     const tierName = tier.name?.trim() ?? "";

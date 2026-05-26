@@ -15,6 +15,8 @@ export type GoogleReviewItem = {
   text: string;
   /** Кількість зірочок 1–5. */
   rating: number;
+  /** URL фото автора (Sanity або зовнішнє джерело). */
+  avatar?: string;
 };
 
 export const GOOGLE_REVIEWS_COUNT = 110;
@@ -26,51 +28,51 @@ function textOr(value: string | undefined | null, fallback: string): string {
   return t || fallback;
 }
 
-const reviewsData = [
+const reviewsData: GoogleReviewItem[] = [
   {
-    id: 1,
+    id: "1",
     authorName: "Ivan Vysitskyi",
     text: "Скажу просто. 67 грн на день за бухгалтера і можливість отримати консультацію юриста — це супер.",
     rating: 5,
   },
   {
-    id: 2,
+    id: "2",
     authorName: "Ірина Гураль",
     text: "Відкрила ФОП 3 група через ACG і тепер користуюсь їхнім бухгалтерським супроводом. Дуже зручно. Для мене це велика економія часу.",
     rating: 5,
   },
   {
-    id: 3,
+    id: "3",
     authorName: "Марія Савченко",
     text: "Ми з чоловіком вирішили відкрити компанію (ТОВ) з пошиття жіночого одягу. Шукали нормального юриста і по рекомендації звернулися до ACG.",
     rating: 5,
   },
   {
-    id: 4,
+    id: "4",
     authorName: "Петро Ісько",
     text: "Мав неприємний досвід із бухгалтером, який просто зник — виявляється, так буває )) Після цього вирішив працювати тільки офіційно, за договором, і з цією компанією.",
     rating: 5,
   },
   {
-    id: 5,
+    id: "5",
     authorName: "Катерина Аврамишин",
     text: "Вже не перший рік з ACG — і кожного разу переконуюсь, що звернулась у правильну компанію. Професіоналізм, людяне ставлення, терпіння до всіх моїх “а якщо…” 😅",
     rating: 5,
   },
   {
-    id: 6,
+    id: "6",
     authorName: "Victor _G",
     text: "Вже скоро 10 років, як співпрацюємо з АКГ. Професійна команда + якісний сервіс = багаторічна співпраця.",
     rating: 5,
   },
   {
-    id: 7,
+    id: "7",
     authorName: "Rool. ik",
     text: "Уже рік ця компанія допомагає мені вільно працювати і не думати про бухгалтерські завдання. Все на вищому рівні, допомагають і в інших питаннях де потрібний юрист.",
     rating: 5,
   },
   {
-    id: 8,
+    id: "8",
     authorName: "Анна Сильчук",
     text: "Дуже відповідальна компанія! Всі процеси під контролем, миттєво надають інформацію і вирішують любі питання, повʼязані з діяльністю.",
     rating: 5,
@@ -180,24 +182,48 @@ export interface ReviewsProps {
   googleReviewsCount?: number;
 }
 
+function reviewAuthorInitial(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  return trimmed.charAt(0).toUpperCase();
+}
+
+function ReviewAvatar({ authorName }: { authorName: string }) {
+  const initial = reviewAuthorInitial(authorName);
+
+  return (
+    <span
+      aria-label={`Аватар ${authorName}`}
+      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700"
+    >
+      {initial}
+    </span>
+  );
+}
+
 function ReviewCardGoogleStyle({ review }: { review: GoogleReviewItem }) {
   return (
     <article className="w-[320px] shrink-0 md:w-[400px]">
       <div
         className={`flex h-full flex-col ${LANDING_CARD_BASE} ${LANDING_CARD_HOVER} ${LANDING_CARD_PADDING}`}
       >
-        <h3 className="text-left text-sm font-semibold leading-tight tracking-tight text-foreground">
-          {review.authorName}
-        </h3>
-        <div
-          className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
-          aria-label={`Оцінка ${review.rating} з 5`}
-          role="img"
-        >
-          <div className="flex items-center gap-px text-[#f4b400]">
-            {Array.from({ length: review.rating }).map((_, i) => (
-              <GoogleStar key={i} className="size-[14px]" />
-            ))}
+        <div className="flex flex-row items-center gap-3">
+          <ReviewAvatar authorName={review.authorName} />
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-left text-sm font-semibold leading-tight tracking-tight text-foreground">
+              {review.authorName}
+            </h3>
+            <div
+              className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
+              aria-label={`Оцінка ${review.rating} з 5`}
+              role="img"
+            >
+              <div className="flex items-center gap-px text-[#f4b400]">
+                {Array.from({ length: review.rating }).map((_, i) => (
+                  <GoogleStar key={i} className="size-[14px]" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <p className={`mt-3 text-left ${LANDING_CARD_BODY}`}>
@@ -258,6 +284,7 @@ export default function Reviews({
     ...r,
     id: String(r.id),
     rating: clampReviewRating(r.rating),
+    avatar: typeof r.avatar === "string" ? r.avatar.trim() || undefined : undefined,
   }));
   const reduceMotion = useReducedMotion();
   const [rawTop, rawBottom] = splitIntoTwoRows(list);

@@ -115,7 +115,7 @@ export function mapLandingPageDocToLandingData(
     additionalServices: mapAdditionalServices(doc.additionalServices),
     pricing: mapPricing(doc.pricing),
     advantages: mapAdvantages(doc.advantages, urlBuilder),
-    trust: mapTrust(doc.trust),
+    trust: mapTrust(doc.trust, urlBuilder),
     faq: mapFaq(doc.faq),
     contact: mapContact(doc.contact),
     seo: mapSeo(doc.seo, urlBuilder),
@@ -341,7 +341,10 @@ function mapAdvantages(
   };
 }
 
-function mapTrust(doc: LandingTrustQueryResult | undefined): TrustBlockProps {
+function mapTrust(
+  doc: LandingTrustQueryResult | undefined,
+  urlBuilder: SanityUrlBuilder,
+): TrustBlockProps {
   if (!doc) return {};
   const quotes = doc.quotes
     ?.map((q) => {
@@ -349,10 +352,18 @@ function mapTrust(doc: LandingTrustQueryResult | undefined): TrustBlockProps {
       if (typeof q.rating === "number" && Number.isFinite(q.rating)) {
         rating = Math.min(5, Math.max(1, Math.round(q.rating)));
       }
+      const author = pickNonEmpty(q.author);
+      const avatarResolved = sanityImageToResolved(
+        urlBuilder,
+        q.avatar ?? undefined,
+        96,
+        author ?? "",
+      );
       return {
         quote: pickNonEmpty(q.quote),
-        author: pickNonEmpty(q.author),
+        author,
         ...(rating !== undefined ? { rating } : {}),
+        ...(avatarResolved?.url ? { avatar: avatarResolved.url } : {}),
       };
     })
     .filter((q) => Boolean(q.quote));

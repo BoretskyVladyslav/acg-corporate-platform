@@ -17,6 +17,8 @@ export interface TrustQuote {
   author?: string;
   /** Оцінка 1–5 з Sanity (`trustQuote.rating`). */
   rating?: number;
+  /** URL аватара автора (Sanity `trustQuote.avatar`). */
+  avatar?: string;
 }
 
 export interface TrustBlockProps {
@@ -66,6 +68,7 @@ function mapTrustQuotesToReviews(quotes: TrustQuote[]): GoogleReviewItem[] {
       authorName: authorLabel,
       text: body,
       rating: clampRating(q.rating),
+      ...(q.avatar?.trim() ? { avatar: q.avatar.trim() } : {}),
     };
   });
 }

@@ -210,6 +210,15 @@ function mergeSingleTier(cms: PricingTier, fallback: PricingTier): PricingTier {
     };
   }
 
+  if (normalizeTierName(fallback.name) === normalizeTierName("Інші послуги")) {
+    return {
+      ...fallback,
+      name: merged.name,
+      isPopular: merged.isPopular,
+      priceText: textOr(cms.priceText, fallback.priceText ?? ""),
+    };
+  }
+
   return merged;
 }
 
