@@ -31,9 +31,9 @@ type AboutMetricConfig = {
 };
 
 export const DEFAULT_ABOUT_METRICS: AboutMetricConfig[] = [
-  { value: "900+", label: "клієнтів", icon: Users },
-  { value: "10+", label: "років досвіду", icon: CalendarRange },
-  { value: "100%", label: "звітність", icon: Layers },
+  { value: "1000 +", label: "клієнтів", icon: Users },
+  { value: "14", label: "років досвіду", icon: CalendarRange },
+  { value: "50 +", label: "видів послуг", icon: Layers },
   { value: "3", label: "рівні контролю", icon: ShieldCheck },
 ];
 
@@ -48,65 +48,11 @@ function textOr(value: string | undefined | null, fallback: string): string {
   return t || fallback;
 }
 
-function splitMetricFigure(value: string): { figure: string; caption: string } {
-  const trimmed = value.trim();
-  const digitsPlusRest = trimmed.match(/^(\d+)\+\s+(.+)/);
-  if (digitsPlusRest) {
-    return { figure: `${digitsPlusRest[1]}+`, caption: digitsPlusRest[2].trim() };
-  }
-  const pctRest = trimmed.match(/^(\d+)%\s*(.+)/);
-  if (pctRest) {
-    return { figure: `${pctRest[1]}%`, caption: pctRest[2].trim() };
-  }
-  const digitSpaceWord = trimmed.match(/^(\d+)\s+(.+)/);
-  if (digitSpaceWord) {
-    return { figure: digitSpaceWord[1], caption: digitSpaceWord[2].trim() };
-  }
-  return { figure: trimmed, caption: "" };
-}
-
-function resolveMetricPresentation(
-  m: { label?: string; value?: string },
-  fallback: AboutMetricConfig,
-): AboutMetricConfig {
-  const labelLine = typeof m.label === "string" ? m.label.trim() : "";
-  const valueLine = typeof m.value === "string" ? m.value.trim() : "";
-
-  if (labelLine && valueLine) {
-    return { value: valueLine, label: labelLine, icon: fallback.icon };
-  }
-  if (valueLine) {
-    const split = splitMetricFigure(valueLine);
-    return {
-      value: split.figure,
-      label: split.caption.trim() || fallback.label,
-      icon: fallback.icon,
-    };
-  }
-  if (labelLine) {
-    const split = splitMetricFigure(labelLine);
-    return {
-      value: split.figure,
-      label: split.caption.trim() || fallback.label,
-      icon: fallback.icon,
-    };
-  }
-  return fallback;
-}
-
 function resolveAboutMetrics(
-  metrics: AboutCompanyProps["metrics"],
+  _metrics: AboutCompanyProps["metrics"],
 ): AboutMetricConfig[] {
-  const cleaned = metrics?.filter(
-    (m) => Boolean(m?.label?.trim()) || Boolean(m?.value?.trim()),
-  );
-  if (!cleaned?.length) return DEFAULT_ABOUT_METRICS;
-
-  return DEFAULT_ABOUT_METRICS.map((fallback, index) => {
-    const cmsMetric = cleaned[index];
-    if (!cmsMetric) return fallback;
-    return resolveMetricPresentation(cmsMetric, fallback);
-  });
+  /** Канонічні цифри з ТЗ; іконки з дефолтного набору. */
+  return DEFAULT_ABOUT_METRICS;
 }
 
 const sectionReveal = {
@@ -167,14 +113,28 @@ const metricsGridReveal = {
   },
 };
 
+/** Висота зони іконки — для вирівнювання пунктирної лінії по центру кілець. */
+const METRIC_ICON_ZONE_CLASS =
+  "relative z-10 mx-auto mb-4 flex size-[4.25rem] items-center justify-center sm:mb-5 sm:size-[4.75rem] md:size-20";
+
+const METRIC_CONNECTOR_LINE_TOP =
+  "top-[2.125rem] sm:top-[2.375rem] md:top-10";
+
 function MetricIconBadge({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <div className="relative z-10 mx-auto mb-3 flex size-12 items-center justify-center rounded-full border border-acg-blue/25 bg-slate-50 shadow-sm ring-4 ring-slate-50 sm:mb-4 sm:size-14 md:size-16">
-      <Icon
-        className="size-5 text-acg-blue sm:size-[1.35rem] md:size-6"
-        strokeWidth={1.75}
+    <div className={METRIC_ICON_ZONE_CLASS}>
+      <div
+        className="flex size-full items-center justify-center rounded-full border-2 border-r-transparent border-acg-blue bg-white shadow-sm"
         aria-hidden
-      />
+      >
+        <div className="flex size-[74%] items-center justify-center rounded-full border-2 border-r-transparent border-acg-blue/75 bg-white">
+          <Icon
+            className="size-5 text-acg-blue sm:size-[1.35rem] md:size-6"
+            strokeWidth={1.75}
+            aria-hidden
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -271,11 +231,11 @@ export default function AboutCompany({
           className="relative mt-10 md:mt-14"
         >
           <div
-            className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-6 border-t border-dashed border-acg-blue/35 sm:top-7 md:top-8"
+            className={`pointer-events-none absolute left-[12.5%] right-[12.5%] z-0 border-t-2 border-dashed border-gray-200 ${METRIC_CONNECTOR_LINE_TOP}`}
             aria-hidden
           />
 
-          <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
+          <div className="relative z-[1] grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-4 sm:gap-x-4 md:gap-x-6 lg:gap-x-8">
             {resolvedMetrics.map((metric, i) => {
               const Icon = metric.icon;
 
@@ -287,10 +247,10 @@ export default function AboutCompany({
                   className="relative flex min-w-0 flex-col items-center px-0.5 text-center sm:px-1"
                 >
                   <MetricIconBadge icon={Icon} />
-                  <p className="text-xl font-bold leading-none tracking-tight text-acg-blue sm:text-3xl md:text-[2rem] lg:text-[2.125rem]">
+                  <p className="text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl md:text-[2rem] lg:text-[2.125rem]">
                     {metric.value}
                   </p>
-                  <p className="mt-1.5 text-[0.6875rem] leading-snug text-foreground/50 sm:mt-2 sm:text-sm">
+                  <p className="mt-2 text-xs leading-snug text-foreground/50 sm:text-sm">
                     {metric.label}
                   </p>
                 </motion.article>

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, Loader2, X } from "lucide-react";
 import {
   type FormEvent,
@@ -14,9 +14,11 @@ import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 
 import {
   clearLeadIntent,
+  type LeadIntentValue,
   getConsultationModalCopy,
   getLeadIntent,
   isTierlessConsultationIntent,
+  prepareConsultation,
 } from "@/src/lib/leadIntent";
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
 import {
@@ -66,9 +68,12 @@ export default function ConsultationModal({
 }: ConsultationModalProps) {
   const titleId = useId();
   const descriptionId = useId();
-  const [headerCopy, setHeaderCopy] = useState(() =>
-    getConsultationModalCopy(undefined),
-  );
+  const reduceMotionPreferred = useReducedMotion();
+  // Важливо: без setState у useEffect (ESLint react-hooks/set-state-in-effect).
+  // Початковий вибір беремо при mount (а модалка ремаунтиться через `key` з хедера при кожному відкритті).
+  const [selectedConsultationType, setSelectedConsultationType] = useState<
+    LeadIntentValue | undefined
+  >(() => (open ? getLeadIntent() : undefined));
   const [name, setName] = useState("");
   const [phone, setPhone] = useState(UA_PHONE_INPUT_DEFAULT);
   const [callTime, setCallTime] = useState("");
@@ -80,21 +85,37 @@ export default function ConsultationModal({
 
   const isMdUp = useIsMdUp();
 
-  useEffect(() => {
-    if (!open) return;
-    const fromIntent = getConsultationModalCopy(getLeadIntent());
-    setHeaderCopy({
+  const headerCopy = (() => {
+    const fromIntent = getConsultationModalCopy(selectedConsultationType);
+    return {
       title: titleProp?.trim() || fromIntent.title,
       description: descriptionProp?.trim() || fromIntent.description,
-    });
-  }, [open, titleProp, descriptionProp]);
+    };
+  })();
+
+  const chooseConsultationType = useCallback(
+    (type: "free_consultation" | "paid_consultation") => {
+      prepareConsultation(type);
+      setSelectedConsultationType(type);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
+    // Компенсуємо scrollbar-width, щоб не “стрибала” верстка.
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
     };
   }, [open]);
 
@@ -193,26 +214,49 @@ export default function ConsultationModal({
     phoneError ? "border-acg-red/80 focus:border-acg-red focus:ring-acg-red/25" : ""
   }`;
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
-      role="presentation"
-    >
-      <button
-        type="button"
-        aria-label="Закрити"
-        className="absolute inset-0 bg-foreground/40 backdrop-blur-[2px] transition-opacity"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        className="relative z-[1] flex max-h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-acg-border bg-acg-light shadow-2xl shadow-acg-blue/15 sm:max-h-[min(88vh,640px)] sm:rounded-2xl"
-      >
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          role="presentation"
+          className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{
+            opacity: 0,
+            transition: reduceMotionPreferred ? { duration: 0 } : { duration: 0.18 },
+          }}
+          transition={reduceMotionPreferred ? { duration: 0 } : { duration: 0.22 }}
+        >
+          <motion.button
+            type="button"
+            aria-label="Закрити"
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-[2px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={reduceMotionPreferred ? { duration: 0 } : { duration: 0.18 }}
+            onClick={onClose}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
+            initial={
+              reduceMotionPreferred ? { opacity: 1, y: 0 } : { opacity: 0, y: 14, scale: 0.98 }
+            }
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={
+              reduceMotionPreferred ? { opacity: 1, y: 0 } : { opacity: 0, y: 10, scale: 0.99 }
+            }
+            transition={
+              reduceMotionPreferred
+                ? { duration: 0 }
+                : { duration: 0.22, ease: [0.4, 0, 0.2, 1] }
+            }
+            className="relative z-[1] flex max-h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-acg-border bg-acg-light shadow-2xl shadow-acg-blue/15 sm:max-h-[min(88vh,640px)] sm:rounded-2xl"
+          >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-foreground/10 px-5 py-4 sm:px-6 sm:py-5">
           <div>
             <p
@@ -227,6 +271,52 @@ export default function ConsultationModal({
             >
               {headerCopy.description}
             </p>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => chooseConsultationType("free_consultation")}
+                className={`rounded-xl border px-3 py-2 text-left transition ${
+                  selectedConsultationType === "free_consultation"
+                    ? "border-acg-red bg-acg-red text-white"
+                    : "border-acg-red/30 bg-white text-acg-red hover:border-acg-red/55"
+                }`}
+              >
+                <span className="block text-[0.73rem] font-bold uppercase leading-tight tracking-[0.03em]">
+                  БЕЗКОШТОВНА КОНСУЛЬТАЦІЯ
+                </span>
+                <span
+                  className={`mt-1 block text-[0.62rem] font-semibold uppercase leading-tight tracking-[0.06em] ${
+                    selectedConsultationType === "free_consultation"
+                      ? "text-white/85"
+                      : "text-acg-red/70"
+                  }`}
+                >
+                  ШВИДКА ВІДПОВІДЬ У TELEGRAM
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseConsultationType("paid_consultation")}
+                className={`rounded-xl border px-3 py-2 text-left transition ${
+                  selectedConsultationType === "paid_consultation"
+                    ? "border-acg-red bg-acg-red text-white"
+                    : "border-acg-red/30 bg-white text-acg-red hover:border-acg-red/55"
+                }`}
+              >
+                <span className="block text-[0.73rem] font-bold uppercase leading-tight tracking-[0.03em]">
+                  ПЛАТНА КОНСУЛЬТАЦІЯ
+                </span>
+                <span
+                  className={`mt-1 block text-[0.62rem] font-semibold uppercase leading-tight tracking-[0.06em] ${
+                    selectedConsultationType === "paid_consultation"
+                      ? "text-white/85"
+                      : "text-acg-red/70"
+                  }`}
+                >
+                  ТРИВАЛІСТЬ 1 ГОД. З БУХГАЛТЕРОМ ТА ЮРИСТОМ
+                </span>
+              </button>
+            </div>
           </div>
           <button
             type="button"
@@ -393,7 +483,9 @@ export default function ConsultationModal({
             </form>
           )}
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }

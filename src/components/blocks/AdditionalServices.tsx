@@ -35,7 +35,10 @@ export default function AdditionalServices({
   items,
 }: AdditionalServicesProps) {
   const reduceMotionPreferred = useReducedMotion();
-  if (!items?.length) return null;
+  // IMPORTANT: hooks must be called in the same order on every render.
+  // So we avoid early-return before `useMemo` calls.
+  const safeItems = items ?? [];
+  const hasItems = safeItems.length > 0;
 
   const headingId = "additional-services-heading";
   const displayTitle = title?.trim() ?? "Додаткові послуги";
@@ -80,6 +83,8 @@ export default function AdditionalServices({
     [reduceMotionPreferred],
   );
 
+  if (!hasItems) return null;
+
   return (
     <section
       id="additional-services"
@@ -110,7 +115,7 @@ export default function AdditionalServices({
             </p>
           ) : null}
         </motion.header>
-        {items.map((item, i) => (
+        {safeItems.map((item, i) => (
           <motion.article
             key={`${item.title}-${i}`}
             variants={itemVariants}

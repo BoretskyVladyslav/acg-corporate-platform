@@ -151,8 +151,8 @@ export default function TrustBlock({
 
   return (
     <section
-      id="trust"
-      aria-labelledby="trust-heading"
+      id="reviews"
+      aria-labelledby="reviews-heading"
       className="bg-slate-50 text-foreground"
     >
       <motion.div
@@ -172,7 +172,7 @@ export default function TrustBlock({
             {displayEyebrow}
           </p>
           <h2
-            id="trust-heading"
+            id="reviews-heading"
             className={`${LANDING_SECTION_H2_SIZE} mt-3 text-acg-blue`}
           >
             {displayHeading}

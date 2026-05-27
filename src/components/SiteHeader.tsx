@@ -21,7 +21,9 @@ import {
   useState,
 } from "react";
 import { useLenis } from "@/src/components/SmoothScrolling";
+import ConsultationModal from "@/src/components/blocks/ConsultationModal";
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
+import { prepareConsultationGeneral } from "@/src/lib/leadIntent";
 import { lenisEasing } from "@/src/lib/lenisEasing";
 import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
 
@@ -41,11 +43,12 @@ function anchorFromHash(hash: string) {
 
 const NAV: { href: string; label: string }[] = [
   { href: "#about", label: "Про нас" },
-  { href: "#services", label: "Послуги" },
-  { href: "#pricing", label: "Тарифи" },
   { href: "#advantages", label: "Переваги" },
-  { href: "#trust", label: "Відгуки" },
+  { href: "#pricing", label: "Тарифи" },
+  { href: "#reviews", label: "Відгуки" },
+  { href: "#quick-call", label: "Швидкий дзвінок" },
   { href: "#faq", label: "FAQ" },
+  { href: "#contact", label: "Консультація" },
 ];
 
 const MOBILE_MENU_PHONE_DISPLAY = "+38 097 505 86 86";
@@ -103,12 +106,12 @@ function clampScrollProgress(scrollY: number) {
 
 const SPY_SECTION_IDS: string[] = [
   "about",
-  "services",
-  "pricing",
   "advantages",
-  "trust",
-  "contact",
+  "pricing",
+  "reviews",
+  "quick-call",
   "faq",
+  "contact",
 ];
 
 const linkBaseClass =
@@ -175,6 +178,8 @@ export default function SiteHeader() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [consultModalOpen, setConsultModalOpen] = useState(false);
+  const [consultModalKey, setConsultModalKey] = useState(0);
   const [headerOffsetPx, setHeaderOffsetPx] = useState(FALLBACK_HEADER_OFFSET_PX);
   const mobileMenuId = useId();
   const headerRootRef = useRef<HTMLElement | null>(null);
@@ -183,6 +188,8 @@ export default function SiteHeader() {
     el: HTMLElement;
     reduceMotion: boolean;
   } | null>(null);
+  // Щоб на мобайлі відкривати модалку ПО ПІСЛЯ завершення exit-анімації меню.
+  const pendingConsultationOpenRef = useRef(false);
   const intersectionRatiosRef = useRef<Map<string, number>>(new Map());
 
   useLayoutEffect(() => {
@@ -425,6 +432,12 @@ export default function SiteHeader() {
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
+  const openConsultationModal = useCallback(() => {
+    prepareConsultationGeneral();
+    setConsultModalKey((k) => k + 1);
+    setConsultModalOpen(true);
+  }, []);
+
   const performScrollTo = useCallback(
     (el: HTMLElement, reduceMotion: boolean) => {
       if (lenis) {
@@ -447,10 +460,19 @@ export default function SiteHeader() {
 
   const onMobileOverlayExitComplete = useCallback(() => {
     const p = pendingMobileScrollRef.current;
-    if (!p) return;
     pendingMobileScrollRef.current = null;
-    requestAnimationFrame(() => performScrollTo(p.el, p.reduceMotion));
-  }, [performScrollTo]);
+    const shouldOpenConsultation = pendingConsultationOpenRef.current;
+    pendingConsultationOpenRef.current = false;
+
+    if (p) {
+      requestAnimationFrame(() =>
+        performScrollTo(p.el, p.reduceMotion),
+      );
+    }
+    if (shouldOpenConsultation) {
+      openConsultationModal();
+    }
+  }, [performScrollTo, openConsultationModal]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -624,10 +646,12 @@ export default function SiteHeader() {
                     {NAV.map((item) => {
                       const id = anchorFromHash(item.href);
                       const isActive = activeSectionId === id;
-                      const showNavPill =
-                        isActive && activeSectionId !== "contact";
+                      const showNavPill = isActive;
                       return (
-                        <li key={item.href} className="relative list-none">
+                        <li
+                          key={`${item.href}-${item.label}`}
+                          className="relative list-none"
+                        >
                           {showNavPill ? (
                               <motion.div
                               layoutId={NAV_ACTIVE_PILL_LAYOUT_ID}
@@ -664,9 +688,9 @@ export default function SiteHeader() {
                 </div>
 
                 <div className="relative z-10 flex shrink-0 items-center gap-2">
-                  <motion.a
-                    href="#contact"
-                    onClick={(e) => scrollToSectionDesktop("#contact", e)}
+                  <motion.button
+                    type="button"
+                    onClick={openConsultationModal}
                     className={ctaShellClass}
                     style={{
                       boxShadow: CTA_REST_SHADOW,
@@ -675,10 +699,10 @@ export default function SiteHeader() {
                     initial={false}
                     whileHover={ctaWhileHover}
                     aria-current={
-                      activeSectionId === "contact" ? "location" : undefined
+                      consultModalOpen ? "location" : undefined
                     }
                   >
-                    {activeSectionId === "contact" ? (
+                    {consultModalOpen ? (
                       <motion.div
                         layoutId={NAV_ACTIVE_PILL_LAYOUT_ID}
                         aria-hidden
@@ -699,7 +723,7 @@ export default function SiteHeader() {
                         Консультація
                       </span>
                     </span>
-                  </motion.a>
+                  </motion.button>
                   <button
                     type="button"
                     className={burgerClass}
@@ -785,7 +809,7 @@ export default function SiteHeader() {
                 const isActive = activeSectionId === id;
                 return (
                   <motion.a
-                    key={item.href}
+                    key={`${item.href}-${item.label}`}
                     href={item.href}
                     variants={mobileMenuLinkVariants}
                     onClick={(e) =>
@@ -799,13 +823,15 @@ export default function SiteHeader() {
                 );
               })}
               <motion.a
-                href="#contact"
+                href="#"
                 variants={mobileMenuLinkVariants}
-                onClick={(e) =>
-                  scrollToSectionAndCloseMobile("#contact", e)
-                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  closeMobile();
+                  pendingConsultationOpenRef.current = true;
+                }}
                 className={`${mobileCtaClass} mt-12 will-change-transform ${
-                  activeSectionId === "contact"
+                  consultModalOpen
                     ? "ring-2 ring-acg-blue/30 ring-offset-2 ring-offset-white/90"
                     : ""
                 }`}
@@ -815,7 +841,7 @@ export default function SiteHeader() {
                 }}
                 whileHover={isMdUp ? ctaWhileHover : undefined}
                 aria-current={
-                  activeSectionId === "contact" ? "location" : undefined
+                  consultModalOpen ? "location" : undefined
                 }
               >
                 <span className={ctaLayerSolid} aria-hidden />
@@ -847,6 +873,11 @@ export default function SiteHeader() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+      <ConsultationModal
+        key={consultModalKey}
+        open={consultModalOpen}
+        onClose={() => setConsultModalOpen(false)}
+      />
     </>
   );
 }
