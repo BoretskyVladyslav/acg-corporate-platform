@@ -33,6 +33,33 @@ export const FOP_ACCOUNTING_SUB_TABS: ReadonlyArray<{
   { label: "Загальна система", tierName: "Загальна система" },
 ] as const;
 
+/** Стабільні індекси в `DEFAULT_PRICING_TIERS` — порядок табів і CMS-мердж. */
+export const PRICING_TIER_INDEX = {
+  consultation: 0,
+  fopRegistration: 1,
+  fopGroup1: 2,
+  fopGroup2: 3,
+  fopGroup3: 4,
+  fopGeneral: 5,
+  tovAccounting: 6,
+  otherServices: 7,
+} as const;
+
+const MAIN_TAB_TIER_INDEX: Record<PricingMainTabId, number> = {
+  consultation: PRICING_TIER_INDEX.consultation,
+  "fop-registration": PRICING_TIER_INDEX.fopRegistration,
+  "fop-accounting": PRICING_TIER_INDEX.fopGroup1,
+  "tov-accounting": PRICING_TIER_INDEX.tovAccounting,
+  "other-services": PRICING_TIER_INDEX.otherServices,
+};
+
+const FOP_ACCOUNTING_TIER_INDICES: readonly number[] = [
+  PRICING_TIER_INDEX.fopGroup1,
+  PRICING_TIER_INDEX.fopGroup2,
+  PRICING_TIER_INDEX.fopGroup3,
+  PRICING_TIER_INDEX.fopGeneral,
+];
+
 const FOP_GROUP_2_3_FEATURES: ServiceItem[] = [
   { title: "Всі послуги з 1-ї групи" },
   { title: "Подання заяв до податкової" },
@@ -143,6 +170,71 @@ function normalizeTierName(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function clampTierIndex(tiers: PricingTier[], index: number): number {
+  return index >= 0 && index < tiers.length ? index : 0;
+}
+
+function tiersMatchForFuzzy(name: string, target: string): boolean {
+  if (!name || !target) return false;
+  if (name === target) return true;
+  if (!name.includes(target) && !target.includes(name)) return false;
+
+  const shorter = Math.min(name.length, target.length);
+  const longer = Math.max(name.length, target.length);
+  if (shorter < 8 && shorter / longer < 0.55) return false;
+  return true;
+}
+
+/** Зіставлення CMS-назви з канонічним слотом каталогу (без «фоп» → «фоп 1 група»). */
+function cmsTierMatchesFallback(
+  cmsName: string | undefined,
+  fallbackName: string | undefined,
+): boolean {
+  const name = normalizeTierName(cmsName);
+  const target = normalizeTierName(fallbackName);
+  if (!name || !target) return false;
+  if (name === target) return true;
+
+  if (target.includes("фоп 1")) {
+    return /фоп/i.test(name) && /1/.test(name) && /груп/i.test(name);
+  }
+  if (target.includes("фоп 2")) {
+    return (
+      /фоп/i.test(name) &&
+      /2/.test(name) &&
+      (/груп/i.test(name) || /3/.test(name))
+    );
+  }
+  if (target.includes("фоп 3")) {
+    return /фоп/i.test(name) && /3/.test(name) && /груп/i.test(name);
+  }
+  if (target.includes("загальна система")) {
+    return /загальн/i.test(name) && /систем/i.test(name);
+  }
+  if (target.includes("консультація")) {
+    return /консультац/i.test(name);
+  }
+  if (target.includes("реєстрація") && target.includes("фоп")) {
+    return /реєстрац/i.test(name) && /фоп/i.test(name);
+  }
+  if (target.includes("тов")) {
+    return /тов|юридичн/i.test(name);
+  }
+  if (target.includes("інші послуги")) {
+    return /інш/i.test(name) && /послуг/i.test(name);
+  }
+
+  return tiersMatchForFuzzy(name, target);
+}
+
+function canonicalTierIndexForName(tierName: string): number | undefined {
+  const target = normalizeTierName(tierName);
+  const idx = DEFAULT_PRICING_TIERS.findIndex(
+    (tier) => normalizeTierName(tier.name) === target,
+  );
+  return idx >= 0 ? idx : undefined;
+}
+
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
   return t || fallback;
@@ -191,7 +283,9 @@ function mergeSingleTier(cms: PricingTier, fallback: PricingTier): PricingTier {
     typeof cms.isPopular === "boolean" ? cms.isPopular : Boolean(fallback.isPopular);
 
   const merged: PricingTier = {
-    name: textOr(cms.name, fallback.name ?? ""),
+    name: cmsTierMatchesFallback(cms.name, fallback.name)
+      ? textOr(cms.name, fallback.name ?? "")
+      : textOr(fallback.name, cms.name ?? ""),
     priceText: textOr(cms.priceText, fallback.priceText ?? ""),
     description,
     features,
@@ -254,9 +348,7 @@ function findCmsTierForDefault(
 
   const fuzzyIdx = cmsTiers.findIndex((tier, index) => {
     if (usedIndexes.has(index)) return false;
-    const name = normalizeTierName(tier.name);
-    if (!name) return false;
-    return name.includes(target) || target.includes(name);
+    return cmsTierMatchesFallback(tier.name, fallback.name);
   });
   if (fuzzyIdx >= 0) {
     usedIndexes.add(fuzzyIdx);
@@ -289,11 +381,17 @@ export function findTierIndexByName(
   );
   if (exact >= 0) return exact;
 
-  const fuzzy = tiers.findIndex((tier) => {
-    const name = normalizeTierName(tier.name);
-    return name.includes(target) || target.includes(name);
-  });
-  return fuzzy >= 0 ? fuzzy : 0;
+  const fuzzy = tiers.findIndex((tier) =>
+    tiersMatchForFuzzy(normalizeTierName(tier.name), target),
+  );
+  if (fuzzy >= 0) return fuzzy;
+
+  const canonical = canonicalTierIndexForName(tierName);
+  if (canonical !== undefined) {
+    return clampTierIndex(tiers, canonical);
+  }
+
+  return 0;
 }
 
 export function resolveActiveTierIndex(
@@ -304,21 +402,36 @@ export function resolveActiveTierIndex(
   if (mainTabId === "fop-accounting") {
     const safeSub = Math.min(
       Math.max(0, fopSubIndex),
-      FOP_ACCOUNTING_SUB_TABS.length - 1,
+      FOP_ACCOUNTING_TIER_INDICES.length - 1,
     );
-    return findTierIndexByName(
-      tiers,
-      FOP_ACCOUNTING_SUB_TABS[safeSub]?.tierName ?? "ФОП 1 група",
-    );
+    return clampTierIndex(tiers, FOP_ACCOUNTING_TIER_INDICES[safeSub]!);
   }
 
-  return findTierIndexByName(tiers, MAIN_TAB_TIER_NAMES[mainTabId]);
+  return clampTierIndex(tiers, MAIN_TAB_TIER_INDEX[mainTabId]);
 }
 
 export function inferNavigationFromTierIndex(
   tiers: PricingTier[],
   tierIndex: number,
 ): { mainTabId: PricingMainTabId; fopSubIndex: number } {
+  const fopByPosition = FOP_ACCOUNTING_TIER_INDICES.indexOf(tierIndex);
+  if (fopByPosition >= 0) {
+    return { mainTabId: "fop-accounting", fopSubIndex: fopByPosition };
+  }
+
+  switch (tierIndex) {
+    case PRICING_TIER_INDEX.consultation:
+      return { mainTabId: "consultation", fopSubIndex: 0 };
+    case PRICING_TIER_INDEX.fopRegistration:
+      return { mainTabId: "fop-registration", fopSubIndex: 0 };
+    case PRICING_TIER_INDEX.tovAccounting:
+      return { mainTabId: "tov-accounting", fopSubIndex: 0 };
+    case PRICING_TIER_INDEX.otherServices:
+      return { mainTabId: "other-services", fopSubIndex: 0 };
+    default:
+      break;
+  }
+
   const tierName = tiers[tierIndex]?.name ?? "";
   const normalized = normalizeTierName(tierName);
 

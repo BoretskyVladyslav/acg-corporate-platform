@@ -228,7 +228,7 @@ export default function Advantages({
               <h3 className="text-3xl font-bold tracking-wide text-acg-blue">
                 {item.title}
               </h3>
-              <p className="mt-3 max-w-2xl text-xl leading-relaxed text-foreground/75">
+              <p className="mt-3 w-full text-xl leading-relaxed text-foreground/75">
                 {item.description}
               </p>
             </motion.div>

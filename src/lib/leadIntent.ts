@@ -108,3 +108,39 @@ export function clearLeadIntent(): void {
     /* ignore */
   }
 }
+
+export type ConsultationModalCopy = {
+  title: string;
+  description: string;
+};
+
+/** Заголовок і підзаголовок модалки за типом консультації. */
+export function getConsultationModalCopy(
+  intent: LeadIntentValue | undefined,
+): ConsultationModalCopy {
+  switch (intent) {
+    case "free_consultation":
+      return {
+        title: "Безкоштовна консультація",
+        description:
+          "Залишіть контакти — відповімо у Telegram найближчим часом.",
+      };
+    case "paid_consultation":
+      return {
+        title: "Платна консультація (1 год)",
+        description:
+          "Консультація з бухгалтером та юристом. Заповніть форму — зв'яжемося для узгодження.",
+      };
+    case "general_consultation":
+      return {
+        title: "Замовити консультацію",
+        description:
+          "Коротко опишіть запит — підберемо формат без прив'язки до конкретного тарифу.",
+      };
+    default:
+      return {
+        title: "Отримати консультацію",
+        description: "Залишіть заявку — наші спеціалісти зв'яжуться з вами.",
+      };
+  }
+}

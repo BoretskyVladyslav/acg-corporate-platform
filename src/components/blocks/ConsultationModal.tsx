@@ -13,12 +13,8 @@ import {
 import { useIsMdUp } from "@/src/hooks/useIsMdUp";
 
 import {
-  LEAD_EMAIL_INVALID_MESSAGE,
-  filterLeadEmailInput,
-  isValidLeadEmail,
-} from "@/src/lib/leadEmail";
-import {
   clearLeadIntent,
+  getConsultationModalCopy,
   getLeadIntent,
   isTierlessConsultationIntent,
 } from "@/src/lib/leadIntent";
@@ -35,6 +31,10 @@ import {
 type ConsultationModalProps = {
   open: boolean;
   onClose: () => void;
+  /** Якщо не задано — береться з sessionStorage (`leadIntent`). */
+  title?: string;
+  /** Якщо не задано — береться з sessionStorage (`leadIntent`). */
+  description?: string;
 };
 
 function mapSubmitError(code: string | undefined): string {
@@ -43,8 +43,6 @@ function mapSubmitError(code: string | undefined): string {
       return "Заповніть усі обов'язкові поля.";
     case "invalid_phone":
       return UA_PHONE_ERROR;
-    case "invalid_email":
-      return LEAD_EMAIL_INVALID_MESSAGE;
     case "invalid_name":
       return "Вкажіть коректне ім'я.";
     case "auth_failed":
@@ -53,8 +51,6 @@ function mapSubmitError(code: string | undefined): string {
       return "Сервіс тимчасово недоступний. Спробуйте пізніше.";
     case "crm_rejected":
       return "Не вдалося зберегти заявку. Спробуйте ще раз.";
-    case "list_sync_failed":
-      return "Не вдалося зберегти email у розсилці. Спробуйте ще раз.";
     case "bad_json":
       return "Некоректні дані форми.";
     default:
@@ -65,20 +61,33 @@ function mapSubmitError(code: string | undefined): string {
 export default function ConsultationModal({
   open,
   onClose,
+  title: titleProp,
+  description: descriptionProp,
 }: ConsultationModalProps) {
   const titleId = useId();
   const descriptionId = useId();
+  const [headerCopy, setHeaderCopy] = useState(() =>
+    getConsultationModalCopy(undefined),
+  );
   const [name, setName] = useState("");
   const [phone, setPhone] = useState(UA_PHONE_INPUT_DEFAULT);
-  const [email, setEmail] = useState("");
+  const [callTime, setCallTime] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const isMdUp = useIsMdUp();
+
+  useEffect(() => {
+    if (!open) return;
+    const fromIntent = getConsultationModalCopy(getLeadIntent());
+    setHeaderCopy({
+      title: titleProp?.trim() || fromIntent.title,
+      description: descriptionProp?.trim() || fromIntent.description,
+    });
+  }, [open, titleProp, descriptionProp]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,7 +112,6 @@ export default function ConsultationModal({
       e.preventDefault();
       setSubmitError(null);
       setPhoneError(null);
-      setEmailError(null);
 
       if (!name.trim()) {
         setSubmitError("Заповніть ім'я.");
@@ -121,12 +129,6 @@ export default function ConsultationModal({
       const phoneE164 = normalizeUaPhone(phone);
       if (!phoneE164) {
         setPhoneError(UA_PHONE_ERROR);
-        return;
-      }
-
-      const emailTrim = email.trim();
-      if (emailTrim && !isValidLeadEmail(emailTrim)) {
-        setEmailError(LEAD_EMAIL_INVALID_MESSAGE);
         return;
       }
 
@@ -154,7 +156,7 @@ export default function ConsultationModal({
             name: name.trim(),
             phone: phoneE164,
             website: honeypot,
-            ...(email.trim() ? { email: email.trim() } : {}),
+            ...(callTime.trim() ? { callTime: callTime.trim() } : {}),
             ...(!tierlessConsultation && tierFromPricing
               ? { tier: tierFromPricing }
               : {}),
@@ -172,9 +174,8 @@ export default function ConsultationModal({
         setIsSuccess(true);
         setName("");
         setPhone(UA_PHONE_INPUT_DEFAULT);
-        setEmail("");
+        setCallTime("");
         setHoneypot("");
-        setEmailError(null);
         clearLeadIntent();
       } catch {
         setSubmitError(mapSubmitError(undefined));
@@ -182,7 +183,7 @@ export default function ConsultationModal({
         setIsSubmitting(false);
       }
     },
-    [name, phone, email, honeypot],
+    [name, phone, callTime, honeypot],
   );
 
   const inputClass =
@@ -190,10 +191,6 @@ export default function ConsultationModal({
 
   const phoneInputClass = `${inputClass} ${
     phoneError ? "border-acg-red/80 focus:border-acg-red focus:ring-acg-red/25" : ""
-  }`;
-
-  const emailInputClass = `${inputClass} ${
-    emailError ? "border-acg-red/80 focus:border-acg-red focus:ring-acg-red/25" : ""
   }`;
 
   if (!open) return null;
@@ -222,14 +219,13 @@ export default function ConsultationModal({
               id={titleId}
               className="text-lg font-semibold tracking-tight text-acg-blue sm:text-xl"
             >
-              Отримати консультацію
+              {headerCopy.title}
             </p>
             <p
               id={descriptionId}
               className="mt-1 text-sm leading-relaxed text-foreground/70"
             >
-              Коротко опишіть запит — підберемо формат без прив&apos;язки до
-              конкретного тарифу.
+              {headerCopy.description}
             </p>
           </div>
           <button
@@ -354,46 +350,24 @@ export default function ConsultationModal({
               </div>
               <div>
                 <label
-                  htmlFor="modal-lead-email"
+                  htmlFor="modal-lead-call-time"
                   className="block text-sm font-medium text-foreground/80"
                 >
-                  Email
+                  Зручний час для дзвінка{" "}
+                  <span className="font-normal text-foreground/50">
+                    (необов&apos;язково)
+                  </span>
                 </label>
                 <input
-                  id="modal-lead-email"
-                  name="email"
+                  id="modal-lead-call-time"
+                  name="callTime"
                   type="text"
-                  autoComplete="email"
-                  inputMode="email"
-                  value={email}
-                  onChange={(ev) => {
-                    const next = filterLeadEmailInput(ev.target.value);
-                    setEmail(next);
-                    if (
-                      emailError &&
-                      (!next.trim() || isValidLeadEmail(next))
-                    ) {
-                      setEmailError(null);
-                    }
-                  }}
-                  onBlur={() => {
-                    const t = email.trim();
-                    if (!t) {
-                      setEmailError(null);
-                      return;
-                    }
-                    setEmailError(
-                      isValidLeadEmail(t) ? null : LEAD_EMAIL_INVALID_MESSAGE,
-                    );
-                  }}
-                  aria-invalid={emailError ? true : undefined}
-                  className={emailInputClass}
+                  autoComplete="off"
+                  value={callTime}
+                  onChange={(ev) => setCallTime(ev.target.value)}
+                  placeholder="Наприклад: після 18:00 або з 10 до 12"
+                  className={inputClass}
                 />
-                {emailError ? (
-                  <p className="mt-2 text-sm font-medium text-acg-red" role="alert">
-                    {emailError}
-                  </p>
-                ) : null}
               </div>
               <div className="pt-1">
                 <motion.button

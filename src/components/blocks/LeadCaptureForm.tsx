@@ -19,11 +19,6 @@ import {
 } from "@/src/lib/landingSectionRhythm";
 
 import {
-  LEAD_EMAIL_INVALID_MESSAGE,
-  filterLeadEmailInput,
-  isValidLeadEmail,
-} from "@/src/lib/leadEmail";
-import {
   clearLeadIntent,
   getLeadIntent,
   isTierlessConsultationIntent,
@@ -41,12 +36,20 @@ import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
 
 export interface LeadCaptureFormProps {
   eyebrow?: string;
+  /** Заголовок секції (пріоритет над `heading`). */
+  title?: string;
+  /** Підзаголовок секції (пріоритет над `description`). */
+  subtitle?: string;
+  /** @deprecated Використовуйте `title`. */
   heading?: string;
+  /** @deprecated Використовуйте `subtitle`. */
   description?: string;
   submitLabel?: string;
   addressLine?: string;
   phoneDisplay?: string;
   service?: string;
+  /** HTML id секції (для якорів навігації). */
+  sectionId?: string;
 }
 
 function mapSubmitError(code: string | undefined): string {
@@ -55,8 +58,6 @@ function mapSubmitError(code: string | undefined): string {
       return "Заповніть усі обов'язкові поля.";
     case "invalid_phone":
       return UA_PHONE_ERROR;
-    case "invalid_email":
-      return LEAD_EMAIL_INVALID_MESSAGE;
     case "invalid_name":
       return "Вкажіть коректне ім'я.";
     case "auth_failed":
@@ -65,8 +66,6 @@ function mapSubmitError(code: string | undefined): string {
       return "Сервіс тимчасово недоступний. Спробуйте пізніше.";
     case "crm_rejected":
       return "Не вдалося зберегти заявку. Спробуйте ще раз.";
-    case "list_sync_failed":
-      return "Не вдалося зберегти email у розсилці. Спробуйте ще раз.";
     case "bad_json":
       return "Некоректні дані форми.";
     default:
@@ -78,6 +77,8 @@ const DEFAULT_PHONE_DISPLAY = "+38 097 505 86 86";
 
 export default function LeadCaptureForm({
   eyebrow = "Контакти",
+  title,
+  subtitle,
   heading = "Замовити консультацію",
   description =
     "Залишіть заявку, і наші спеціалісти зв'яжуться з вами найближчим часом.",
@@ -85,13 +86,17 @@ export default function LeadCaptureForm({
   addressLine = "М. КИЇВ, ВУЛ. САКСАГАНСЬКОГО 28.",
   phoneDisplay = DEFAULT_PHONE_DISPLAY,
   service,
+  sectionId = "contact",
 }: LeadCaptureFormProps) {
+  const sectionTitle = title ?? heading;
+  const sectionSubtitle = subtitle ?? description;
+  const headingId = `${sectionId}-heading`;
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState(UA_PHONE_INPUT_DEFAULT);
-  const [email, setEmail] = useState("");
+  const [callTime, setCallTime] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -103,7 +108,6 @@ export default function LeadCaptureForm({
       e.preventDefault();
       setSubmitError(null);
       setPhoneError(null);
-      setEmailError(null);
 
       if (!name.trim()) {
         setSubmitError("Заповніть ім'я.");
@@ -121,12 +125,6 @@ export default function LeadCaptureForm({
       const phoneE164 = normalizeUaPhone(phone);
       if (!phoneE164) {
         setPhoneError(UA_PHONE_ERROR);
-        return;
-      }
-
-      const emailTrim = email.trim();
-      if (emailTrim && !isValidLeadEmail(emailTrim)) {
-        setEmailError(LEAD_EMAIL_INVALID_MESSAGE);
         return;
       }
 
@@ -154,7 +152,7 @@ export default function LeadCaptureForm({
             name: name.trim(),
             phone: phoneE164,
             website: honeypot,
-            ...(email.trim() ? { email: email.trim() } : {}),
+            ...(callTime.trim() ? { callTime: callTime.trim() } : {}),
             ...(service?.trim() && !tierlessConsultation
               ? { service: service.trim() }
               : {}),
@@ -175,9 +173,8 @@ export default function LeadCaptureForm({
         setIsSuccess(true);
         setName("");
         setPhone(UA_PHONE_INPUT_DEFAULT);
-        setEmail("");
+        setCallTime("");
         setHoneypot("");
-        setEmailError(null);
         clearLeadIntent();
       } catch {
         setSubmitError(mapSubmitError(undefined));
@@ -185,7 +182,7 @@ export default function LeadCaptureForm({
         setIsSubmitting(false);
       }
     },
-    [name, phone, email, honeypot, service],
+    [name, phone, callTime, honeypot, service],
   );
 
   const inputClass =
@@ -197,20 +194,14 @@ export default function LeadCaptureForm({
       : ""
   }`;
 
-  const emailInputClass = `${inputClass} ${
-    emailError
-      ? "border-acg-red/80 focus:border-acg-red focus:ring-acg-red/25"
-      : ""
-  }`;
-
   const phoneTelHref =
     telHrefFromDisplay(phoneDisplay) ??
     telHrefFromDisplay(DEFAULT_PHONE_DISPLAY);
 
   return (
     <section
-      id="contact"
-      aria-labelledby="lead-form-heading"
+      id={sectionId}
+      aria-labelledby={headingId}
       className={LANDING_LEAD_SECTION_CLASS}
     >
       <div className={LANDING_LEAD_SECTION_GLOW} aria-hidden />
@@ -228,13 +219,13 @@ export default function LeadCaptureForm({
           <div className="max-w-xl lg:pt-2">
             <p className={LANDING_LEAD_EYEBROW_ON_ACCENT}>{eyebrow}</p>
             <h2
-              id="lead-form-heading"
+              id={headingId}
               className={`${LANDING_SECTION_H2_SIZE} mt-3 ${LANDING_LEAD_H2_ON_ACCENT}`}
             >
-              {heading}
+              {sectionTitle}
             </h2>
             <p className={`mt-4 ${LANDING_LEAD_LEDE_ON_ACCENT}`}>
-              {description}
+              {sectionSubtitle}
             </p>
             <dl className="mt-12 space-y-10">
               <div>
@@ -408,63 +399,24 @@ export default function LeadCaptureForm({
                 </div>
                 <div>
                   <label
-                    htmlFor="lead-email"
+                    htmlFor="lead-call-time"
                     className="block text-sm font-medium text-foreground/80"
                   >
-                    Email
+                    Зручний час для дзвінка{" "}
+                    <span className="font-normal text-foreground/50">
+                      (необов&apos;язково)
+                    </span>
                   </label>
                   <input
-                    id="lead-email"
-                    name="email"
+                    id="lead-call-time"
+                    name="callTime"
                     type="text"
-                    autoComplete="email"
-                    inputMode="email"
-                    value={email}
-                    onChange={(ev) => {
-                      const next = filterLeadEmailInput(ev.target.value);
-                      setEmail(next);
-                      if (
-                        emailError &&
-                        (!next.trim() || isValidLeadEmail(next))
-                      ) {
-                        setEmailError(null);
-                      }
-                    }}
-                    onBlur={() => {
-                      const t = email.trim();
-                      if (!t) {
-                        setEmailError(null);
-                        return;
-                      }
-                      setEmailError(
-                        isValidLeadEmail(t)
-                          ? null
-                          : LEAD_EMAIL_INVALID_MESSAGE,
-                      );
-                    }}
-                    aria-invalid={emailError ? true : undefined}
-                    aria-describedby={
-                      emailError
-                        ? "lead-email-error lead-email-hint"
-                        : "lead-email-hint"
-                    }
-                    className={emailInputClass}
+                    autoComplete="off"
+                    value={callTime}
+                    onChange={(ev) => setCallTime(ev.target.value)}
+                    placeholder="Наприклад: після 18:00 або з 10 до 12"
+                    className={inputClass}
                   />
-                  <p
-                    id="lead-email-hint"
-                    className={`mt-1.5 text-xs ${emailError ? "text-foreground/40" : "text-foreground/50"}`}
-                  >
-                    Латиниця, цифри та символи @ . _ + -
-                  </p>
-                  {emailError ? (
-                    <p
-                      id="lead-email-error"
-                      className="mt-2 text-sm font-medium text-acg-red"
-                      role="alert"
-                    >
-                      {emailError}
-                    </p>
-                  ) : null}
                 </div>
                 <div className="pt-2">
                   <motion.button

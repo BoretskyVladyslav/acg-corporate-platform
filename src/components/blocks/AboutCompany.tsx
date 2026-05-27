@@ -31,9 +31,9 @@ type AboutMetricConfig = {
 };
 
 export const DEFAULT_ABOUT_METRICS: AboutMetricConfig[] = [
-  { value: "1000+", label: "клієнтів", icon: Users },
-  { value: "14", label: "років досвіду", icon: CalendarRange },
-  { value: "50+", label: "видів послуг", icon: Layers },
+  { value: "900+", label: "клієнтів", icon: Users },
+  { value: "10+", label: "років досвіду", icon: CalendarRange },
+  { value: "100%", label: "звітність", icon: Layers },
   { value: "3", label: "рівні контролю", icon: ShieldCheck },
 ];
 
@@ -169,18 +169,12 @@ const metricsGridReveal = {
 
 function MetricIconBadge({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <div className="relative mx-auto mb-4 flex size-[4.25rem] items-center justify-center sm:size-[4.75rem]">
-      <span
-        className="absolute inset-0 rounded-full border border-acg-blue/20"
+    <div className="relative z-10 mx-auto mb-3 flex size-12 items-center justify-center rounded-full border border-acg-blue/25 bg-slate-50 shadow-sm ring-4 ring-slate-50 sm:mb-4 sm:size-14 md:size-16">
+      <Icon
+        className="size-5 text-acg-blue sm:size-[1.35rem] md:size-6"
+        strokeWidth={1.75}
         aria-hidden
       />
-      <span
-        className="absolute inset-[0.45rem] rounded-full border border-acg-blue/30 sm:inset-2"
-        aria-hidden
-      />
-      <span className="relative flex size-10 items-center justify-center rounded-full bg-acg-blue/[0.08] text-acg-blue sm:size-11">
-        <Icon className="size-5 sm:size-[1.35rem]" strokeWidth={1.75} aria-hidden />
-      </span>
     </div>
   );
 }
@@ -274,18 +268,14 @@ export default function AboutCompany({
           variants={metricsRevealVariants}
           role="list"
           aria-label="Ключові показники"
-          className="relative mt-10 md:mt-12"
+          className="relative mt-10 md:mt-14"
         >
           <div
-            className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-[2.125rem] hidden border-t border-dashed border-acg-blue/30 lg:block"
-            aria-hidden
-          />
-          <div
-            className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-[2.375rem] hidden h-px bg-gradient-to-r from-transparent via-acg-blue/20 to-transparent lg:block"
+            className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-6 border-t border-dashed border-acg-blue/35 sm:top-7 md:top-8"
             aria-hidden
           />
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4 lg:gap-x-8">
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
             {resolvedMetrics.map((metric, i) => {
               const Icon = metric.icon;
 
@@ -294,13 +284,13 @@ export default function AboutCompany({
                   key={`${metric.value}__${metric.label}__${i}`}
                   role="listitem"
                   variants={itemVariants}
-                  className="relative flex min-w-0 flex-col items-center px-1 text-center"
+                  className="relative flex min-w-0 flex-col items-center px-0.5 text-center sm:px-1"
                 >
                   <MetricIconBadge icon={Icon} />
-                  <p className="text-[1.65rem] font-bold leading-none tracking-tight text-acg-blue sm:text-[2rem] lg:text-[2.125rem]">
+                  <p className="text-xl font-bold leading-none tracking-tight text-acg-blue sm:text-3xl md:text-[2rem] lg:text-[2.125rem]">
                     {metric.value}
                   </p>
-                  <p className="mt-2 max-w-[9rem] text-sm leading-snug text-foreground/55 sm:text-[0.9375rem]">
+                  <p className="mt-1.5 text-[0.6875rem] leading-snug text-foreground/50 sm:mt-2 sm:text-sm">
                     {metric.label}
                   </p>
                 </motion.article>

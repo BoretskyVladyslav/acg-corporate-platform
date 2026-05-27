@@ -10,6 +10,8 @@ type Body = {
   name?: string;
   phone?: string;
   email?: string;
+  /** Зручний час для дзвінка (опціонально). */
+  callTime?: string;
   service?: string;
   /** Останній обраний тариф з блоку Pricing (sessionStorage). */
   tier?: string;
@@ -63,6 +65,7 @@ function buildTelegramLeadText(input: {
   name: string;
   phone: string;
   email?: string;
+  callTime?: string;
   service?: string;
   tier?: string;
   leadIntent?: LeadIntentKind;
@@ -74,6 +77,11 @@ function buildTelegramLeadText(input: {
     `👤 <b>Ім'я:</b> ${name}`,
     `📞 <b>Телефон:</b> ${phone}`,
   ];
+  if (input.callTime?.trim()) {
+    lines.push(
+      `🕐 <b>Зручний час:</b> ${escapeTelegramHtml(input.callTime.trim())}`,
+    );
+  }
   if (input.leadIntent) {
     lines.push(
       `📋 <b>Консультація:</b> ${escapeTelegramHtml(leadIntentStatusLabel(input.leadIntent))}`,
@@ -239,6 +247,7 @@ async function createCrmContactAndDeal(input: {
   name: string;
   phone: string;
   email?: string;
+  callTime?: string;
   tier?: string;
   service?: string;
   leadIntent?: LeadIntentKind;
@@ -264,6 +273,13 @@ async function createCrmContactAndDeal(input: {
       attributes.push({
         name: "Послуга",
         value: input.service.trim().slice(0, 500),
+        type: 0,
+      });
+    }
+    if (input.callTime?.trim()) {
+      attributes.push({
+        name: "Зручний час для дзвінка",
+        value: input.callTime.trim().slice(0, 500),
         type: 0,
       });
     }
@@ -419,6 +435,8 @@ export async function POST(req: Request) {
   const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : "";
   const emailRaw =
     typeof body.email === "string" ? body.email.trim() : "";
+  const callTime =
+    typeof body.callTime === "string" ? body.callTime.trim() : undefined;
   const service =
     typeof body.service === "string" ? body.service.trim() : undefined;
   const tier =
@@ -466,20 +484,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (listReady && !crmReady) {
-    if (!emailRaw) {
-      return NextResponse.json(
-        { ok: false, error: "required_fields" },
-        { status: 400 },
-      );
-    }
-    if (!isValidLeadEmail(emailRaw)) {
-      return NextResponse.json(
-        { ok: false, error: "invalid_email" },
-        { status: 400 },
-      );
-    }
-  } else if (emailRaw && !isValidLeadEmail(emailRaw)) {
+  if (emailRaw && !isValidLeadEmail(emailRaw)) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
   }
 
@@ -501,6 +506,7 @@ export async function POST(req: Request) {
       name,
       phone,
       ...(emailRaw ? { email: emailRaw } : {}),
+      ...(callTime ? { callTime } : {}),
       ...(!tierlessConsultation && tier ? { tier } : {}),
       ...(!tierlessConsultation && service ? { service } : {}),
       ...(leadIntent ? { leadIntent } : {}),
@@ -541,6 +547,7 @@ export async function POST(req: Request) {
         name,
         phone,
         ...(emailRaw ? { email: emailRaw } : {}),
+        ...(callTime ? { callTime } : {}),
         ...(!tierlessConsultation && service ? { service } : {}),
         ...(!tierlessConsultation && tier ? { tier } : {}),
         ...(leadIntent ? { leadIntent } : {}),

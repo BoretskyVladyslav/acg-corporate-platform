@@ -43,8 +43,15 @@ export interface HeroProps {
 
 const HERO_TEAM_IMAGE_ALT = "Команда ACG Accounting";
 
-const FREE_CTA_LABEL = "Безкоштовна консультація";
-const PAID_CTA_LABEL = "Платна консультація";
+const HERO_FREE_CTA = {
+  label: "ОТРИМАТИ ПЕРВИНУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО",
+  hint: "ШВИДКА ВІДПОВІДЬ У TELEGRAM",
+} as const;
+
+const HERO_PAID_CTA = {
+  label: "КОНСУЛЬТАЦІЯ",
+  hint: "ТРИВАЛІСТЬ 1 ГОД. З БУХГАЛТЕРОМ ТА ЮРИСТОМ",
+} as const;
 
 type HeroNavCard = {
   title: string;
@@ -192,6 +199,42 @@ const grainPatternUrl =
 
 const ctaShineClass =
   "relative overflow-hidden after:pointer-events-none after:absolute after:inset-0 after:z-10 after:bg-gradient-to-r after:from-transparent after:via-white/35 after:to-transparent after:content-[''] md:after:animate-[hero-cta-shine_6.5s_ease-in-out_infinite] motion-reduce:after:animate-none";
+
+const heroPrimaryCtaClass = `${ctaShineClass} inline-flex min-h-[4.25rem] w-full flex-1 items-center justify-center rounded-2xl bg-acg-red px-4 py-3.5 text-center shadow-md shadow-acg-red/20 transition-colors hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 sm:min-h-[4.5rem] sm:px-5 sm:py-4`;
+
+const heroSecondaryCtaClass = `${ctaShineClass} inline-flex min-h-[4.25rem] w-full flex-1 items-center justify-center rounded-2xl border-2 border-acg-red/25 bg-white px-4 py-3.5 text-center shadow-sm transition hover:border-acg-red/45 hover:bg-acg-red/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 sm:min-h-[4.5rem] sm:px-5 sm:py-4`;
+
+function HeroConsultationCta({
+  variant,
+  onClick,
+}: {
+  variant: "free" | "paid";
+  onClick: () => void;
+}) {
+  const copy = variant === "free" ? HERO_FREE_CTA : HERO_PAID_CTA;
+  const hintClass =
+    variant === "free"
+      ? "text-[0.625rem] font-semibold uppercase leading-snug tracking-[0.06em] text-white/85 sm:text-[0.6875rem]"
+      : "text-[0.625rem] font-semibold uppercase leading-snug tracking-[0.06em] text-acg-red/70 sm:text-[0.6875rem]";
+
+  const labelClass =
+    variant === "free"
+      ? "text-[0.6875rem] font-bold uppercase leading-[1.2] tracking-[0.04em] text-white sm:text-xs lg:text-[0.8125rem]"
+      : "text-[0.6875rem] font-bold uppercase leading-[1.2] tracking-[0.04em] text-acg-red sm:text-xs lg:text-[0.8125rem]";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={variant === "free" ? heroPrimaryCtaClass : heroSecondaryCtaClass}
+    >
+      <span className="relative z-20 flex max-w-[18rem] flex-col items-center gap-1.5 sm:max-w-[14rem] lg:max-w-[16rem]">
+        <span className={labelClass}>{copy.label}</span>
+        <span className={hintClass}>{copy.hint}</span>
+      </span>
+    </button>
+  );
+}
 
 const heroPhotoCardClass =
   "relative mx-auto w-full max-w-[min(100%,36rem)] aspect-square min-w-0";
@@ -502,23 +545,17 @@ export default function HeroClient({
                 </motion.div>
               </motion.div>
               <motion.div
-                className="flex w-full flex-col gap-2.5 sm:flex-row sm:items-stretch sm:gap-3"
+                className="flex w-full flex-col gap-2.5 md:flex-row md:items-stretch md:gap-3"
                 variants={itemMotion}
               >
-                <button
-                  type="button"
+                <HeroConsultationCta
+                  variant="free"
                   onClick={() => openConsultationModal("free_consultation")}
-                  className={`${ctaShineClass} inline-flex min-h-11 w-full flex-1 items-center justify-center rounded-full bg-acg-red px-5 py-2.5 text-sm font-semibold leading-tight text-white transition-colors hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 sm:min-h-12 sm:text-base`}
-                >
-                  <span className="relative z-20">{FREE_CTA_LABEL}</span>
-                </button>
-                <button
-                  type="button"
+                />
+                <HeroConsultationCta
+                  variant="paid"
                   onClick={() => openConsultationModal("paid_consultation")}
-                  className={`${ctaShineClass} inline-flex min-h-11 w-full flex-1 items-center justify-center rounded-full border-2 border-acg-red/25 bg-white px-5 py-2.5 text-sm font-semibold leading-tight text-acg-red transition hover:border-acg-red/45 hover:bg-acg-red/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 sm:min-h-12 sm:text-base`}
-                >
-                  <span className="relative z-20">{PAID_CTA_LABEL}</span>
-                </button>
+                />
               </motion.div>
 
               {/* Мобільне фото команди — квадратне, без апскейлу вище нативної роздільності. */}

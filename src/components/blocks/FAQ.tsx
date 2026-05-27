@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Phone, Plus, Send } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 
 import ConsultationModal from "./ConsultationModal";
@@ -15,10 +15,7 @@ import {
   LANDING_SECTION_LEDE,
   LANDING_SECTION_SHELL,
 } from "@/src/lib/landingSectionRhythm";
-import { externalLinkProps } from "@/src/lib/externalLink";
 import { prepareConsultationGeneral } from "@/src/lib/leadIntent";
-import { telHrefFromDisplay } from "@/src/lib/telHrefFromDisplay";
-import { ACG_TELEGRAM_LEADS_URL } from "@/src/lib/telegram";
 
 export interface FaqItem {
   question?: string;
@@ -40,7 +37,6 @@ export interface FAQProps {
 const DEFAULT_FAQ_EYEBROW = "FAQ";
 const DEFAULT_FAQ_HEADING = "Популярні запитання";
 const DEFAULT_FAQ_INTRO = "Відповіді на часті питання наших клієнтів";
-const DEFAULT_FAQ_FOOTER_NOTE = "© {year} Назва компанії. Усі права захищені.";
 
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
@@ -92,12 +88,6 @@ const defaultItems: FaqItem[] = [
 const FAQ_INDIVIDUAL_CTA_COPY =
   "Маєте індивідуальне запитання? Наші експерти готові допомогти.";
 
-/** Додаткові посилання під FAQ не редагуються в Sanity — лише в коді. */
-const STATIC_FOOTER_NAV_LINKS: Array<{ label: string; href: string }> = [
-  { label: "Конфіденційність", href: "#" },
-  { label: "Умови", href: "#" },
-];
-
 const revealEase = [0.22, 1, 0.36, 1] as const;
 
 function formatItemIndex(i: number) {
@@ -110,8 +100,6 @@ export default function FAQ({
   intro,
   items,
   footerButtonText,
-  footerNote,
-  phoneDisplay,
 }: FAQProps) {
   const displayEyebrow = textOr(eyebrow, DEFAULT_FAQ_EYEBROW);
   const displayHeading = textOr(heading, DEFAULT_FAQ_HEADING);
@@ -122,11 +110,6 @@ export default function FAQ({
     typeof footerButtonText === "string" ? footerButtonText.trim() : "";
   const showFaqConsultCta = Boolean(trimmedFooterButtonText);
 
-  const footerPhoneHref = telHrefFromDisplay(phoneDisplay);
-
-  const year = new Date().getFullYear();
-  const footerNoteTemplate = textOr(footerNote, DEFAULT_FAQ_FOOTER_NOTE);
-  const resolvedNote = footerNoteTemplate.replace("{year}", String(year));
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [consultModalOpen, setConsultModalOpen] = useState(false);
   const [consultModalKey, setConsultModalKey] = useState(0);
@@ -300,54 +283,6 @@ export default function FAQ({
             />
           </>
         ) : null}
-
-        <footer className="mt-10 border-t border-acg-border pt-8 sm:mt-12 w-full">
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="min-w-0 text-xs text-foreground/50 sm:text-sm">
-                {resolvedNote}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:gap-x-6">
-                <a
-                  href={ACG_TELEGRAM_LEADS_URL}
-                  {...externalLinkProps(ACG_TELEGRAM_LEADS_URL)}
-                  className="inline-flex items-center gap-2 text-foreground/70 transition hover:text-[#229ED9]"
-                  aria-label="Telegram @acg_leads_bot"
-                >
-                  <Send className="size-5 shrink-0 text-[#229ED9]" aria-hidden />
-                  <span className="text-sm font-medium">Telegram</span>
-                </a>
-                {phoneDisplay?.trim() && footerPhoneHref ? (
-                  <a
-                    href={footerPhoneHref}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-foreground/75 transition hover:text-acg-blue"
-                  >
-                    <Phone className="size-4 shrink-0 text-acg-blue" aria-hidden />
-                    <span>{phoneDisplay.trim()}</span>
-                  </a>
-                ) : null}
-              </div>
-            </div>
-            <nav aria-label="Додаткові посилання" className="border-t border-foreground/[0.06] pt-4">
-              <ul className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground/45">
-                {STATIC_FOOTER_NAV_LINKS.map((link, i) => {
-                  const href = link.href;
-                  return (
-                    <li key={i}>
-                      <a
-                        href={href}
-                        {...externalLinkProps(href)}
-                        className="underline-offset-2 hover:text-acg-blue/90 hover:underline"
-                      >
-                        {link.label}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-          </div>
-        </footer>
       </motion.div>
     </section>
   );

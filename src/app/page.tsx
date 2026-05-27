@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 
-import AboutCompany from "@/src/components/blocks/AboutCompany";
-import AdditionalServices from "@/src/components/blocks/AdditionalServices";
 import Advantages from "@/src/components/blocks/Advantages";
 import FAQ from "@/src/components/blocks/FAQ";
 import Hero from "@/src/components/blocks/Hero";
 import LeadCaptureForm from "@/src/components/blocks/LeadCaptureForm";
 import Pricing from "@/src/components/blocks/Pricing";
-import Services from "@/src/components/blocks/Services";
 import TrustBlock from "@/src/components/blocks/TrustBlock";
+import SiteFooter from "@/src/components/SiteFooter";
 import SiteHeader from "@/src/components/SiteHeader";
 import { loadLandingPageForHome } from "@/sanity/lib/loadLandingPage";
 import {
@@ -55,32 +53,35 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const {
-    hero,
-    about,
-    services,
-    additionalServices,
-    pricing,
-    advantages,
-    trust,
-    faq,
-    contact,
-  } = await loadLandingPageForHome();
+  const { hero, pricing, advantages, trust, faq, contact } =
+    await loadLandingPageForHome();
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <SiteHeader />
       <main className="min-w-0 flex-1 overflow-x-clip">
         <Hero {...hero} />
-        <AboutCompany {...about} />
         <Advantages {...advantages} />
         <Pricing {...pricing} />
-        <Services {...services} />
         <TrustBlock {...trust} />
-        <LeadCaptureForm {...contact} />
-        <AdditionalServices {...additionalServices} />
-        <FAQ {...faq} phoneDisplay={contact.phoneDisplay} />
+        <LeadCaptureForm
+          {...contact}
+          sectionId="quick-call"
+          title="Швидкий дзвінок"
+          subtitle="Залиште номер, і ми зателефонуємо у зручний для вас час"
+        />
+        <FAQ {...faq} />
+        <LeadCaptureForm
+          {...contact}
+          sectionId="contact"
+          title="Замовити консультацію"
+          subtitle="Залишіть заявку, і наші спеціалісти зв'яжуться з вами"
+        />
       </main>
+      <SiteFooter
+        phoneDisplay={contact.phoneDisplay}
+        footerNote={faq.footerNote}
+      />
     </div>
   );
 }
