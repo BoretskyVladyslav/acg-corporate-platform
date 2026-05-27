@@ -611,6 +611,7 @@ function PricingCheckoutPanel({
   const gapClass = Math.max(mainFeatures.length, descLines.length) > 6 ? "gap-2.5" : "gap-3";
   const priceDisplayRaw = tier.priceText?.trim() ?? "";
   const popular = isPopularTier(tier);
+  const isRegistrationTier = /реєстрац/i.test(tier.name ?? "");
   const ctaBase = popular
     ? "bg-acg-red ring-2 ring-amber-300/60 hover:bg-acg-red/92"
     : "bg-acg-red shadow-lg shadow-acg-red/25 hover:bg-acg-red/92";
@@ -624,8 +625,18 @@ function PricingCheckoutPanel({
     reduceMotionPreferred || !isMdUp ? {} : { boxShadow: ctaPulseShadowRed };
 
   return (
-    <div className="flex min-h-[min(28rem,82svh)] flex-col md:min-h-[26rem] md:flex-row md:items-stretch">
-      <div className="relative flex min-h-0 flex-1 flex-col border-b border-acg-blue/[0.1] p-6 sm:p-8 md:border-b-0 md:border-r lg:basis-[62%] lg:p-10 lg:pl-11">
+    <div
+      className={`flex flex-col md:flex-row md:items-stretch ${
+        isRegistrationTier
+          ? "min-h-[min(23rem,72svh)] md:min-h-[22rem]"
+          : "min-h-[min(28rem,82svh)] md:min-h-[26rem]"
+      }`}
+    >
+      <div
+        className={`relative flex min-h-0 flex-1 flex-col border-b border-acg-blue/[0.1] p-6 sm:p-8 md:border-b-0 md:border-r lg:p-10 lg:pl-11 ${
+          isRegistrationTier ? "lg:basis-[68%]" : "lg:basis-[62%]"
+        }`}
+      >
         {popular ? (
           <span className="mb-3 inline-flex w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-950 ring-1 ring-amber-300/70">
             Рекомендовано
@@ -814,7 +825,7 @@ function PricingCheckoutPanel({
           popular
             ? "bg-[linear-gradient(165deg,color-mix(in_oklab,var(--color-acg-blue)_6%,transparent)_0%,#fff_38%,rgb(254_252_232/0.7)_100%)]"
             : "bg-gradient-to-b from-acg-blue/[0.035] to-white"
-        }`}
+        } ${isRegistrationTier ? "lg:basis-[32%]" : "lg:basis-[38%]"}`}
       >
         <div className="min-w-0 flex-1 pb-6">
           {isPlaceholder ? (

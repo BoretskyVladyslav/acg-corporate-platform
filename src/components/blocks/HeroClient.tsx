@@ -8,7 +8,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { Building2, LayoutGrid, TrendingUp, UserPlus } from "lucide-react";
+import { Building2, TrendingUp, UserPlus } from "lucide-react";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent as AnchorMouseEvent } from "react";
@@ -51,6 +51,7 @@ const HERO_FREE_CTA = {
 const HERO_PAID_CTA = {
   label: "КОНСУЛЬТАЦІЯ",
   hint: "ТРИВАЛІСТЬ 1 ГОД. З БУХГАЛТЕРОМ ТА ЮРИСТОМ",
+  price: "2000 грн",
 } as const;
 
 type HeroNavCard = {
@@ -70,23 +71,11 @@ const HERO_NAV_CARDS: HeroNavCard[] = [
     pricingPreset: "fop-registration",
   },
   {
-    title: "Бухгалтерія для ФОП",
-    subtitle: "Напрями послуг",
-    icon: TrendingUp,
-    href: "#services",
-  },
-  {
     title: "Бухгалтерія для ТОВ",
     subtitle: "Тарифи та вартість",
     icon: Building2,
     href: "#pricing",
     pricingPreset: "tov-accounting",
-  },
-  {
-    title: "Інші послуги",
-    subtitle: "Додаткові опції",
-    icon: LayoutGrid,
-    href: "#additional-services",
   },
 ];
 
@@ -216,6 +205,8 @@ function HeroConsultationCta({
     variant === "free"
       ? "text-[0.625rem] font-semibold uppercase leading-snug tracking-[0.06em] text-white/85 sm:text-[0.6875rem]"
       : "text-[0.625rem] font-semibold uppercase leading-snug tracking-[0.06em] text-acg-red/70 sm:text-[0.6875rem]";
+  const priceClass =
+    "text-[0.75rem] font-bold uppercase leading-snug tracking-[0.05em] text-acg-red sm:text-[0.8125rem]";
 
   const labelClass =
     variant === "free"
@@ -231,6 +222,7 @@ function HeroConsultationCta({
       <span className="relative z-20 flex max-w-[18rem] flex-col items-center gap-1.5 sm:max-w-[14rem] lg:max-w-[16rem]">
         <span className={labelClass}>{copy.label}</span>
         <span className={hintClass}>{copy.hint}</span>
+        {variant === "paid" ? <span className={priceClass}>{HERO_PAID_CTA.price}</span> : null}
       </span>
     </button>
   );

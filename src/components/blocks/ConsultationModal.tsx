@@ -315,6 +315,15 @@ export default function ConsultationModal({
                 >
                   ТРИВАЛІСТЬ 1 ГОД. З БУХГАЛТЕРОМ ТА ЮРИСТОМ
                 </span>
+                <span
+                  className={`mt-1 block text-[0.7rem] font-bold uppercase leading-tight tracking-[0.05em] ${
+                    selectedConsultationType === "paid_consultation"
+                      ? "text-white"
+                      : "text-acg-red"
+                  }`}
+                >
+                  2000 грн
+                </span>
               </button>
             </div>
           </div>
