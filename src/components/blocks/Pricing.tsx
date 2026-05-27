@@ -26,6 +26,7 @@ import {
   mergePricingTierCatalog,
   resolveActiveTierIndex,
   type PricingMainTabId,
+  type PricingTierPreset,
 } from "@/src/lib/pricingCatalog";
 import {
   LANDING_SECTION_H2_SIZE,
@@ -266,9 +267,9 @@ export default function Pricing({
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const ce = e as CustomEvent<{ preset?: "fop-registration" | "tov-accounting" }>;
+      const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
       const preset = ce.detail?.preset;
-      if (preset !== "fop-registration" && preset !== "tov-accounting") return;
+      if (!preset) return;
       setMainTabId(mainTabIdForPreset(preset));
     };
     window.addEventListener(ACG_PRICING_PRESET_EVENT, handler);

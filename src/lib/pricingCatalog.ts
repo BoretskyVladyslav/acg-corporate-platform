@@ -8,7 +8,11 @@ export type PricingMainTabId =
   | "tov-accounting"
   | "other-services";
 
-export type PricingTierPreset = "fop-registration" | "tov-accounting";
+export type PricingTierPreset =
+  | "fop-registration"
+  | "fop-accounting"
+  | "tov-accounting"
+  | "other-services";
 
 export const ACG_PRICING_PRESET_EVENT = "acg-pricing-select-preset";
 
@@ -537,8 +541,18 @@ export function findInitialPricingNavigation(
 export function mainTabIdForPreset(
   preset: PricingTierPreset,
 ): PricingMainTabId {
-  if (preset === "fop-registration") return "fop-registration";
-  return "tov-accounting";
+  switch (preset) {
+    case "fop-registration":
+      return "fop-registration";
+    case "fop-accounting":
+      return "fop-accounting";
+    case "tov-accounting":
+      return "tov-accounting";
+    case "other-services":
+      return "other-services";
+    default:
+      return "fop-registration";
+  }
 }
 
 export function dispatchPricingTierPreset(preset: PricingTierPreset): void {

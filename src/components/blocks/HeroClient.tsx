@@ -8,7 +8,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { Building2, TrendingUp, UserPlus } from "lucide-react";
+import { Building2, LayoutGrid, TrendingUp, UserPlus } from "lucide-react";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent as AnchorMouseEvent } from "react";
@@ -65,17 +65,31 @@ type HeroNavCard = {
 const HERO_NAV_CARDS: HeroNavCard[] = [
   {
     title: "Реєстрація ФОП",
-    subtitle: "Тарифи та вартість",
+    subtitle: "Пакет послуг: Реєстрація ФОП",
     icon: UserPlus,
     href: "#pricing",
     pricingPreset: "fop-registration",
   },
   {
+    title: "Бухгалтерія для ФОП",
+    subtitle: "Пакет послуг: Бухгалтерія для ФОП",
+    icon: TrendingUp,
+    href: "#pricing",
+    pricingPreset: "fop-accounting",
+  },
+  {
     title: "Бухгалтерія для ТОВ",
-    subtitle: "Тарифи та вартість",
+    subtitle: "Пакет послуг: Бухгалтерія для ТОВ",
     icon: Building2,
     href: "#pricing",
     pricingPreset: "tov-accounting",
+  },
+  {
+    title: "Інші послуги",
+    subtitle: "Пакет послуг: Інші послуги",
+    icon: LayoutGrid,
+    href: "#pricing",
+    pricingPreset: "other-services",
   },
 ];
 
