@@ -238,6 +238,15 @@ export default function Pricing({
   const activeCategory = categoriesList[activeCategoryIndex];
   const tier = activeCategory?.tariffs?.[activeTariffIndex] ?? activeCategory?.tariffs?.[0];
 
+  const watermarkText = useMemo(() => {
+    let sum = 0;
+    for (let i = 0; i < activeCategoryIndex; i++) {
+      sum += categoriesList[i]?.tariffs?.length ?? 0;
+    }
+    sum += activeTariffIndex;
+    return String(sum + 1).padStart(2, "0");
+  }, [activeCategoryIndex, activeTariffIndex, categoriesList]);
+
   const [consultModalOpen, setConsultModalOpen] = useState(false);
   const [consultModalKey, setConsultModalKey] = useState(0);
   const reduceMotionPreferred = useReducedMotion();
@@ -504,7 +513,7 @@ export default function Pricing({
                   style={watermarkOutlineStyle}
                   className={`${watermarkPositionClass} opacity-[0.45]`}
                 >
-                  {String(activeCategoryIndex + 1).padStart(2, "0")}
+                  {watermarkText}
                 </span>
               ) : (
                 <motion.span
@@ -519,7 +528,7 @@ export default function Pricing({
                     delay: 0.04,
                   }}
                 >
-                  {String(activeCategoryIndex + 1).padStart(2, "0")}
+                  {watermarkText}
                 </motion.span>
               )}
               <div className="relative z-[1]">
@@ -613,8 +622,9 @@ function PricingCheckoutPanel({
   const ctaBase = popular
     ? "bg-acg-red ring-2 ring-amber-300/60 hover:bg-acg-red/92"
     : "bg-acg-red shadow-lg shadow-acg-red/25 hover:bg-acg-red/92";
+  const hasNoFeatures = !hasFeatureRows && descLines.length === 0;
   const showEmptyFallback = false;
-  const showRightColumn = Boolean(priceDisplayRaw);
+  const showRightColumn = Boolean(priceDisplayRaw) && !hasNoFeatures;
 
   const ctaPulseAnimate =
     reduceMotionPreferred || !isMdUp ? {} : { boxShadow: ctaPulseShadowRed };
@@ -627,11 +637,13 @@ function PricingCheckoutPanel({
   return (
     <div
       className={`flex flex-col md:flex-row md:items-stretch ${
-        !showRightColumn
-          ? "min-h-0"
-          : isRegistrationTier
-            ? "min-h-[min(23rem,72svh)] md:min-h-[22rem]"
-            : "min-h-[min(28rem,82svh)] md:min-h-[26rem]"
+        hasNoFeatures
+          ? "min-h-[400px]"
+          : !showRightColumn
+            ? "min-h-0"
+            : isRegistrationTier
+              ? "min-h-[min(23rem,72svh)] md:min-h-[22rem]"
+              : "min-h-[min(28rem,82svh)] md:min-h-[26rem]"
       }`}
     >
       <div
@@ -653,13 +665,31 @@ function PricingCheckoutPanel({
         <h3 className="break-words text-xl font-semibold tracking-tight text-acg-blue sm:text-2xl">
           {tier.name}
         </h3>
-        {hasContent ? (
+        {hasContent || hasNoFeatures ? (
           <div className="mt-4 h-px w-full min-w-0 bg-acg-border" aria-hidden />
         ) : null}
-        {tier.description?.trim() ? (
+        {tier.description?.trim() && !hasNoFeatures ? (
           <p className="mt-5 text-sm leading-relaxed text-foreground/72">
             {tier.description}
           </p>
+        ) : null}
+        {hasNoFeatures ? (
+          <div className="mt-6 flex min-h-0 flex-1 flex-col items-center justify-center py-4 sm:py-6">
+            <div className="w-full max-w-xl rounded-2xl border border-dashed border-acg-blue/30 bg-acg-blue/[0.04] p-6 text-center sm:p-8">
+              <p className="text-base leading-relaxed text-foreground/72 sm:text-lg mb-6">
+                {tier.description?.trim() || "Інформація оновлюється"}
+              </p>
+              {!showRightColumn ? (
+                <button
+                  type="button"
+                  onClick={onOrderClick}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-acg-red px-6 py-2.5 text-center text-sm font-semibold text-white shadow-md shadow-acg-red/20 transition hover:bg-acg-red/92"
+                >
+                  {orderButtonLabel}
+                </button>
+              ) : null}
+            </div>
+          </div>
         ) : null}
         {hasFeatureRows ? (
           <motion.ul
