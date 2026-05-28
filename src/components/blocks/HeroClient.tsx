@@ -213,8 +213,7 @@ const grainPatternUrl =
   ) +
   '")';
 
-const ctaShineClass =
-  "relative overflow-hidden after:pointer-events-none after:absolute after:inset-0 after:z-10 after:bg-gradient-to-r after:from-transparent after:via-white/35 after:to-transparent after:content-[''] md:after:animate-[hero-cta-shine_6.5s_ease-in-out_infinite] motion-reduce:after:animate-none";
+const ctaShineClass = "cta-shine";
 
 const heroPrimaryCtaClass = `${ctaShineClass} inline-flex min-h-[4.25rem] w-full flex-1 items-center justify-center rounded-2xl bg-acg-red px-4 py-3.5 text-center shadow-md shadow-acg-red/20 transition-colors hover:bg-acg-red/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 sm:min-h-[4.5rem] sm:px-5 sm:py-4`;
 
