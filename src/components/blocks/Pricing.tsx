@@ -273,22 +273,91 @@ export default function Pricing({
   };
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
-      const preset = ce.detail?.preset;
-      if (!preset) return;
+    const parseUrlAndSelectTab = () => {
+      if (typeof window === "undefined") return;
+      const hash = window.location.hash;
+      if (!hash.startsWith("#pricing")) return;
       
-      const searchPresetStr = preset.replace("-", " ").toLowerCase();
-      const matchedCatIndex = categoriesList.findIndex(c => 
-        c.categoryName?.toLowerCase().includes(searchPresetStr.split(" ")[0])
-      );
+      const searchParams = new URLSearchParams(hash.slice(hash.indexOf("?") + 1));
+      const tab = searchParams.get("tab") as PricingTierPreset | null;
+      if (!tab) return;
+      
+      let matchedCatIndex = -1;
+      const p = tab.toLowerCase();
+      
+      if (p === "fop-registration") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("реєстрац") && name.includes("фоп");
+        });
+      } else if (p === "fop-accounting") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("бухгалтер") && name.includes("фоп");
+        });
+      } else if (p === "tov-accounting") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("тов") || name.includes("юридичн");
+        });
+      } else if (p === "other-services") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("інш") || name.includes("послуг");
+        });
+      }
+      
       if (matchedCatIndex >= 0) {
         setActiveCategoryIndex(matchedCatIndex);
         setActiveTariffIndex(0);
       }
     };
+
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
+      const preset = ce.detail?.preset;
+      if (!preset) return;
+      
+      let matchedCatIndex = -1;
+      const p = preset.toLowerCase();
+      
+      if (p === "fop-registration") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("реєстрац") && name.includes("фоп");
+        });
+      } else if (p === "fop-accounting") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("бухгалтер") && name.includes("фоп");
+        });
+      } else if (p === "tov-accounting") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("тов") || name.includes("юридичн");
+        });
+      } else if (p === "other-services") {
+        matchedCatIndex = categoriesList.findIndex(c => {
+          const name = c.categoryName?.toLowerCase() ?? "";
+          return name.includes("інш") || name.includes("послуг");
+        });
+      }
+
+      if (matchedCatIndex >= 0) {
+        setActiveCategoryIndex(matchedCatIndex);
+        setActiveTariffIndex(0);
+      }
+    };
+
+    // Run URL parser on mount
+    parseUrlAndSelectTab();
+
     window.addEventListener(ACG_PRICING_PRESET_EVENT, handler);
-    return () => window.removeEventListener(ACG_PRICING_PRESET_EVENT, handler);
+    window.addEventListener("hashchange", parseUrlAndSelectTab);
+    return () => {
+      window.removeEventListener(ACG_PRICING_PRESET_EVENT, handler);
+      window.removeEventListener("hashchange", parseUrlAndSelectTab);
+    };
   }, [categoriesList]);
 
   const panelMotionProps = useMemo(

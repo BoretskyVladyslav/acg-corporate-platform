@@ -75,28 +75,28 @@ const HERO_NAV_CARDS: HeroNavCard[] = [
     defaultTitle: "Реєстрація ФОП",
     defaultSubtitle: "Пакет послуг: Реєстрація ФОП",
     icon: UserPlus,
-    href: "#pricing",
+    href: "#pricing?tab=fop-registration",
     pricingPreset: "fop-registration",
   },
   {
     defaultTitle: "Бухгалтерія для ФОП",
     defaultSubtitle: "Пакет послуг: Бухгалтерія для ФОП",
     icon: TrendingUp,
-    href: "#pricing",
+    href: "#pricing?tab=fop-accounting",
     pricingPreset: "fop-accounting",
   },
   {
     defaultTitle: "Бухгалтерія для ТОВ",
     defaultSubtitle: "Пакет послуг: Бухгалтерія для ТОВ",
     icon: Building2,
-    href: "#pricing",
+    href: "#pricing?tab=tov-accounting",
     pricingPreset: "tov-accounting",
   },
   {
     defaultTitle: "Інші послуги",
     defaultSubtitle: "Пакет послуг: Інші послуги",
     icon: LayoutGrid,
-    href: "#pricing",
+    href: "#pricing?tab=other-services",
     pricingPreset: "other-services",
   },
 ];
@@ -450,9 +450,13 @@ export default function HeroClient({
     ) => {
       if (!href.startsWith("#")) return;
       event.preventDefault();
-      scrollToSectionById(href.slice(1), lenis);
+      const cleanId = href.split("?")[0]!.slice(1);
+      scrollToSectionById(cleanId, lenis);
       if (pricingPreset) {
         dispatchPricingTierPreset(pricingPreset);
+      }
+      if (typeof window !== "undefined") {
+        window.history.pushState(null, "", href);
       }
     },
     [lenis],
