@@ -2,22 +2,22 @@ import HeroClient, { type HeroCardContent, type HeroProps } from "./HeroClient";
 
 export type { HeroCardContent, HeroProps };
 
+// ─── Дефолти (fallback, якщо CMS порожній) ────────────────────────────────────
 const HEADING_FALLBACK =
   "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.";
-
-const FREE_CTA_LABEL_FALLBACK = "Безкоштовна консультація";
-const PAID_CTA_LABEL_FALLBACK = "Платна консультація";
 
 function pickNonEmptyText(value: string | undefined, fallback: string): string {
   const trimmed = value?.trim();
   return trimmed ? trimmed : fallback;
 }
 
-/** Герой із Sanity: `landingPageSingleton` → вкладена секція Hero. Для скриптів або тестів. */
+/** Герой із Sanity: `landingPageSingleton` → вкладена секція Hero. */
 export { fetchHeroFromSanity } from "@/sanity/lib/loadLandingPage";
 
 /**
- * Підставляє захардкоджені значення, якщо з Sanity нічого не прийшло або рядок порожній.
+ * Підставляє захардкоджені значення для обов'язкових полів, якщо CMS порожній.
+ * Поля кнопок (primaryButtonTitle/Hint, secondaryButton*) передаються as-is —
+ * HeroClient сам застосує дефолти якщо undefined.
  */
 export function resolveHeroProps(partial: Partial<HeroProps> = {}): HeroProps {
   const subheading =
@@ -27,22 +27,20 @@ export function resolveHeroProps(partial: Partial<HeroProps> = {}): HeroProps {
 
   const bgUrl = partial.backgroundImageUrl?.trim();
 
-  const heroCards =
-    partial.heroCards?.filter(
-      (c) => Boolean(c.title?.trim()) && Boolean(c.subtitle?.trim()),
-    ) ?? undefined;
+  // Картки: передаємо як є — HeroClient сам замінить порожні на дефолти по позиції
+  const heroCards = partial.heroCards?.filter(
+    (c) => Boolean(c.title?.trim()) || Boolean(c.subtitle?.trim()),
+  ) ?? undefined;
 
   return {
     heading: pickNonEmptyText(partial.heading, HEADING_FALLBACK),
     subheading,
-    primaryCtaLabel: pickNonEmptyText(
-      partial.primaryCtaLabel,
-      FREE_CTA_LABEL_FALLBACK,
-    ),
-    secondaryCtaLabel: pickNonEmptyText(
-      partial.secondaryCtaLabel,
-      PAID_CTA_LABEL_FALLBACK,
-    ),
+    // CTA-поля: передаємо undefined якщо порожньо — HeroClient застосує дефолт
+    ...(partial.primaryButtonTitle ? { primaryButtonTitle: partial.primaryButtonTitle } : {}),
+    ...(partial.primaryButtonHint ? { primaryButtonHint: partial.primaryButtonHint } : {}),
+    ...(partial.secondaryButtonTitle ? { secondaryButtonTitle: partial.secondaryButtonTitle } : {}),
+    ...(partial.secondaryButtonHint ? { secondaryButtonHint: partial.secondaryButtonHint } : {}),
+    ...(partial.secondaryButtonPrice ? { secondaryButtonPrice: partial.secondaryButtonPrice } : {}),
     ...(heroCards?.length ? { heroCards } : {}),
     ...(bgUrl ? { backgroundImageUrl: bgUrl } : {}),
   };

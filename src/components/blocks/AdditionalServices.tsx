@@ -3,7 +3,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
 
-import type { LandingAdditionalServicesResolved } from "@/sanity/lib/loadLandingPage";
 import {
   LANDING_CARD_BASE,
   LANDING_CARD_BODY,
@@ -18,7 +17,17 @@ import {
   LANDING_SECTION_SHELL,
 } from "@/src/lib/landingSectionRhythm";
 
-export type AdditionalServicesProps = LandingAdditionalServicesResolved;
+export type AdditionalServiceItem = {
+  title: string;
+  description?: string;
+  price?: string;
+};
+
+export type AdditionalServicesProps = {
+  title?: string;
+  subtitle?: string;
+  items?: AdditionalServiceItem[];
+};
 
 /** Ease-out для появи блоків (як на преміальних лендингах). */
 const SECTION_ITEM_EASE_OUT = [0, 0, 0.2, 1] as const;
@@ -115,7 +124,7 @@ export default function AdditionalServices({
             </p>
           ) : null}
         </motion.header>
-        {safeItems.map((item, i) => (
+        {safeItems.map((item: AdditionalServiceItem, i: number) => (
           <motion.article
             key={`${item.title}-${i}`}
             variants={itemVariants}

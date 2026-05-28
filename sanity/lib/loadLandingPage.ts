@@ -11,27 +11,26 @@ import type { FAQProps } from "@/src/components/blocks/FAQ";
 import type { LeadCaptureFormProps } from "@/src/components/blocks/LeadCaptureForm";
 import type { PricingProps, PricingTier } from "@/src/components/blocks/Pricing";
 import type { ServiceItem } from "@/src/components/blocks/Services";
-import type { ServicesProps } from "@/src/components/blocks/Services";
 import type { TrustBlockProps } from "@/src/components/blocks/TrustBlock";
 
 import {
   landingPageQuery,
   type LandingAboutQueryResult,
-  type LandingAdditionalServicesQueryResult,
   type LandingAdvantagesQueryResult,
   type LandingContactQueryResult,
   type LandingFaqQueryResult,
   type LandingHeroQueryResult,
   type LandingPageQueryResult,
   type LandingPricingQueryResult,
-  type LandingServicesQueryResult,
   type LandingSeoQueryResult,
   type LandingTrustQueryResult,
 } from "./queries";
 
 type SanityUrlBuilder = ReturnType<typeof createImageUrlBuilder>;
 
-/** Поля OG / title для Next.js Metadata (береться разом із контентом з одного GROQ). */
+// ─── Типи результатів ─────────────────────────────────────────────────────────
+
+/** Поля OG / title для Next.js Metadata. */
 export type LandingSeoResolved = {
   metaTitle?: string;
   metaDescription?: string;
@@ -40,42 +39,32 @@ export type LandingSeoResolved = {
 };
 
 export type LandingHeroCardResolved = {
-  title: string;
-  subtitle: string;
+  title?: string;
+  subtitle?: string;
 };
 
 export type LandingHeroPageProps = {
   heading?: string;
   subheading?: string;
   heroCards?: LandingHeroCardResolved[];
-  primaryCtaLabel?: string;
-  secondaryCtaLabel?: string;
+  /** Кнопка 1 — Безкоштовна консультація */
+  primaryButtonTitle?: string;
+  primaryButtonHint?: string;
+  /** Кнопка 2 — Платна консультація */
+  secondaryButtonTitle?: string;
+  secondaryButtonHint?: string;
+  secondaryButtonPrice?: string;
   backgroundImageUrl?: string;
 };
 
-/** Дані блоку контактної форми з Sanity; порожні поля доповнює LeadCaptureForm. */
+/** Дані блоку контактної форми з Sanity. */
 export type LandingContactResolved = Partial<LeadCaptureFormProps>;
-
-/** Після мапінгу з вкладки «Додаткові послуги» документа лендингу. */
-export type LandingAdditionalItemResolved = {
-  title: string;
-  description?: string;
-  price?: string;
-};
-
-export type LandingAdditionalServicesResolved = {
-  title?: string;
-  subtitle?: string;
-  items?: LandingAdditionalItemResolved[];
-};
 
 export type LandingPageData = {
   hero: LandingHeroPageProps;
   about: AboutCompanyProps;
-  services: ServicesProps;
-  additionalServices: LandingAdditionalServicesResolved;
-  pricing: PricingProps;
   advantages: AdvantagesProps;
+  pricing: PricingProps;
   trust: TrustBlockProps;
   faq: FAQProps;
   contact: LandingContactResolved;
@@ -85,21 +74,23 @@ export type LandingPageData = {
 export const EMPTY_LANDING_PAGE: LandingPageData = {
   hero: {},
   about: {},
-  services: {},
-  additionalServices: {},
-  pricing: {},
   advantages: {},
+  pricing: {},
   trust: {},
   faq: {},
   contact: {},
   seo: {},
 };
 
+// ─── Fetch ────────────────────────────────────────────────────────────────────
+
 export async function fetchLandingPageDocument(
   client: SanityClient,
 ): Promise<LandingPageQueryResult> {
   return client.fetch<LandingPageQueryResult>(landingPageQuery);
 }
+
+// ─── Головний маппер ──────────────────────────────────────────────────────────
 
 export function mapLandingPageDocToLandingData(
   doc: LandingPageQueryResult,
@@ -111,16 +102,16 @@ export function mapLandingPageDocToLandingData(
   return {
     hero: mapHero(doc.hero, urlBuilder),
     about: mapAbout(doc.about),
-    services: mapServices(doc.services),
-    additionalServices: mapAdditionalServices(doc.additionalServices),
-    pricing: mapPricing(doc.pricing),
     advantages: mapAdvantages(doc.advantages, urlBuilder),
+    pricing: mapPricing(doc.pricing),
     trust: mapTrust(doc.trust, urlBuilder),
     faq: mapFaq(doc.faq),
     contact: mapContact(doc.contact),
     seo: mapSeo(doc.seo, urlBuilder),
   };
 }
+
+// ─── Утиліти ─────────────────────────────────────────────────────────────────
 
 function pickNonEmpty(value: string | null | undefined): string | undefined {
   const t = value?.trim();
@@ -131,7 +122,6 @@ function sanityImageToResolved(
   urlBuilder: SanityUrlBuilder,
   image: Record<string, unknown> | null | undefined,
   width: number,
-  /** Alt для фронтенду/next/image; у Studio окремого поля alt немає. */
   altFallback = "",
 ): { url: string; alt: string } | null {
   const src = image as SanityImageSource | null | undefined;
@@ -142,6 +132,8 @@ function sanityImageToResolved(
   const alt = typeof altFallback === "string" ? altFallback.trim() : "";
   return { url, alt };
 }
+
+// ─── Маппери секцій ───────────────────────────────────────────────────────────
 
 function mapHero(
   doc: LandingHeroQueryResult | undefined,
@@ -158,21 +150,22 @@ function mapHero(
   if (resolved) {
     backgroundImageUrl = resolved.url;
   }
+  // Картки: беремо і title, і subtitle з CMS. Порожні → undefined (HeroClient дає дефолт)
   const heroCards = doc.heroCards
     ?.map((row) => ({
       title: pickNonEmpty(row.title),
       subtitle: pickNonEmpty(row.subtitle),
     }))
-    .filter(
-      (row): row is LandingHeroCardResolved =>
-        Boolean(row.title) && Boolean(row.subtitle),
-    );
+    .filter((row) => Boolean(row.title) || Boolean(row.subtitle));
   return {
     heading: pickNonEmpty(doc.heading),
     subheading: pickNonEmpty(doc.subheading),
     heroCards: heroCards?.length ? heroCards : undefined,
-    primaryCtaLabel: pickNonEmpty(doc.primaryCtaLabel),
-    secondaryCtaLabel: pickNonEmpty(doc.secondaryCtaLabel),
+    primaryButtonTitle: pickNonEmpty(doc.primaryButtonTitle),
+    primaryButtonHint: pickNonEmpty(doc.primaryButtonHint),
+    secondaryButtonTitle: pickNonEmpty(doc.secondaryButtonTitle),
+    secondaryButtonHint: pickNonEmpty(doc.secondaryButtonHint),
+    secondaryButtonPrice: pickNonEmpty(doc.secondaryButtonPrice),
     backgroundImageUrl,
   };
 }
@@ -181,8 +174,8 @@ function mapAbout(doc: LandingAboutQueryResult | undefined): AboutCompanyProps {
   if (!doc) return {};
   const metrics = doc.metrics
     ?.map((m) => ({
-      label: pickNonEmpty(m.label),
       value: pickNonEmpty(m.value),
+      label: pickNonEmpty(m.label),
     }))
     .filter((m) => m.label !== undefined || m.value !== undefined);
   return {
@@ -193,47 +186,37 @@ function mapAbout(doc: LandingAboutQueryResult | undefined): AboutCompanyProps {
   };
 }
 
-function mapServices(doc: LandingServicesQueryResult | undefined): ServicesProps {
+function mapAdvantages(
+  doc: LandingAdvantagesQueryResult | undefined,
+  urlBuilder: SanityUrlBuilder,
+): AdvantagesProps {
   if (!doc) return {};
   const items = doc.items
-    ?.map((it) => ({
-      title: pickNonEmpty(it.title),
-      description: pickNonEmpty(it.description),
-      note: pickNonEmpty(it.note),
-      icon: pickNonEmpty(it.icon),
+    ?.map((row) => ({
+      title: pickNonEmpty(row.title) ?? "",
+      description: pickNonEmpty(row.description) ?? "",
     }))
-    .filter((it) => Boolean(it.title));
+    .filter((row) => row.title && row.description);
+  let sideImageUrl: string | undefined;
+  let sideImageAlt: string | undefined;
+  const sectionImageAlt =
+    pickNonEmpty(doc.heading) ?? pickNonEmpty(doc.eyebrow) ?? "";
+  const img = sanityImageToResolved(
+    urlBuilder,
+    doc.sideImage ?? undefined,
+    1200,
+    sectionImageAlt,
+  );
+  if (img) {
+    sideImageUrl = img.url;
+    sideImageAlt = img.alt;
+  }
   return {
     eyebrow: pickNonEmpty(doc.eyebrow),
     heading: pickNonEmpty(doc.heading),
-    intro: pickNonEmpty(doc.intro),
     items: items?.length ? items : undefined,
-  };
-}
-
-function mapAdditionalServices(
-  doc: LandingAdditionalServicesQueryResult | undefined,
-): LandingAdditionalServicesResolved {
-  if (!doc) return {};
-  const rawItems =
-    doc.items?.map((it) => ({
-      title: pickNonEmpty(it.title),
-      description: pickNonEmpty(it.description),
-      price: pickNonEmpty(it.price),
-    })) ?? [];
-  const items: LandingAdditionalItemResolved[] = [];
-  for (const row of rawItems) {
-    if (!row.title) continue;
-    items.push({
-      title: row.title,
-      ...(row.description ? { description: row.description } : {}),
-      ...(row.price ? { price: row.price } : {}),
-    });
-  }
-  return {
-    title: pickNonEmpty(doc.title),
-    subtitle: pickNonEmpty(doc.subtitle),
-    items: items.length ? items : undefined,
+    sideImageUrl,
+    sideImageAlt,
   };
 }
 
@@ -252,9 +235,7 @@ function normalizePricingFeatureItems(raw: unknown): ServiceItem[] {
     const o = item as Record<string, unknown>;
     if ("text" in o) {
       const line = pickNonEmpty(
-        typeof o.text === "string"
-          ? o.text
-          : String(o.text ?? ""),
+        typeof o.text === "string" ? o.text : String(o.text ?? ""),
       );
       if (line) out.push({ title: line });
       continue;
@@ -304,40 +285,6 @@ function mapPricing(doc: LandingPricingQueryResult | undefined): PricingProps {
     ctaText: pickNonEmpty(doc.ctaText),
     globalButtonLabel: pickNonEmpty(doc.globalButtonLabel),
     tiers: tiers.length ? tiers : undefined,
-  };
-}
-
-function mapAdvantages(
-  doc: LandingAdvantagesQueryResult | undefined,
-  urlBuilder: SanityUrlBuilder,
-): AdvantagesProps {
-  if (!doc) return {};
-  const items = doc.items
-    ?.map((row) => ({
-      title: pickNonEmpty(row.title) ?? "",
-      description: pickNonEmpty(row.description) ?? "",
-    }))
-    .filter((row) => row.title && row.description);
-  let sideImageUrl: string | undefined;
-  let sideImageAlt: string | undefined;
-  const sectionImageAlt =
-    pickNonEmpty(doc.heading) ?? pickNonEmpty(doc.eyebrow) ?? "";
-  const img = sanityImageToResolved(
-    urlBuilder,
-    doc.sideImage ?? undefined,
-    1200,
-    sectionImageAlt,
-  );
-  if (img) {
-    sideImageUrl = img.url;
-    sideImageAlt = img.alt;
-  }
-  return {
-    eyebrow: pickNonEmpty(doc.eyebrow),
-    heading: pickNonEmpty(doc.heading),
-    items: items?.length ? items : undefined,
-    sideImageUrl,
-    sideImageAlt,
   };
 }
 
@@ -427,6 +374,8 @@ function mapSeo(
     ogImageAlt: ogResolved?.alt,
   };
 }
+
+// ─── Публічний API ────────────────────────────────────────────────────────────
 
 /** Один GROQ-запит + мапінг; без кешування (для скриптів). */
 export async function loadLandingPageDataUncached(): Promise<LandingPageData> {

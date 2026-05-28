@@ -1,32 +1,36 @@
 import { groq } from "next-sanity";
 
-/** Один документ із усіма секціями лендингу та вкладками Studio. */
+/**
+ * Один GROQ-запит для всього лендингу.
+ * Структура відповідає секціям у src/app/page.tsx.
+ *
+ * Видалені секції: services, additionalServices
+ * (вони не рендеряться на фронтенді).
+ */
 export const landingPageQuery = groq`
   *[_type == "landingPage" && _id == "landingPageSingleton"][0]{
     hero{
       heading,
       subheading,
       heroCards[]{title, subtitle},
-      primaryCtaLabel,
-      secondaryCtaLabel,
+      primaryButtonTitle,
+      primaryButtonHint,
+      secondaryButtonTitle,
+      secondaryButtonHint,
+      secondaryButtonPrice,
       backgroundImage
     },
     about{
       eyebrow,
       heading,
       body,
-      metrics[]{label, value}
+      metrics[]{value, label}
     },
-    services{
+    advantages{
       eyebrow,
       heading,
-      intro,
-      items[]{title, description, note, icon}
-    },
-    additionalServices{
-      title,
-      subtitle,
-      items[]{title, description, price}
+      sideImage,
+      items[]{title, description}
     },
     pricing{
       eyebrow,
@@ -41,12 +45,6 @@ export const landingPageQuery = groq`
         features[]{title, description, note, icon, isHeader},
         isPopular
       }
-    },
-    advantages{
-      eyebrow,
-      heading,
-      sideImage,
-      items[]{title, description}
     },
     trust{
       eyebrow,
@@ -80,14 +78,19 @@ export const landingPageQuery = groq`
   }
 `;
 
-/** Плоскі форми вкладених блоків збігаються з минулими одиночними запитами для маперів. */
+// ─── TypeScript-типи відповідей GROQ ──────────────────────────────────────────
 
 export type LandingHeroQueryResult = {
   heading?: string | null;
   subheading?: string | null;
   heroCards?: Array<{ title?: string | null; subtitle?: string | null }> | null;
-  primaryCtaLabel?: string | null;
-  secondaryCtaLabel?: string | null;
+  /** Кнопка 1 — Безкоштовна консультація */
+  primaryButtonTitle?: string | null;
+  primaryButtonHint?: string | null;
+  /** Кнопка 2 — Платна консультація */
+  secondaryButtonTitle?: string | null;
+  secondaryButtonHint?: string | null;
+  secondaryButtonPrice?: string | null;
   backgroundImage?: Record<string, unknown> | null;
 } | null;
 
@@ -95,29 +98,14 @@ export type LandingAboutQueryResult = {
   eyebrow?: string | null;
   heading?: string | null;
   body?: string | null;
-  metrics?: Array<{ label?: string | null; value?: string | null }> | null;
+  metrics?: Array<{ value?: string | null; label?: string | null }> | null;
 } | null;
 
-export type LandingServicesQueryResult = {
+export type LandingAdvantagesQueryResult = {
   eyebrow?: string | null;
   heading?: string | null;
-  intro?: string | null;
-  items?: Array<{
-    title?: string | null;
-    description?: string | null;
-    note?: string | null;
-    icon?: string | null;
-  }> | null;
-} | null;
-
-export type LandingAdditionalServicesQueryResult = {
-  title?: string | null;
-  subtitle?: string | null;
-  items?: Array<{
-    title?: string | null;
-    description?: string | null;
-    price?: string | null;
-  }> | null;
+  sideImage?: Record<string, unknown> | null;
+  items?: Array<{ title?: string | null; description?: string | null }> | null;
 } | null;
 
 export type LandingPricingQueryResult = {
@@ -144,13 +132,6 @@ export type LandingPricingQueryResult = {
   }> | null;
 } | null;
 
-export type LandingAdvantagesQueryResult = {
-  eyebrow?: string | null;
-  heading?: string | null;
-  sideImage?: Record<string, unknown> | null;
-  items?: Array<{ title?: string | null; description?: string | null }> | null;
-} | null;
-
 export type LandingTrustQueryResult = {
   eyebrow?: string | null;
   heading?: string | null;
@@ -165,15 +146,6 @@ export type LandingTrustQueryResult = {
   }> | null;
 } | null;
 
-export type LandingFaqQueryResult = {
-  eyebrow?: string | null;
-  heading?: string | null;
-  intro?: string | null;
-  items?: Array<{ question?: string | null; answer?: string | null }> | null;
-  footerButtonText?: string | null;
-  footerNote?: string | null;
-} | null;
-
 export type LandingContactQueryResult = {
   eyebrow?: string | null;
   heading?: string | null;
@@ -181,6 +153,15 @@ export type LandingContactQueryResult = {
   submitLabel?: string | null;
   addressLine?: string | null;
   phoneDisplay?: string | null;
+} | null;
+
+export type LandingFaqQueryResult = {
+  eyebrow?: string | null;
+  heading?: string | null;
+  intro?: string | null;
+  items?: Array<{ question?: string | null; answer?: string | null }> | null;
+  footerButtonText?: string | null;
+  footerNote?: string | null;
 } | null;
 
 export type LandingSeoQueryResult = {
@@ -192,10 +173,8 @@ export type LandingSeoQueryResult = {
 export type LandingPageQueryResult = {
   hero?: LandingHeroQueryResult;
   about?: LandingAboutQueryResult;
-  services?: LandingServicesQueryResult;
-  additionalServices?: LandingAdditionalServicesQueryResult;
-  pricing?: LandingPricingQueryResult;
   advantages?: LandingAdvantagesQueryResult;
+  pricing?: LandingPricingQueryResult;
   trust?: LandingTrustQueryResult;
   contact?: LandingContactQueryResult;
   faq?: LandingFaqQueryResult;

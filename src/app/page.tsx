@@ -54,25 +54,40 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { hero, about, pricing, advantages, trust, faq, contact } =
+  const { hero, about, advantages, pricing, trust, faq, contact } =
     await loadLandingPageForHome();
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <SiteHeader />
       <main className="min-w-0 flex-1 overflow-x-clip">
+        {/* Hero — перший екран із заголовком та кнопками */}
         <Hero {...hero} />
+
+        {/* Про компанію — текст та показники */}
         <AboutCompany {...about} />
+
+        {/* Переваги — список із зображенням */}
         <Advantages {...advantages} />
+
+        {/* Тарифи — навігація по пакетах */}
         <Pricing {...pricing} />
+
+        {/* Відгуки клієнтів */}
         <TrustBlock {...trust} />
+
+        {/* Форма «Швидкий дзвінок» */}
         <LeadCaptureForm
           {...contact}
           sectionId="quick-call"
           title="Швидкий дзвінок"
           subtitle="Залиште номер, і ми зателефонуємо у зручний для вас час"
         />
+
+        {/* Часті запитання */}
         <FAQ {...faq} />
+
+        {/* Форма «Замовити консультацію» */}
         <LeadCaptureForm
           {...contact}
           sectionId="contact"

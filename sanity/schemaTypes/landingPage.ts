@@ -1,93 +1,92 @@
 import { defineField, defineType } from "sanity";
 
-/** Єдиний документ лендингу; секції збігаються з блоками на сайті й вирівняні вкладками (groups). */
+/**
+ * Єдиний документ лендингу; секції збігаються з блоками на сайті.
+ * Порядок вкладок відповідає порядку відображення секцій на сторінці.
+ */
 export const landingPageType = defineType({
   name: "landingPage",
   title: "Головна сторінка (лендинг)",
   type: "document",
   groups: [
-    { name: "hero", title: "Головний екран (Hero)", default: true },
-    { name: "about", title: "Про компанію" },
-    { name: "services", title: "Послуги" },
-    { name: "additionalServices", title: "Додаткові послуги" },
-    { name: "pricing", title: "Тарифи" },
-    { name: "advantages", title: "Переваги" },
-    { name: "trust", title: "Довіра та відгуки" },
-    { name: "contact", title: "Форма / контакти" },
-    { name: "faq", title: "FAQ" },
-    { name: "seo", title: "SEO та налаштування" },
+    { name: "hero", title: "🏠 Hero — Перший екран", default: true },
+    { name: "about", title: "📊 Про компанію" },
+    { name: "advantages", title: "✅ Переваги" },
+    { name: "pricing", title: "💰 Тарифи" },
+    { name: "trust", title: "⭐ Відгуки" },
+    { name: "contact", title: "📞 Форма / Контакти" },
+    { name: "faq", title: "❓ FAQ" },
+    { name: "seo", title: "🔍 SEO та метатеги" },
   ],
   fields: [
     defineField({
       name: "hero",
-      title: "Hero",
+      title: "Перший екран (Hero)",
       type: "landingHeroSection",
       group: "hero",
       description:
-        "Перший екран із заголовком, кнопками та зображенням — відповідає блоку Hero на сайті.",
+        "Заголовок, підзаголовок, навігаційні картки та кнопки консультації.",
     }),
     defineField({
       name: "about",
       title: "Про компанію",
       type: "landingAboutSection",
       group: "about",
-    }),
-    defineField({
-      name: "services",
-      title: "Послуги",
-      type: "landingServicesSection",
-      group: "services",
-    }),
-    defineField({
-      name: "additionalServices",
-      title: "Додаткові послуги",
-      type: "landingAdditional",
-      group: "additionalServices",
       description:
-        "Короткий перелік додаткових послуг (окремо від основного блоку «Послуги»).",
-    }),
-    defineField({
-      name: "pricing",
-      title: "Тарифи",
-      type: "landingPricingSection",
-      group: "pricing",
+        "Текст про компанію та 4 плашки-показники (клієнти, роки, послуги, контроль).",
     }),
     defineField({
       name: "advantages",
       title: "Переваги",
       type: "landingAdvantagesSection",
       group: "advantages",
+      description:
+        "Список переваг компанії з заголовком та зображенням праворуч.",
+    }),
+    defineField({
+      name: "pricing",
+      title: "Тарифи",
+      type: "landingPricingSection",
+      group: "pricing",
+      description:
+        "Тарифні пакети: Консультація, Реєстрація ФОП, Бухгалтерія ФОП/ТОВ, Інші послуги.",
     }),
     defineField({
       name: "trust",
-      title: "Довіра та відгуки",
+      title: "Відгуки клієнтів",
       type: "landingTrustSection",
       group: "trust",
+      description:
+        "Рейтинг Google, відгуки клієнтів у вигляді карток.",
     }),
     defineField({
       name: "contact",
-      title: "Блок із формою замовлення",
+      title: "Форма замовлення та контакти",
       type: "landingContactSection",
       group: "contact",
       description:
-        "Тексти та контакти біля форми («контактний блок», телефон, адреса) — як на сайті над формою.",
+        "Тексти для форми зворотнього зв'язку, адреса та телефон для відображення.",
     }),
     defineField({
       name: "faq",
-      title: "FAQ",
+      title: "Часті запитання (FAQ)",
       type: "landingFaqSection",
       group: "faq",
+      description:
+        "Список питань і відповідей, кнопка консультації та нотатка у підвалі.",
     }),
     defineField({
       name: "seo",
-      title: "SEO",
+      title: "SEO та метатеги",
       type: "landingSeoSection",
       group: "seo",
+      description:
+        "Заголовок вкладки браузера, мета-опис та OG-зображення для соцмереж.",
     }),
   ],
   preview: {
     prepare() {
-      return { title: "Лендинг (головна)" };
+      return { title: "Лендинг ACG Accounting" };
     },
   },
 });

@@ -9,24 +9,24 @@ import { featureItemType } from "./featureItem";
 import { faqItemType, landingFaqSectionType } from "./landingFaq";
 import { heroCardItemType, landingHeroSectionType } from "./hero";
 import { landingContactSectionType } from "./landingContact";
-import {
-  landingAdditionalItemType,
-  landingAdditionalSectionType,
-} from "./landingAdditional";
 import { landingPageType } from "./landingPage";
 import {
   landingPricingSectionType,
   pricingTierSchemaType,
 } from "./landingPricing";
-import { landingServicesSectionType } from "./landingServices";
 import { landingSeoSectionType } from "./landingSeo";
 import { landingTrustSectionType, trustQuoteType } from "./landingTrust";
 
 /**
- * Спочатку вкладені object-типи та секційні блоки, потім документ `landingPage`.
+ * Порядок: спочатку вкладені object-типи (без document),
+ * потім секційні блоки, в кінці — документ `landingPage`.
+ *
+ * Секції Services та AdditionalServices видалено — вони не рендеряться
+ * на фронтенді (src/app/page.tsx).
  */
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
+    // ── Вкладені об'єкти (підтипи масивів) ──────────────────────────────────
     aboutCompanyMetricType,
     featureItemType,
     pricingTierSchemaType,
@@ -34,17 +34,18 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     trustQuoteType,
     faqItemType,
     heroCardItemType,
+
+    // ── Секції лендингу ──────────────────────────────────────────────────────
     landingHeroSectionType,
     landingAboutSectionType,
-    landingServicesSectionType,
-    landingAdditionalItemType,
-    landingAdditionalSectionType,
-    landingPricingSectionType,
     landingAdvantagesSectionType,
+    landingPricingSectionType,
     landingTrustSectionType,
     landingContactSectionType,
     landingFaqSectionType,
     landingSeoSectionType,
+
+    // ── Головний документ ────────────────────────────────────────────────────
     landingPageType,
   ],
 };

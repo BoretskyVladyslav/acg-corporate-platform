@@ -28,35 +28,43 @@ import teamPhoto from "@/public/images/hero-team.png";
 import ConsultationModal from "./ConsultationModal";
 
 export type HeroCardContent = {
-  title: string;
-  subtitle: string;
+  /** Заголовок картки з CMS або дефолт з HERO_NAV_CARDS. */
+  title?: string;
+  subtitle?: string;
 };
 
 export interface HeroProps {
   heading?: string;
   subheading?: string;
   heroCards?: HeroCardContent[];
-  primaryCtaLabel?: string;
-  secondaryCtaLabel?: string;
+  /** Кнопка 1 — Безкоштовна консультація */
+  primaryButtonTitle?: string;
+  primaryButtonHint?: string;
+  /** Кнопка 2 — Платна консультація */
+  secondaryButtonTitle?: string;
+  secondaryButtonHint?: string;
+  secondaryButtonPrice?: string;
   backgroundImageUrl?: string;
 }
 
+// ─── Дефолти (fallback якщо CMS порожній) ────────────────────────────────────
 const HERO_TEAM_IMAGE_ALT = "Команда ACG Accounting";
 
-const HERO_FREE_CTA = {
-  label: "ОТРИМАТИ ПЕРВИНУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО",
+const HERO_FREE_CTA_DEFAULTS = {
+  title: "ОТРИМАТИ ПЕРВИНУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО",
   hint: "ШВИДКА ВІДПОВІДЬ У TELEGRAM",
 } as const;
 
-const HERO_PAID_CTA = {
-  label: "КОНСУЛЬТАЦІЯ",
+const HERO_PAID_CTA_DEFAULTS = {
+  title: "КОНСУЛЬТАЦІЯ",
   hint: "ТРИВАЛІСТЬ 1 ГОД. З БУХГАЛТЕРОМ ТА ЮРИСТОМ",
   price: "2000 грн",
 } as const;
 
+// ─── Навігаційні картки (дефолти; title та subtitle перекриваються з CMS) ──────
 type HeroNavCard = {
-  title: string;
-  subtitle: string;
+  defaultTitle: string;
+  defaultSubtitle: string;
   icon: typeof UserPlus;
   href: string;
   pricingPreset?: PricingTierPreset;
@@ -64,34 +72,36 @@ type HeroNavCard = {
 
 const HERO_NAV_CARDS: HeroNavCard[] = [
   {
-    title: "Реєстрація ФОП",
-    subtitle: "Пакет послуг: Реєстрація ФОП",
+    defaultTitle: "Реєстрація ФОП",
+    defaultSubtitle: "Пакет послуг: Реєстрація ФОП",
     icon: UserPlus,
     href: "#pricing",
     pricingPreset: "fop-registration",
   },
   {
-    title: "Бухгалтерія для ФОП",
-    subtitle: "Пакет послуг: Бухгалтерія для ФОП",
+    defaultTitle: "Бухгалтерія для ФОП",
+    defaultSubtitle: "Пакет послуг: Бухгалтерія для ФОП",
     icon: TrendingUp,
     href: "#pricing",
     pricingPreset: "fop-accounting",
   },
   {
-    title: "Бухгалтерія для ТОВ",
-    subtitle: "Пакет послуг: Бухгалтерія для ТОВ",
+    defaultTitle: "Бухгалтерія для ТОВ",
+    defaultSubtitle: "Пакет послуг: Бухгалтерія для ТОВ",
     icon: Building2,
     href: "#pricing",
     pricingPreset: "tov-accounting",
   },
   {
-    title: "Інші послуги",
-    subtitle: "Пакет послуг: Інші послуги",
+    defaultTitle: "Інші послуги",
+    defaultSubtitle: "Пакет послуг: Інші послуги",
     icon: LayoutGrid,
     href: "#pricing",
     pricingPreset: "other-services",
   },
 ];
+
+// ─── Утиліти ─────────────────────────────────────────────────────────────────
 
 function splitHeroHeading(heading: string): {
   accentPrimary: string;
@@ -148,6 +158,8 @@ function useMousePosition(enabled: boolean) {
   return { x, y };
 }
 
+// ─── Анімаційні варіанти ──────────────────────────────────────────────────────
+
 const contentVariants = {
   hidden: {},
   visible: {
@@ -167,7 +179,6 @@ const itemVariants = {
   },
 };
 
-/** Легкий варіант для < md: лише короткий fade + невеликий slide. */
 const itemVariantsMobile = {
   hidden: { opacity: 0, y: 12 },
   visible: {
@@ -186,6 +197,8 @@ const contentVariantsMobile = {
     },
   },
 };
+
+// ─── CSS-класи ───────────────────────────────────────────────────────────────
 
 const headlineAccentClass =
   "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.06] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-[clamp(1.375rem,5.2vw,1.75rem)] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-6xl xl:text-7xl";
@@ -207,14 +220,21 @@ const heroPrimaryCtaClass = `${ctaShineClass} inline-flex min-h-[4.25rem] w-full
 
 const heroSecondaryCtaClass = `${ctaShineClass} inline-flex min-h-[4.25rem] w-full flex-1 items-center justify-center rounded-2xl border-2 border-acg-red/25 bg-white px-4 py-3.5 text-center shadow-sm transition hover:border-acg-red/45 hover:bg-acg-red/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 sm:min-h-[4.5rem] sm:px-5 sm:py-4`;
 
+// ─── Компонент CTA-кнопки ─────────────────────────────────────────────────────
+
 function HeroConsultationCta({
   variant,
+  title,
+  hint,
+  price,
   onClick,
 }: {
   variant: "free" | "paid";
+  title: string;
+  hint: string;
+  price?: string;
   onClick: () => void;
 }) {
-  const copy = variant === "free" ? HERO_FREE_CTA : HERO_PAID_CTA;
   const hintClass =
     variant === "free"
       ? "text-[0.625rem] font-semibold uppercase leading-snug tracking-[0.06em] text-white/85 sm:text-[0.6875rem]"
@@ -234,13 +254,15 @@ function HeroConsultationCta({
       className={variant === "free" ? heroPrimaryCtaClass : heroSecondaryCtaClass}
     >
       <span className="relative z-20 flex max-w-[18rem] flex-col items-center gap-1.5 sm:max-w-[14rem] lg:max-w-[16rem]">
-        <span className={labelClass}>{copy.label}</span>
-        <span className={hintClass}>{copy.hint}</span>
-        {variant === "paid" ? <span className={priceClass}>{HERO_PAID_CTA.price}</span> : null}
+        <span className={labelClass}>{title}</span>
+        <span className={hintClass}>{hint}</span>
+        {price ? <span className={priceClass}>{price}</span> : null}
       </span>
     </button>
   );
 }
+
+// ─── Фото-бейджи ─────────────────────────────────────────────────────────────
 
 const heroPhotoCardClass =
   "relative mx-auto w-full max-w-[min(100%,36rem)] aspect-square min-w-0";
@@ -358,10 +380,17 @@ function HeroStatBadge({
   );
 }
 
+// ─── Головний компонент ───────────────────────────────────────────────────────
+
 export default function HeroClient({
   heading = "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.",
   subheading = "",
   heroCards,
+  primaryButtonTitle,
+  primaryButtonHint,
+  secondaryButtonTitle,
+  secondaryButtonHint,
+  secondaryButtonPrice,
 }: HeroProps) {
   const [consultModalOpen, setConsultModalOpen] = useState(false);
   const [consultModalKey, setConsultModalKey] = useState(0);
@@ -384,19 +413,31 @@ export default function HeroClient({
   const contentMotion = isMdUp ? contentVariants : contentVariantsMobile;
   const itemMotion = isMdUp ? itemVariants : itemVariantsMobile;
 
-  const heroNavCards = useMemo<HeroNavCard[]>(() => {
-    if (!heroCards?.length) return HERO_NAV_CARDS;
-
+  // Формуємо навігаційні картки: title та subtitle беруться з CMS якщо є,
+  // інакше — з HERO_NAV_CARDS дефолтів.
+  const heroNavCards = useMemo(() => {
     return HERO_NAV_CARDS.map((card, index) => {
-      const cmsCard = heroCards[index];
-      const cmsSubtitle = cmsCard?.subtitle?.trim();
-      if (!cmsSubtitle) return card;
+      const cmsCard = heroCards?.[index];
       return {
-        ...card,
-        subtitle: cmsSubtitle,
+        title: cmsCard?.title?.trim() || card.defaultTitle,
+        subtitle: cmsCard?.subtitle?.trim() || card.defaultSubtitle,
+        icon: card.icon,
+        href: card.href,
+        pricingPreset: card.pricingPreset,
       };
     });
   }, [heroCards]);
+
+  // Тексти CTA-кнопок: CMS або дефолти
+  const freeCta = {
+    title: primaryButtonTitle?.trim() || HERO_FREE_CTA_DEFAULTS.title,
+    hint: primaryButtonHint?.trim() || HERO_FREE_CTA_DEFAULTS.hint,
+  };
+  const paidCta = {
+    title: secondaryButtonTitle?.trim() || HERO_PAID_CTA_DEFAULTS.title,
+    hint: secondaryButtonHint?.trim() || HERO_PAID_CTA_DEFAULTS.hint,
+    price: secondaryButtonPrice?.trim() || HERO_PAID_CTA_DEFAULTS.price,
+  };
 
   const handleNavAnchorClick = useCallback(
     (
@@ -556,10 +597,15 @@ export default function HeroClient({
               >
                 <HeroConsultationCta
                   variant="free"
+                  title={freeCta.title}
+                  hint={freeCta.hint}
                   onClick={() => openConsultationModal("free_consultation")}
                 />
                 <HeroConsultationCta
                   variant="paid"
+                  title={paidCta.title}
+                  hint={paidCta.hint}
+                  price={paidCta.price}
                   onClick={() => openConsultationModal("paid_consultation")}
                 />
               </motion.div>
