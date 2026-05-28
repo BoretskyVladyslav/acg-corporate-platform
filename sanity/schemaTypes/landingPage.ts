@@ -24,64 +24,56 @@ export const landingPageType = defineType({
       title: "Перший екран (Hero)",
       type: "landingHeroSection",
       group: "hero",
-      description:
-        "Заголовок, підзаголовок, навігаційні картки та кнопки консультації.",
+      description: "Заголовок, картки та кнопки",
     }),
     defineField({
       name: "about",
       title: "Про компанію",
       type: "landingAboutSection",
       group: "about",
-      description:
-        "Текст про компанію та 4 плашки-показники (клієнти, роки, послуги, контроль).",
+      description: "Текст та статистика",
     }),
     defineField({
       name: "advantages",
       title: "Переваги",
       type: "landingAdvantagesSection",
       group: "advantages",
-      description:
-        "Список переваг компанії з заголовком та зображенням праворуч.",
+      description: "Список переваг",
     }),
     defineField({
       name: "pricing",
       title: "Тарифи",
       type: "landingPricingSection",
       group: "pricing",
-      description:
-        "Тарифні пакети: Консультація, Реєстрація ФОП, Бухгалтерія ФОП/ТОВ, Інші послуги.",
+      description: "Категорії та пакети тарифів",
     }),
     defineField({
       name: "trust",
       title: "Відгуки клієнтів",
       type: "landingTrustSection",
       group: "trust",
-      description:
-        "Рейтинг Google, відгуки клієнтів у вигляді карток.",
+      description: "Google рейтинг та відгуки",
     }),
     defineField({
       name: "contact",
       title: "Форма замовлення та контакти",
       type: "landingContactSection",
       group: "contact",
-      description:
-        "Тексти для форми зворотнього зв'язку, адреса та телефон для відображення.",
+      description: "Тексти форми та контакти",
     }),
     defineField({
       name: "faq",
       title: "Часті запитання (FAQ)",
       type: "landingFaqSection",
       group: "faq",
-      description:
-        "Список питань і відповідей, кнопка консультації та нотатка у підвалі.",
+      description: "Питання, відповіді та CTA",
     }),
     defineField({
       name: "seo",
       title: "SEO та метатеги",
       type: "landingSeoSection",
       group: "seo",
-      description:
-        "Заголовок вкладки браузера, мета-опис та OG-зображення для соцмереж.",
+      description: "Метатеги та OG зображення",
     }),
   ],
   preview: {

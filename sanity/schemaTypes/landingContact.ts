@@ -36,8 +36,7 @@ export const landingContactSectionType = defineType({
       name: "phoneDisplay",
       title: "Телефон (як показати на сайті)",
       type: "string",
-      description:
-        "Номер для відображення та для дзвінка; посилання tel: збирається автоматично.",
+      description: "Телефон (наприклад «+38 067 123 45 67»)",
     }),
   ],
 });

@@ -13,11 +13,7 @@ export const landingPageQuery = groq`
       heading,
       subheading,
       heroCards[]{title, subtitle},
-      primaryButtonTitle,
-      primaryButtonHint,
-      secondaryButtonTitle,
-      secondaryButtonHint,
-      secondaryButtonPrice,
+      mainButtons[]{title, subtitle, price, buttonStyle, actionType},
       backgroundImage
     },
     about{
@@ -38,12 +34,15 @@ export const landingPageQuery = groq`
       intro,
       ctaText,
       globalButtonLabel,
-      tiers[]{
-        name,
-        priceText,
-        description,
-        features[]{title, description, note, icon, isHeader},
-        isPopular
+      categories[]{
+        categoryName,
+        tariffs[]{
+          name,
+          priceText,
+          description,
+          features[]{title, description, note, icon, isHeader, isSubheading},
+          isPopular
+        }
       }
     },
     trust{
@@ -84,13 +83,13 @@ export type LandingHeroQueryResult = {
   heading?: string | null;
   subheading?: string | null;
   heroCards?: Array<{ title?: string | null; subtitle?: string | null }> | null;
-  /** Кнопка 1 — Безкоштовна консультація */
-  primaryButtonTitle?: string | null;
-  primaryButtonHint?: string | null;
-  /** Кнопка 2 — Платна консультація */
-  secondaryButtonTitle?: string | null;
-  secondaryButtonHint?: string | null;
-  secondaryButtonPrice?: string | null;
+  mainButtons?: Array<{
+    title?: string | null;
+    subtitle?: string | null;
+    price?: string | null;
+    buttonStyle?: string | null;
+    actionType?: string | null;
+  }> | null;
   backgroundImage?: Record<string, unknown> | null;
 } | null;
 
@@ -114,21 +113,24 @@ export type LandingPricingQueryResult = {
   intro?: string | null;
   ctaText?: string | null;
   globalButtonLabel?: string | null;
-  tiers?: Array<{
-    name?: string | null;
-    /** Повне відображення ціни (єдине поле в Studio). */
-    priceText?: string | null;
-    description?: string | null;
-    features?:
-      | Array<{
-          title?: string | null;
-          description?: string | null;
-          note?: string | null;
-          icon?: string | null;
-          isHeader?: boolean | null;
-        }>
-      | null;
-    isPopular?: boolean | null;
+  categories?: Array<{
+    categoryName?: string | null;
+    tariffs?: Array<{
+      name?: string | null;
+      priceText?: string | null;
+      description?: string | null;
+      features?:
+        | Array<{
+            title?: string | null;
+            description?: string | null;
+            note?: string | null;
+            icon?: string | null;
+            isHeader?: boolean | null;
+            isSubheading?: boolean | null;
+          }>
+        | null;
+      isPopular?: boolean | null;
+    }> | null;
   }> | null;
 } | null;
 

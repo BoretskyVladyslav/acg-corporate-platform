@@ -79,24 +79,28 @@ export const featureItemType = defineType({
       name: "title",
       title: "Назва",
       type: "string",
-      description:
-        "Заголовок рядка: послуга, пункт тарифу або назва підсекції (якщо ввімкнено «Заголовок підсекції»).",
+      description: "Назва послуги або заголовка",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: "isHeader",
       title: "Це заголовок підсекції?",
       type: "boolean",
-      description:
-        "Увімкніть для рядка-розділювача (наприклад «Окремий функціонал з ПРРО»): жирний текст без іконки; нижче додайте звичайні пункти.",
+      description: "Робить цей рядок підзаголовком у списку",
+      initialValue: false,
+    }),
+    defineField({
+      name: "isSubheading",
+      title: "Це підзаголовок?",
+      type: "boolean",
+      description: "Увімкніть, щоб цей пункт виглядав як заголовок групи послуг (без галочки, жирним шрифтом)",
       initialValue: false,
     }),
     defineField({
       name: "icon",
       title: "Іконка",
       type: "string",
-      description:
-        "Для звичайних пунктів — малюнок поруч із текстом. Для заголовка підсекції не використовується.",
+      description: "Опціональна іконка",
       options: {
         layout: "dropdown",
         list: [...ICON_OPTIONS],
@@ -109,8 +113,7 @@ export const featureItemType = defineType({
       type: "text",
       rows: 4,
       fieldset: "extras",
-      description:
-        "Необов’язковий текст під назвою. Якщо є крапки — розіб’ється на підпункти на сайті.",
+      description: "Додатковий опис під назвою",
     }),
     defineField({
       name: "note",
@@ -118,15 +121,14 @@ export const featureItemType = defineType({
       type: "text",
       rows: 2,
       fieldset: "extras",
-      description:
-        "Дрібне уточнення під пунктом (наприклад умова або термін).",
+      description: "Примітка (відображається над рискою)",
     }),
   ],
   preview: {
-    select: { title: "title", icon: "icon", isHeader: "isHeader" },
-    prepare({ title, icon, isHeader }) {
+    select: { title: "title", icon: "icon", isHeader: "isHeader", isSubheading: "isSubheading" },
+    prepare({ title, icon, isHeader, isSubheading }) {
       const label = title || "Без назви";
-      if (isHeader === true) {
+      if (isHeader === true || isSubheading === true) {
         return {
           title: label,
           media: () =>

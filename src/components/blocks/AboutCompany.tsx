@@ -61,7 +61,7 @@ function resolveAboutMetrics(
   );
   if (!filled.length) return DEFAULT_ABOUT_METRICS;
 
-  return filled.slice(0, 4).map((m, i) => ({
+  return filled.map((m, i) => ({
     value: m.value?.trim() ?? DEFAULT_ABOUT_METRICS[i]?.value ?? "",
     label: m.label?.trim() ?? DEFAULT_ABOUT_METRICS[i]?.label ?? "",
     icon: DEFAULT_ABOUT_METRICS[i]?.icon ?? Users,
@@ -248,17 +248,17 @@ export default function AboutCompany({
             aria-hidden
           />
 
-          <div className="relative z-[1] grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-4 sm:gap-x-4 md:gap-x-6 lg:gap-x-8">
+          <div className="relative z-[1] flex flex-wrap justify-center gap-y-8 gap-x-3 sm:gap-x-4 md:gap-x-6 lg:gap-x-8">
             {resolvedMetrics.map((metric, i) => {
-              const Icon = metric.icon;
+               const Icon = metric.icon;
 
-              return (
-                <motion.article
-                  key={`${metric.value}__${metric.label}__${i}`}
-                  role="listitem"
-                  variants={itemVariants}
-                  className="relative flex min-w-0 flex-col items-center px-0.5 text-center sm:px-1"
-                >
+               return (
+                 <motion.article
+                   key={`${metric.value}__${metric.label}__${i}`}
+                   role="listitem"
+                   variants={itemVariants}
+                   className="relative flex min-w-0 flex-col items-center px-0.5 text-center sm:px-1 flex-grow basis-[calc(50%-12px)] sm:basis-[calc(25%-16px)] md:basis-0 md:flex-1"
+                 >
                   <MetricIconBadge icon={Icon} />
                   <p className="text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl md:text-[2rem] lg:text-[2.125rem]">
                     {metric.value}

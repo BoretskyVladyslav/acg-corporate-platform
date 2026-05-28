@@ -9,8 +9,7 @@ const faqItemObject = defineType({
       name: "question",
       title: "Питання",
       type: "string",
-      description:
-        "Формулюйте як реальне запитання клієнта. Починайте з великої літери, крапку в кінці можна не ставити (наприклад «Як відбувається співпраця дистанційно»).",
+      description: "Запитання клієнта",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -18,8 +17,7 @@ const faqItemObject = defineType({
       title: "Відповідь",
       type: "text",
       rows: 6,
-      description:
-        "Детальна відповідь: 2–4 речення. Відображається при розкритті картки. Уникайте жаргону — пишіть зрозуміло для підприємця.",
+      description: "Відповідь",
       validation: (Rule) => Rule.required(),
     }),
   ],
@@ -56,39 +54,34 @@ export const landingFaqSectionType = defineType({
       name: "eyebrow",
       title: "Позначка над заголовком (eyebrow)",
       type: "string",
-      description:
-        "Маленький рядок над заголовком (зазвичай «FAQ»). Якщо порожньо — показується дефолт.",
+      description: "Маленький текст над заголовком",
     }),
     defineField({
       name: "heading",
       title: "Заголовок секції",
       type: "string",
-      description:
-        "Головний заголовок FAQ (наприклад «Популярні запитання»). Якщо порожньо — показується дефолт.",
+      description: "Основний заголовок",
     }),
     defineField({
       name: "intro",
       title: "Вступний підзаголовок",
       type: "text",
       rows: 2,
-      description:
-        "Короткий текст під заголовком (наприклад «Відповіді на часті питання наших клієнтів»). Якщо порожньо — показується дефолт.",
+      description: "Короткий текст під заголовком",
     }),
     defineField({
       name: "items",
       title: "Запитання та відповіді",
       type: "array",
       of: [defineArrayMember({ type: faqItemObject.name })],
-      description:
-        "Список питань-відповідей. Рекомендовано 4–8 пунктів. Порядок змінюється перетягуванням. Якщо список порожній — показуються 4 дефолтних питання.",
+      description: "Список запитань",
     }),
     defineField({
       name: "footerButtonText",
       title: "Текст кнопки «Отримати консультацію»",
       type: "string",
       fieldset: "cta",
-      description:
-        "Підпис кнопки під списком питань (наприклад «Отримати консультацію»). Якщо ПОРОЖНЬО — кнопка взагалі не з'являється на сайті. Кнопка відкриває модальне вікно консультації.",
+      description: "Підпис кнопки під списком",
     }),
     defineField({
       name: "footerNote",
@@ -96,8 +89,7 @@ export const landingFaqSectionType = defineType({
       type: "text",
       rows: 2,
       fieldset: "footer",
-      description:
-        "Коротка нотатка у самому низу сторінки (наприклад: рік заснування, копірайт). Використовуйте плейсхолдер {year} для автоматичного підстановки поточного року. Приклад: «© {year} ACG Accounting. Усі права захищено.»",
+      description: "Текст у футері (можна використовувати {year})",
     }),
   ],
 });

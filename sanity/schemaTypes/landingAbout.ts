@@ -9,16 +9,14 @@ const aboutMetricObject = defineType({
       name: "value",
       title: "Значення (велике число)",
       type: "string",
-      description:
-        "Великий акцент на картці: число або рядок (наприклад «1000 +» або «14»). Обов'язкове для відображення плашки.",
+      description: "Значення (наприклад «500+»)",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: "label",
       title: "Підпис під числом",
       type: "string",
-      description:
-        "Короткий текст під великим значенням (наприклад «клієнтів», «років досвіду»). Обов'язкове для відображення плашки.",
+      description: "Підпис (наприклад «задоволених клієнтів»)",
       validation: (Rule) => Rule.required(),
     }),
   ],
@@ -33,7 +31,7 @@ export const landingAboutSectionType = defineType({
       name: "eyebrow",
       title: "Текст над заголовком (eyebrow)",
       type: "string",
-      description: "Коротка підводка перед основним заголовком секції.",
+      description: "Маленький текст над заголовком",
     }),
     defineField({
       name: "heading",
@@ -48,12 +46,10 @@ export const landingAboutSectionType = defineType({
     }),
     defineField({
       name: "metrics",
-      title: "Плашки-показники (рівно 4)",
+      title: "Плашки-показники",
       type: "array",
       of: [defineArrayMember({ type: aboutMetricObject.name })],
-      description:
-        "Рівно 4 плашки з числом та підписом. Іконки підбираються автоматично за порядком: 1 — клієнти, 2 — роки досвіду, 3 — послуги, 4 — рівні контролю. Якщо залишити порожнім — показуються дефолтні значення.",
-      validation: (Rule) => Rule.max(4),
+      description: "Картки зі статистикою",
     }),
   ],
 });

@@ -26,6 +26,7 @@ export interface ServiceItem {
   icon?: string;
   /** Рядок-заголовок підсекції в тарифах (Sanity `featureItem.isHeader`). */
   isHeader?: boolean;
+  isSubheading?: boolean;
 }
 
 export interface ServicesProps {

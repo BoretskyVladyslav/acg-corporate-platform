@@ -56,11 +56,16 @@ export interface PricingTier {
   isPlaceholder?: boolean;
 }
 
+export interface PricingCategory {
+  categoryName?: string;
+  tariffs?: PricingTier[];
+}
+
 export interface PricingProps {
   eyebrow?: string;
   heading?: string;
   intro?: string;
-  tiers?: PricingTier[];
+  categories?: PricingCategory[];
   /** Текст над нижньою кнопкою консультації (Sanity `pricing.ctaText`). */
   ctaText?: string;
   /** Підпис синьої кнопки замовлення у картці тарифу (`pricing.globalButtonLabel`). */
@@ -183,13 +188,14 @@ function splitDescriptionToLines(text: string): string[] {
 function pricingFeatureRowIsRenderable(f: ServiceItem): boolean {
   return (
     f.isHeader === true ||
+    f.isSubheading === true ||
     Boolean(f.title?.trim()) ||
     Boolean(f.description?.trim()) ||
     Boolean(f.note?.trim())
   );
 }
 
-/** Усі звичайні пункти після останнього `isHeader` (до наступного заголовка) — компактний підсписок. */
+/** Усі звичайні пункти після останнього `isHeader`/`isSubheading` (до наступного заголовка) — компактний підсписок. */
 function followsPricingSubsectionHeader(
   items: ServiceItem[],
   index: number,
@@ -198,7 +204,7 @@ function followsPricingSubsectionHeader(
   for (let i = 0; i < index; i++) {
     const row = items[i];
     if (!pricingFeatureRowIsRenderable(row)) continue;
-    if (row.isHeader === true) {
+    if (row.isHeader === true || row.isSubheading === true) {
       lastHeaderIndex = i;
     }
   }
@@ -213,7 +219,7 @@ export default function Pricing({
   eyebrow,
   heading,
   intro,
-  tiers,
+  categories,
   ctaText,
   globalButtonLabel,
 }: PricingProps) {
@@ -223,29 +229,22 @@ export default function Pricing({
   const displayCtaText = textOr(ctaText, DEFAULT_PRICING_CTA_BOTTOM_TEXT);
   /** Текст CTA у картках тарифів — фіксований згідно з ТЗ клієнта. */
   const cardOrderLabel = DEFAULT_GLOBAL_ORDER_LABEL;
-  const resolvedTiers = mergePricingTierCatalog(tiers, DEFAULT_PRICING_TIERS);
-  const initialNavigation = useMemo(
-    () => findInitialPricingNavigation(resolvedTiers),
-    [resolvedTiers],
-  );
-  const [mainTabId, setMainTabId] = useState<PricingMainTabId>(
-    initialNavigation.mainTabId,
-  );
-  const [fopSubIndex, setFopSubIndex] = useState(initialNavigation.fopSubIndex);
+  
+  const categoriesList = categories ?? [];
+  
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const [activeTariffIndex, setActiveTariffIndex] = useState(0);
+  
+  const activeCategory = categoriesList[activeCategoryIndex];
+  const tier = activeCategory?.tariffs?.[activeTariffIndex] ?? activeCategory?.tariffs?.[0];
+
   const [consultModalOpen, setConsultModalOpen] = useState(false);
   const [consultModalKey, setConsultModalKey] = useState(0);
   const reduceMotionPreferred = useReducedMotion();
   const isMdUp = useIsMdUp();
 
-  const safeIndex = resolveActiveTierIndex(
-    resolvedTiers,
-    mainTabId,
-    fopSubIndex,
-  );
-  const tier = resolvedTiers[safeIndex] ?? resolvedTiers[0];
-
   useEffect(() => {
-    const tierName = resolvedTiers[safeIndex]?.name?.trim() ?? "";
+    const tierName = tier?.name?.trim() ?? "";
     try {
       if (typeof window !== "undefined" && tierName) {
         sessionStorage.setItem(ACG_SELECTED_PRICING_TIER_KEY, tierName);
@@ -253,16 +252,15 @@ export default function Pricing({
     } catch {
       /* sessionStorage недоступний або переповнений */
     }
-  }, [safeIndex, resolvedTiers]);
+  }, [tier]);
 
-  const selectMainTab = (nextTabId: PricingMainTabId) => {
-    setMainTabId(nextTabId);
+  const selectMainTab = (index: number) => {
+    setActiveCategoryIndex(index);
+    setActiveTariffIndex(0);
   };
 
-  const selectFopSubTab = (index: number) => {
-    if (index >= 0 && index < FOP_ACCOUNTING_SUB_TABS.length) {
-      setFopSubIndex(index);
-    }
+  const selectSubTab = (index: number) => {
+    setActiveTariffIndex(index);
   };
 
   useEffect(() => {
@@ -270,11 +268,19 @@ export default function Pricing({
       const ce = e as CustomEvent<{ preset?: PricingTierPreset }>;
       const preset = ce.detail?.preset;
       if (!preset) return;
-      setMainTabId(mainTabIdForPreset(preset));
+      
+      const searchPresetStr = preset.replace("-", " ").toLowerCase();
+      const matchedCatIndex = categoriesList.findIndex(c => 
+        c.categoryName?.toLowerCase().includes(searchPresetStr.split(" ")[0])
+      );
+      if (matchedCatIndex >= 0) {
+        setActiveCategoryIndex(matchedCatIndex);
+        setActiveTariffIndex(0);
+      }
     };
     window.addEventListener(ACG_PRICING_PRESET_EVENT, handler);
     return () => window.removeEventListener(ACG_PRICING_PRESET_EVENT, handler);
-  }, []);
+  }, [categoriesList]);
 
   const panelMotionProps = useMemo(
     () =>
@@ -376,32 +382,26 @@ export default function Pricing({
             </p>
           </motion.div>
 
-        {PRICING_MAIN_TABS.length > 1 ? (
+        {categoriesList.length > 1 ? (
           <motion.div variants={shellItemVariants} className="mt-8 md:mt-10">
             <div
               role="tablist"
               aria-label="Категорії тарифів"
-              className="flex w-full min-w-0 snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain scroll-px-2 pb-2 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 md:flex-wrap md:justify-center md:gap-2 md:overflow-x-visible md:scroll-px-0 lg:justify-start [&::-webkit-scrollbar]:hidden"
+              className="flex flex-wrap w-full min-w-0 gap-2.5 sm:gap-3 md:justify-center md:gap-2 lg:justify-start"
             >
-              {PRICING_MAIN_TABS.map((tab) => {
-                const isActive = tab.id === mainTabId;
-                const tabTierIndex = resolveActiveTierIndex(
-                  resolvedTiers,
-                  tab.id,
-                  tab.id === "fop-accounting" ? fopSubIndex : 0,
-                );
-                const tabTier = resolvedTiers[tabTierIndex];
-                const isPopular = tabTier ? isPopularTier(tabTier) : false;
+              {categoriesList.map((cat, idx) => {
+                const isActive = idx === activeCategoryIndex;
+                const isPopular = cat.tariffs?.some(isPopularTier) ?? false;
 
                 return (
                   <motion.button
-                    key={tab.id}
+                    key={`cat-${idx}`}
                     type="button"
                     role="tab"
                     aria-selected={isActive}
                     aria-controls="pricing-tier-panel"
-                    id={`pricing-main-tab-${tab.id}`}
-                    onClick={() => selectMainTab(tab.id)}
+                    id={`pricing-main-tab-${idx}`}
+                    onClick={() => selectMainTab(idx)}
                     className={`snap-start shrink-0 touch-manipulation rounded-full border font-semibold transition-colors min-h-[48px] max-w-[calc(100vw-2.5rem)] px-4 py-3.5 text-left text-sm leading-snug sm:max-w-none sm:px-5 sm:py-4 sm:text-base md:min-h-0 md:max-w-none md:px-4 md:py-2.5 md:text-center md:text-sm md:font-medium ${
                       isActive ? LANDING_PRICING_TAB_ACTIVE : LANDING_PRICING_TAB_IDLE
                     } ${isPopular ? "ring-2 ring-amber-300/75 ring-offset-2 ring-offset-[#245494]" : ""}`}
@@ -419,7 +419,7 @@ export default function Pricing({
                   >
                     <span className="inline-flex w-full flex-col items-start gap-1 md:items-center">
                       <span className="inline-flex flex-wrap items-center gap-1.5 break-words md:justify-center">
-                        <span className="break-words">{tab.label}</span>
+                        <span className="break-words">{cat.categoryName}</span>
                         {isPopular ? (
                           <span
                             className={`rounded-full px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${isActive ? "bg-acg-blue/10 text-acg-blue" : "bg-amber-100 text-amber-900"}`}
@@ -435,40 +435,36 @@ export default function Pricing({
               })}
             </div>
 
-            {mainTabId === "fop-accounting" ? (
+            {(activeCategory?.tariffs?.length ?? 0) > 1 ? (
               <div className="mt-4 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4 md:mt-5">
                 <p className="mb-3 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-white/60 md:text-left">
-                  Оберіть групу ФОП
+                  Оберіть тариф
                 </p>
                 <div
                   role="tablist"
-                  aria-label="Групи ФОП"
-                  className="flex w-full min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:justify-center md:justify-start [&::-webkit-scrollbar]:hidden"
+                  aria-label="Тарифи"
+                  className="flex flex-wrap w-full min-w-0 gap-2 sm:justify-center md:justify-start"
                 >
-                  {FOP_ACCOUNTING_SUB_TABS.map((subTab, index) => {
-                    const isSubActive = index === fopSubIndex;
-                    const subTier =
-                      resolvedTiers[
-                        resolveActiveTierIndex(resolvedTiers, "fop-accounting", index)
-                      ];
-                    const isSubPopular = subTier ? isPopularTier(subTier) : false;
+                  {activeCategory.tariffs!.map((subTab, index) => {
+                    const isSubActive = index === activeTariffIndex;
+                    const isSubPopular = isPopularTier(subTab);
 
                     return (
                       <button
-                        key={subTab.label}
+                        key={`subtab-${index}`}
                         type="button"
                         role="tab"
                         aria-selected={isSubActive}
                         aria-controls="pricing-tier-panel"
-                        id={`pricing-fop-subtab-${index}`}
-                        onClick={() => selectFopSubTab(index)}
+                        id={`pricing-subtab-${index}`}
+                        onClick={() => selectSubTab(index)}
                         className={`snap-start shrink-0 touch-manipulation rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors sm:px-4 sm:py-2.5 sm:text-sm ${
                           isSubActive
                             ? LANDING_PRICING_SUBTAB_ACTIVE
                             : LANDING_PRICING_SUBTAB_IDLE
                         } ${isSubPopular ? "ring-1 ring-amber-300/70" : ""}`}
                       >
-                        {subTab.label}
+                        {subTab.name}
                       </button>
                     );
                   })}
@@ -484,14 +480,14 @@ export default function Pricing({
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.article
-              key={safeIndex}
+              key={`${activeCategoryIndex}-${activeTariffIndex}`}
               id="pricing-tier-panel"
               role="tabpanel"
               aria-labelledby={
-                PRICING_MAIN_TABS.length > 1
-                  ? mainTabId === "fop-accounting"
-                    ? `pricing-fop-subtab-${fopSubIndex}`
-                    : `pricing-main-tab-${mainTabId}`
+                categoriesList.length > 1
+                  ? (activeCategory?.tariffs?.length ?? 0) > 1
+                    ? `pricing-subtab-${activeTariffIndex}`
+                    : `pricing-main-tab-${activeCategoryIndex}`
                   : "pricing-heading"
               }
               aria-live="polite"
@@ -508,7 +504,7 @@ export default function Pricing({
                   style={watermarkOutlineStyle}
                   className={`${watermarkPositionClass} opacity-[0.45]`}
                 >
-                  {String(safeIndex + 1).padStart(2, "0")}
+                  {String(activeCategoryIndex + 1).padStart(2, "0")}
                 </span>
               ) : (
                 <motion.span
@@ -523,7 +519,7 @@ export default function Pricing({
                     delay: 0.04,
                   }}
                 >
-                  {String(safeIndex + 1).padStart(2, "0")}
+                  {String(activeCategoryIndex + 1).padStart(2, "0")}
                 </motion.span>
               )}
               <div className="relative z-[1]">
@@ -599,6 +595,7 @@ function PricingCheckoutPanel({
   const hasFeatureRows = mainFeatures.some(
     (f) =>
       f.isHeader === true ||
+      f.isSubheading === true ||
       Boolean(f.title?.trim()) ||
       Boolean(f.description?.trim()) ||
       Boolean(f.note?.trim()),
@@ -616,26 +613,34 @@ function PricingCheckoutPanel({
   const ctaBase = popular
     ? "bg-acg-red ring-2 ring-amber-300/60 hover:bg-acg-red/92"
     : "bg-acg-red shadow-lg shadow-acg-red/25 hover:bg-acg-red/92";
-  const showEmptyFallback =
-    !isPlaceholder &&
-    !hasFeatureRows &&
-    descLines.length === 0 &&
-    !tier.description?.trim();
+  const showEmptyFallback = false;
+  const showRightColumn = Boolean(priceDisplayRaw);
 
   const ctaPulseAnimate =
     reduceMotionPreferred || !isMdUp ? {} : { boxShadow: ctaPulseShadowRed };
 
+  const hasContent =
+    Boolean(tier.description?.trim()) ||
+    hasFeatureRows ||
+    descLines.length > 0;
+
   return (
     <div
       className={`flex flex-col md:flex-row md:items-stretch ${
-        isRegistrationTier
-          ? "min-h-[min(23rem,72svh)] md:min-h-[22rem]"
-          : "min-h-[min(28rem,82svh)] md:min-h-[26rem]"
+        !showRightColumn
+          ? "min-h-0"
+          : isRegistrationTier
+            ? "min-h-[min(23rem,72svh)] md:min-h-[22rem]"
+            : "min-h-[min(28rem,82svh)] md:min-h-[26rem]"
       }`}
     >
       <div
-        className={`relative flex min-h-0 flex-1 flex-col border-b border-acg-blue/[0.1] p-6 sm:p-8 md:border-b-0 md:border-r lg:p-10 lg:pl-11 ${
-          isRegistrationTier ? "lg:basis-[68%]" : "lg:basis-[62%]"
+        className={`relative flex min-h-0 flex-col p-6 sm:p-8 lg:p-10 lg:pl-11 ${
+          showRightColumn
+            ? `flex-1 border-b border-acg-blue/[0.1] md:border-b-0 md:border-r ${
+                isRegistrationTier ? "lg:basis-[68%]" : "lg:basis-[62%]"
+              }`
+            : "w-full"
         }`}
       >
         {popular ? (
@@ -648,18 +653,13 @@ function PricingCheckoutPanel({
         <h3 className="break-words text-xl font-semibold tracking-tight text-acg-blue sm:text-2xl">
           {tier.name}
         </h3>
-        <div className="mt-4 h-px w-full min-w-0 bg-acg-border" aria-hidden />
-        {tier.description?.trim() && hasFeatureRows ? (
+        {hasContent ? (
+          <div className="mt-4 h-px w-full min-w-0 bg-acg-border" aria-hidden />
+        ) : null}
+        {tier.description?.trim() ? (
           <p className="mt-5 text-sm leading-relaxed text-foreground/72">
             {tier.description}
           </p>
-        ) : null}
-        {isPlaceholder && tier.description?.trim() ? (
-          <div className="mt-6 flex min-h-0 flex-1 items-center justify-center py-4 sm:py-8">
-            <p className="w-full max-w-xl rounded-2xl border border-dashed border-acg-blue/30 bg-acg-blue/[0.04] px-6 py-8 text-center text-base leading-relaxed text-foreground/72 sm:px-8 sm:py-10 sm:text-lg">
-              {tier.description}
-            </p>
-          </div>
         ) : null}
         {hasFeatureRows ? (
           <motion.ul
@@ -671,6 +671,7 @@ function PricingCheckoutPanel({
             {mainFeatures.map((f, j) => {
               if (
                 f.isHeader !== true &&
+                f.isSubheading !== true &&
                 !f.title?.trim() &&
                 !f.description?.trim() &&
                 !f.note?.trim()
@@ -690,6 +691,24 @@ function PricingCheckoutPanel({
                     className="mt-6 mb-2 first:mt-0"
                   >
                     <p className="text-base font-bold leading-snug text-acg-blue sm:text-[1.0625rem]">
+                      {headline}
+                    </p>
+                  </motion.li>
+                );
+              }
+
+              if (f.isSubheading === true) {
+                const headline = f.title?.trim() ?? "";
+                if (!headline) return null;
+                return (
+                  <motion.li
+                    key={`subhdr-${headline}-${j}`}
+                    variants={
+                      isMdUp ? featureItemVariants : featureItemVariantsMobile
+                    }
+                    className="mt-5 mb-2 first:mt-0"
+                  >
+                    <p className="text-sm font-semibold leading-snug text-acg-blue sm:text-base">
                       {headline}
                     </p>
                   </motion.li>
@@ -821,48 +840,50 @@ function PricingCheckoutPanel({
         ) : null}
       </div>
 
-      <aside
-        className={`relative flex flex-1 flex-col border-t border-acg-blue/[0.1] p-6 sm:p-8 md:border-l md:border-t-0 lg:max-w-sm lg:basis-[38%] lg:p-10 ${
-          popular
-            ? "bg-[linear-gradient(165deg,color-mix(in_oklab,var(--color-acg-blue)_6%,transparent)_0%,#fff_38%,rgb(254_252_232/0.7)_100%)]"
-            : "bg-gradient-to-b from-acg-blue/[0.035] to-white"
-        } ${isRegistrationTier ? "lg:basis-[32%]" : "lg:basis-[38%]"}`}
-      >
-        <div className="min-w-0 flex-1 pb-6">
-          {isPlaceholder ? (
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-foreground/45">
-              Оновлюється
-            </p>
-          ) : priceDisplayRaw ? (
-            <p className="break-words text-[1.625rem] font-bold leading-snug tracking-tight text-acg-blue sm:text-4xl md:text-[2.25rem] lg:text-[2.75rem]">
-              {priceDisplayRaw}
-            </p>
-          ) : (
-            <p className="max-w-[18rem] text-base font-semibold leading-snug tracking-tight text-acg-blue sm:text-xl">
-              На запит
-            </p>
-          )}
-          {!isPlaceholder && !priceDisplayRaw ? (
-            <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-foreground/65">
-              Ціна залежить від об&apos;єму послуг; залишіть заявку — узгодимо умови.
-            </p>
-          ) : null}
-        </div>
-        <motion.button
-          type="button"
-          onClick={onOrderClick}
-          className={`mt-auto inline-flex min-h-[52px] w-full shrink-0 items-center justify-center rounded-full px-5 py-3.5 text-center text-sm font-semibold leading-snug text-white transition-[transform,filter] duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 md:hover:-translate-y-px sm:px-6 sm:text-[0.9375rem] ${ctaBase}`}
-          initial={false}
-          animate={ctaPulseAnimate}
-          transition={
-            reduceMotionPreferred || !isMdUp
-              ? { duration: 0 }
-              : ctaPulseTransition
-          }
+      {showRightColumn ? (
+        <aside
+          className={`relative flex flex-1 flex-col border-t border-acg-blue/[0.1] p-6 sm:p-8 md:border-l md:border-t-0 lg:max-w-sm lg:basis-[38%] lg:p-10 ${
+            popular
+              ? "bg-[linear-gradient(165deg,color-mix(in_oklab,var(--color-acg-blue)_6%,transparent)_0%,#fff_38%,rgb(254_252_232/0.7)_100%)]"
+              : "bg-gradient-to-b from-acg-blue/[0.035] to-white"
+          } ${isRegistrationTier ? "lg:basis-[32%]" : "lg:basis-[38%]"}`}
         >
-          {orderButtonLabel}
-        </motion.button>
-      </aside>
+          <div className="min-w-0 flex-1 pb-6">
+            {isPlaceholder ? (
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-foreground/45">
+                Оновлюється
+              </p>
+            ) : priceDisplayRaw ? (
+              <p className="break-words text-[1.625rem] font-bold leading-snug tracking-tight text-acg-blue sm:text-4xl md:text-[2.25rem] lg:text-[2.75rem]">
+                {priceDisplayRaw}
+              </p>
+            ) : (
+              <p className="max-w-[18rem] text-base font-semibold leading-snug tracking-tight text-acg-blue sm:text-xl">
+                На запит
+              </p>
+            )}
+            {!isPlaceholder && !priceDisplayRaw ? (
+              <p className="mt-3 max-w-[17rem] text-sm leading-relaxed text-foreground/65">
+                Ціна залежить від об&apos;єму послуг; залишіть заявку — узгодимо умови.
+              </p>
+            ) : null}
+          </div>
+          <motion.button
+            type="button"
+            onClick={onOrderClick}
+            className={`mt-auto inline-flex min-h-[52px] w-full shrink-0 items-center justify-center rounded-full px-5 py-3.5 text-center text-sm font-semibold leading-snug text-white transition-[transform,filter] duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-red/40 focus-visible:ring-offset-2 md:hover:-translate-y-px sm:px-6 sm:text-[0.9375rem] ${ctaBase}`}
+            initial={false}
+            animate={ctaPulseAnimate}
+            transition={
+              reduceMotionPreferred || !isMdUp
+                ? { duration: 0 }
+                : ctaPulseTransition
+            }
+          >
+            {orderButtonLabel}
+          </motion.button>
+        </aside>
+      ) : null}
     </div>
   );
 }

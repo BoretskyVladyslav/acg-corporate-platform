@@ -314,6 +314,7 @@ function tierHasCmsFeatures(tier: PricingTier): boolean {
   return (tier.features ?? []).some(
     (x) =>
       x?.isHeader === true ||
+      x?.isSubheading === true ||
       Boolean(x.title?.trim()) ||
       Boolean(x.description?.trim()) ||
       Boolean(x.note?.trim()) ||
@@ -332,6 +333,9 @@ function featuresFromCmsOnly(cms: ServiceItem[]): ServiceItem[] {
     };
     if (item.isHeader === true) {
       row.isHeader = true;
+    }
+    if (item.isSubheading === true) {
+      row.isSubheading = true;
     }
     return row;
   });

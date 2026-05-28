@@ -9,8 +9,7 @@ const advantageItemObject = defineType({
       name: "title",
       title: "Заголовок переваги",
       type: "string",
-      description:
-        "Коротка назва: 2–4 слова. Відображається жирним над описом (наприклад «Прозоре ціноутворення»).",
+      description: "Коротка назва (2-4 слова)",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -18,8 +17,7 @@ const advantageItemObject = defineType({
       title: "Детальний опис",
       type: "text",
       rows: 4,
-      description:
-        "2–3 речення, що розкривають суть переваги. Відображається звичайним текстом під заголовком.",
+      description: "Детальний опис переваги",
       validation: (Rule) => Rule.required(),
     }),
   ],
@@ -44,32 +42,27 @@ export const landingAdvantagesSectionType = defineType({
       name: "eyebrow",
       title: "Позначка над заголовком (eyebrow)",
       type: "string",
-      description:
-        "Маленький рядок над основним заголовком: 1–2 слова (наприклад «Переваги»). Якщо порожньо — показується дефолт «Переваги».",
+      description: "Маленький текст над заголовком",
     }),
     defineField({
       name: "heading",
       title: "Заголовок секції",
       type: "string",
-      description:
-        "Головний заголовок блоку (наприклад «Чому нас обирають»). Якщо порожньо — показується дефолт.",
+      description: "Основний заголовок",
     }),
     defineField({
       name: "sideImage",
       title: "Зображення поруч зі списком",
       type: "image",
       options: { hotspot: true },
-      description:
-        "Фото або ілюстрація, що відображається ліворуч від списку переваг. Рекомендований розмір: 900×700 px, прозорий фон (PNG). Якщо не завантажено — використовується дефолтне зображення команди.",
+      description: "Зображення ліворуч (PNG)",
     }),
     defineField({
       name: "items",
-      title: "Список переваг (до 6)",
+      title: "Список переваг",
       type: "array",
       of: [defineArrayMember({ type: advantageItemObject.name })],
-      description:
-        "Кожна перевага відображається як окремий блок із порядковим номером, заголовком та описом. Порядок змінюється перетягуванням. Якщо список порожній — показуються 4 дефолтних пункти.",
-      validation: (Rule) => Rule.max(6),
+      description: "Список переваг",
     }),
   ],
 });

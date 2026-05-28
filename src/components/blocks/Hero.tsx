@@ -35,12 +35,7 @@ export function resolveHeroProps(partial: Partial<HeroProps> = {}): HeroProps {
   return {
     heading: pickNonEmptyText(partial.heading, HEADING_FALLBACK),
     subheading,
-    // CTA-поля: передаємо undefined якщо порожньо — HeroClient застосує дефолт
-    ...(partial.primaryButtonTitle ? { primaryButtonTitle: partial.primaryButtonTitle } : {}),
-    ...(partial.primaryButtonHint ? { primaryButtonHint: partial.primaryButtonHint } : {}),
-    ...(partial.secondaryButtonTitle ? { secondaryButtonTitle: partial.secondaryButtonTitle } : {}),
-    ...(partial.secondaryButtonHint ? { secondaryButtonHint: partial.secondaryButtonHint } : {}),
-    ...(partial.secondaryButtonPrice ? { secondaryButtonPrice: partial.secondaryButtonPrice } : {}),
+    ...(partial.mainButtons?.length ? { mainButtons: partial.mainButtons } : {}),
     ...(heroCards?.length ? { heroCards } : {}),
     ...(bgUrl ? { backgroundImageUrl: bgUrl } : {}),
   };

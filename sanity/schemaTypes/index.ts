@@ -7,11 +7,12 @@ import {
 } from "./landingAdvantages";
 import { featureItemType } from "./featureItem";
 import { faqItemType, landingFaqSectionType } from "./landingFaq";
-import { heroCardItemType, landingHeroSectionType } from "./hero";
+import { heroCardItemType, landingHeroSectionType, mainButtonType } from "./hero";
 import { landingContactSectionType } from "./landingContact";
 import { landingPageType } from "./landingPage";
 import {
   landingPricingSectionType,
+  pricingCategorySchemaType,
   pricingTierSchemaType,
 } from "./landingPricing";
 import { landingSeoSectionType } from "./landingSeo";
@@ -29,11 +30,13 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     // ── Вкладені об'єкти (підтипи масивів) ──────────────────────────────────
     aboutCompanyMetricType,
     featureItemType,
+    pricingCategorySchemaType,
     pricingTierSchemaType,
     advantageItemType,
     trustQuoteType,
     faqItemType,
     heroCardItemType,
+    mainButtonType,
 
     // ── Секції лендингу ──────────────────────────────────────────────────────
     landingHeroSectionType,

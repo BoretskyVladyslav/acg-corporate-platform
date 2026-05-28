@@ -9,7 +9,7 @@ import type { AboutCompanyProps } from "@/src/components/blocks/AboutCompany";
 import type { AdvantagesProps } from "@/src/components/blocks/Advantages";
 import type { FAQProps } from "@/src/components/blocks/FAQ";
 import type { LeadCaptureFormProps } from "@/src/components/blocks/LeadCaptureForm";
-import type { PricingProps, PricingTier } from "@/src/components/blocks/Pricing";
+import type { PricingCategory, PricingProps, PricingTier } from "@/src/components/blocks/Pricing";
 import type { ServiceItem } from "@/src/components/blocks/Services";
 import type { TrustBlockProps } from "@/src/components/blocks/TrustBlock";
 
@@ -47,13 +47,13 @@ export type LandingHeroPageProps = {
   heading?: string;
   subheading?: string;
   heroCards?: LandingHeroCardResolved[];
-  /** Кнопка 1 — Безкоштовна консультація */
-  primaryButtonTitle?: string;
-  primaryButtonHint?: string;
-  /** Кнопка 2 — Платна консультація */
-  secondaryButtonTitle?: string;
-  secondaryButtonHint?: string;
-  secondaryButtonPrice?: string;
+  mainButtons?: Array<{
+    title?: string;
+    subtitle?: string;
+    price?: string;
+    buttonStyle?: string;
+    actionType?: string;
+  }>;
   backgroundImageUrl?: string;
 };
 
@@ -157,15 +157,19 @@ function mapHero(
       subtitle: pickNonEmpty(row.subtitle),
     }))
     .filter((row) => Boolean(row.title) || Boolean(row.subtitle));
+  const mainButtons = doc.mainButtons?.map((btn) => ({
+    title: pickNonEmpty(btn.title),
+    subtitle: pickNonEmpty(btn.subtitle),
+    price: pickNonEmpty(btn.price),
+    buttonStyle: pickNonEmpty(btn.buttonStyle),
+    actionType: pickNonEmpty(btn.actionType),
+  }));
+
   return {
     heading: pickNonEmpty(doc.heading),
     subheading: pickNonEmpty(doc.subheading),
     heroCards: heroCards?.length ? heroCards : undefined,
-    primaryButtonTitle: pickNonEmpty(doc.primaryButtonTitle),
-    primaryButtonHint: pickNonEmpty(doc.primaryButtonHint),
-    secondaryButtonTitle: pickNonEmpty(doc.secondaryButtonTitle),
-    secondaryButtonHint: pickNonEmpty(doc.secondaryButtonHint),
-    secondaryButtonPrice: pickNonEmpty(doc.secondaryButtonPrice),
+    mainButtons: mainButtons?.length ? mainButtons : undefined,
     backgroundImageUrl,
   };
 }
@@ -245,6 +249,7 @@ function normalizePricingFeatureItems(raw: unknown): ServiceItem[] {
     const note = pickNonEmpty(o.note as string | null | undefined);
     const icon = pickNonEmpty(o.icon as string | null | undefined);
     const isHeader = o.isHeader === true;
+    const isSubheading = o.isSubheading === true;
     if (!title && !description && note) {
       out.push({ title: note });
       continue;
@@ -257,6 +262,7 @@ function normalizePricingFeatureItems(raw: unknown): ServiceItem[] {
       note: note ?? undefined,
       ...(icon ? { icon } : {}),
       ...(isHeader ? { isHeader: true } : {}),
+      ...(isSubheading ? { isSubheading: true } : {}),
     });
   }
   return out;
@@ -264,27 +270,39 @@ function normalizePricingFeatureItems(raw: unknown): ServiceItem[] {
 
 function mapPricing(doc: LandingPricingQueryResult | undefined): PricingProps {
   if (!doc) return {};
-  const tiers: PricingTier[] = [];
-  for (const tier of doc.tiers ?? []) {
-    const name = pickNonEmpty(tier.name);
-    if (!name) continue;
-    const featuresRaw = normalizePricingFeatureItems(tier.features);
-    const priceText = pickNonEmpty(tier.priceText);
-    tiers.push({
-      name,
-      priceText,
-      description: pickNonEmpty(tier.description),
-      features: featuresRaw.length ? featuresRaw : undefined,
-      isPopular: tier.isPopular === true,
+  const categories: PricingCategory[] = [];
+  for (const cat of doc.categories ?? []) {
+    const categoryName = pickNonEmpty(cat.categoryName);
+    if (!categoryName) continue;
+    
+    const tariffs: PricingTier[] = [];
+    for (const tier of cat.tariffs ?? []) {
+      const name = pickNonEmpty(tier.name);
+      if (!name) continue;
+      const featuresRaw = normalizePricingFeatureItems(tier.features);
+      const priceText = pickNonEmpty(tier.priceText);
+      tariffs.push({
+        name,
+        priceText,
+        description: pickNonEmpty(tier.description),
+        features: featuresRaw.length ? featuresRaw : undefined,
+        isPopular: tier.isPopular === true,
+      });
+    }
+    
+    categories.push({
+      categoryName,
+      tariffs: tariffs.length ? tariffs : undefined,
     });
   }
+
   return {
     eyebrow: pickNonEmpty(doc.eyebrow),
     heading: pickNonEmpty(doc.heading),
     intro: pickNonEmpty(doc.intro),
     ctaText: pickNonEmpty(doc.ctaText),
     globalButtonLabel: pickNonEmpty(doc.globalButtonLabel),
-    tiers: tiers.length ? tiers : undefined,
+    categories: categories.length ? categories : undefined,
   };
 }
 

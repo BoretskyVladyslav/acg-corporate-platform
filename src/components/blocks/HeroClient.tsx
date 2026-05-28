@@ -37,13 +37,13 @@ export interface HeroProps {
   heading?: string;
   subheading?: string;
   heroCards?: HeroCardContent[];
-  /** Кнопка 1 — Безкоштовна консультація */
-  primaryButtonTitle?: string;
-  primaryButtonHint?: string;
-  /** Кнопка 2 — Платна консультація */
-  secondaryButtonTitle?: string;
-  secondaryButtonHint?: string;
-  secondaryButtonPrice?: string;
+  mainButtons?: Array<{
+    title?: string;
+    subtitle?: string;
+    price?: string;
+    buttonStyle?: string;
+    actionType?: string;
+  }>;
   backgroundImageUrl?: string;
 }
 
@@ -386,11 +386,7 @@ export default function HeroClient({
   heading = "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.",
   subheading = "",
   heroCards,
-  primaryButtonTitle,
-  primaryButtonHint,
-  secondaryButtonTitle,
-  secondaryButtonHint,
-  secondaryButtonPrice,
+  mainButtons,
 }: HeroProps) {
   const [consultModalOpen, setConsultModalOpen] = useState(false);
   const [consultModalKey, setConsultModalKey] = useState(0);
@@ -428,16 +424,24 @@ export default function HeroClient({
     });
   }, [heroCards]);
 
-  // Тексти CTA-кнопок: CMS або дефолти
-  const freeCta = {
-    title: primaryButtonTitle?.trim() || HERO_FREE_CTA_DEFAULTS.title,
-    hint: primaryButtonHint?.trim() || HERO_FREE_CTA_DEFAULTS.hint,
-  };
-  const paidCta = {
-    title: secondaryButtonTitle?.trim() || HERO_PAID_CTA_DEFAULTS.title,
-    hint: secondaryButtonHint?.trim() || HERO_PAID_CTA_DEFAULTS.hint,
-    price: secondaryButtonPrice?.trim() || HERO_PAID_CTA_DEFAULTS.price,
-  };
+  // Головні кнопки: беремо з CMS, або дефолти якщо CMS порожня
+  const ctaButtons = mainButtons?.length
+    ? mainButtons
+    : [
+        {
+          title: HERO_FREE_CTA_DEFAULTS.title,
+          subtitle: HERO_FREE_CTA_DEFAULTS.hint,
+          buttonStyle: "primary",
+          actionType: "free_consultation",
+        },
+        {
+          title: HERO_PAID_CTA_DEFAULTS.title,
+          subtitle: HERO_PAID_CTA_DEFAULTS.hint,
+          price: HERO_PAID_CTA_DEFAULTS.price,
+          buttonStyle: "secondary",
+          actionType: "paid_consultation",
+        },
+      ];
 
   const handleNavAnchorClick = useCallback(
     (
@@ -560,7 +564,7 @@ export default function HeroClient({
                 variants={itemMotion}
               >
                 <motion.div
-                  className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4"
+                  className="flex flex-wrap gap-2.5 sm:gap-3"
                   variants={contentMotion}
                 >
                   {heroNavCards.map((card) => {
@@ -573,7 +577,7 @@ export default function HeroClient({
                           handleNavAnchorClick(event, card.href, card.pricingPreset)
                         }
                         variants={itemMotion}
-                        className={`${ctaShineClass} group flex min-h-[3.25rem] flex-row items-center gap-2.5 rounded-xl border border-acg-blue/15 bg-white/70 px-3.5 py-3 text-left shadow-sm ring-1 ring-white/40 backdrop-blur-[2px] transition hover:border-acg-blue/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/30 sm:min-h-[4.5rem] sm:flex-col sm:items-start sm:justify-center sm:gap-2 sm:px-3 sm:py-3.5 xl:min-h-[4.75rem]`}
+                        className={`${ctaShineClass} group flex flex-grow w-full sm:w-[calc(50%-6px)] xl:w-[calc(25%-9px)] min-h-[3.25rem] flex-row items-center gap-2.5 rounded-xl border border-acg-blue/15 bg-white/70 px-3.5 py-3 text-left shadow-sm ring-1 ring-white/40 backdrop-blur-[2px] transition hover:border-acg-blue/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/30 sm:min-h-[4.5rem] sm:flex-col sm:items-start sm:justify-center sm:gap-2 sm:px-3 sm:py-3.5 xl:min-h-[4.75rem]`}
                       >
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-acg-blue/10 text-acg-blue transition group-hover:bg-acg-blue/15 sm:size-10 sm:rounded-xl">
                           <Icon className="size-[1.15rem] sm:size-5" aria-hidden />
@@ -592,22 +596,24 @@ export default function HeroClient({
                 </motion.div>
               </motion.div>
               <motion.div
-                className="flex w-full flex-col gap-2.5 md:flex-row md:items-stretch md:gap-3"
+                className="flex w-full flex-col gap-2.5 md:flex-row md:flex-wrap md:items-stretch md:gap-3"
                 variants={itemMotion}
               >
-                <HeroConsultationCta
-                  variant="free"
-                  title={freeCta.title}
-                  hint={freeCta.hint}
-                  onClick={() => openConsultationModal("free_consultation")}
-                />
-                <HeroConsultationCta
-                  variant="paid"
-                  title={paidCta.title}
-                  hint={paidCta.hint}
-                  price={paidCta.price}
-                  onClick={() => openConsultationModal("paid_consultation")}
-                />
+                {ctaButtons.map((btn: any, idx: number) => (
+                  <HeroConsultationCta
+                    key={`hero-btn-${idx}`}
+                    variant={btn.buttonStyle === "secondary" ? "paid" : "free"}
+                    title={btn.title || ""}
+                    hint={btn.subtitle || ""}
+                    price={btn.price || undefined}
+                    onClick={() =>
+                      openConsultationModal(
+                        (btn.actionType as "free_consultation" | "paid_consultation") ||
+                          "free_consultation"
+                      )
+                    }
+                  />
+                ))}
               </motion.div>
 
               {/* Мобільне фото команди — квадратне, без апскейлу вище нативної роздільності. */}

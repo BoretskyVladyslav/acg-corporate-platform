@@ -24,8 +24,7 @@ const pricingTierObject = defineType({
       title: "Назва",
       type: "string",
       fieldset: "tariffMain",
-      description:
-        "Назва картки на табах та у заголовку всередині блоку.",
+      description: "Назва тарифу (наприклад «ФОП 1 група»)",
       validation: (Rule) => Rule.required(),
     }),
     defineField({
@@ -33,8 +32,7 @@ const pricingTierObject = defineType({
       title: "Ціна",
       type: "string",
       fieldset: "tariffMain",
-      description:
-        "Цінник як єдиний рядок: символи, суми, «від», період (місяць / разово).",
+      description: "Вартість (наприклад «1000 грн / міс.»)",
     }),
     defineField({
       name: "description",
@@ -42,16 +40,14 @@ const pricingTierObject = defineType({
       type: "text",
       rows: 3,
       fieldset: "tariffMain",
-      description:
-        "Короткий текст під назвою тарифу над списком. Не дублюйте пункти з «Пунктів» — це окреме поле.",
+      description: "Короткий текст під назвою тарифу",
     }),
     defineField({
       name: "isPopular",
       title: "Хіт продажу",
       type: "boolean",
       fieldset: "tariffMain",
-      description:
-        "Підсвічує картку як рекомендовану; краще обрати лише один тариф.",
+      description: "Підсвічує тариф як рекомендований",
       initialValue: false,
     }),
     defineField({
@@ -59,8 +55,7 @@ const pricingTierObject = defineType({
       title: "Пункти",
       type: "array",
       fieldset: "tariffPackage",
-      description:
-        "Чек-лист послуг цього тарифу; порядок змінюється перетягуванням.",
+      description: "Чек-лист послуг у тарифі",
       of: [
         defineArrayMember({
           type: featureItemType.name,
@@ -81,6 +76,38 @@ const pricingTierObject = defineType({
   },
 });
 
+const pricingCategoryObject = defineType({
+  name: "pricingCategory",
+  title: "Категорія тарифів",
+  type: "object",
+  fields: [
+    defineField({
+      name: "categoryName",
+      title: "Назва категорії",
+      type: "string",
+      description: "Наприклад «Бухгалтерія для ФОП»",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: "tariffs",
+      title: "Тарифи в цій категорії",
+      type: "array",
+      of: [defineArrayMember({ type: pricingTierObject.name })],
+      description: "Саб-таби цієї категорії (ФОП 1, ФОП 2 тощо)",
+    }),
+  ],
+  preview: {
+    select: { title: "categoryName", tariffs: "tariffs" },
+    prepare({ title, tariffs }) {
+      const count = tariffs?.length || 0;
+      return {
+        title: title || "Без назви",
+        subtitle: `Тарифів: ${count}`,
+      };
+    },
+  },
+});
+
 export const landingPricingSectionType = defineType({
   name: "landingPricingSection",
   title: "Тарифи",
@@ -88,50 +115,45 @@ export const landingPricingSectionType = defineType({
   fields: [
     defineField({
       name: "eyebrow",
-      title: "Текст над заголовком (eyebrow)",
+      title: "Позначка над заголовком (eyebrow)",
       type: "string",
-      description:
-        "Мітка над заголовком секції дрібним верхнім регістром.",
+      description: "Маленький рядок над заголовком",
     }),
     defineField({
       name: "heading",
       title: "Заголовок секції",
       type: "string",
-      description:
-        "Головний заголовок блоку «Тарифи».",
+      description: "Основний заголовок блоку",
     }),
     defineField({
       name: "intro",
       title: "Вступний текст",
       type: "text",
       rows: 3,
-      description:
-        "Параграф під заголовком до перемикача тарифів.",
+      description: "Текст під заголовком",
     }),
     defineField({
       name: "ctaText",
-      title: "Текст над нижньою кнопкою",
+      title: "Текст над кнопкою",
       type: "text",
       rows: 3,
-      description:
-        "Текст над червоною кнопкою консультації внизу секції.",
+      description: "Текст у футері секції (над кнопкою)",
     }),
     defineField({
       name: "globalButtonLabel",
-      title: "Універсальний текст кнопок замовлення",
+      title: "Текст кнопки замовлення",
       type: "string",
-      description:
-        "Підпис на синіх кнопках «Замовити» біля ціни у кожній картці тарифу.",
+      description: "Напис на синіх кнопках у тарифах",
     }),
     defineField({
-      name: "tiers",
-      title: "Пакети",
+      name: "categories",
+      title: "Категорії тарифів (Таби)",
       type: "array",
-      description:
-        "Усі тарифні картки та їхні списки послуг.",
-      of: [defineArrayMember({ type: pricingTierObject.name })],
+      description: "Головні таби (наприклад «Консультація», «Бухгалтерія для ФОП»)",
+      of: [defineArrayMember({ type: pricingCategoryObject.name })],
     }),
   ],
 });
 
 export const pricingTierSchemaType = pricingTierObject;
+export const pricingCategorySchemaType = pricingCategoryObject;
