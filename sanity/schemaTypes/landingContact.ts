@@ -39,11 +39,5 @@ export const landingContactSectionType = defineType({
       description:
         "Номер для відображення та для дзвінка; посилання tel: збирається автоматично.",
     }),
-    defineField({
-      name: "service",
-      title: "Службове поле (за потреби)",
-      type: "string",
-      description: "Рідко використовується; залиште порожнім, якщо не потрібно.",
-    }),
   ],
 });

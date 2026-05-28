@@ -62,8 +62,7 @@ export const landingPageQuery = groq`
       description,
       submitLabel,
       addressLine,
-      phoneDisplay,
-      service
+      phoneDisplay
     },
     faq{
       eyebrow,
@@ -182,7 +181,6 @@ export type LandingContactQueryResult = {
   submitLabel?: string | null;
   addressLine?: string | null;
   phoneDisplay?: string | null;
-  service?: string | null;
 } | null;
 
 export type LandingSeoQueryResult = {

@@ -49,10 +49,23 @@ function textOr(value: string | undefined | null, fallback: string): string {
 }
 
 function resolveAboutMetrics(
-  _metrics: AboutCompanyProps["metrics"],
+  metrics: AboutCompanyProps["metrics"],
 ): AboutMetricConfig[] {
-  /** Канонічні цифри з ТЗ; іконки з дефолтного набору. */
-  return DEFAULT_ABOUT_METRICS;
+  /**
+   * Якщо в Sanity є хоча б 1 метрик із value або label — використовуємо
+   * дані з CMS (до 4), підставляючи іконки з дефолтного набору по позиції.
+   * Якщо CMS порожній або не переданий — повертаємо повний набір дефолтів.
+   */
+  const filled = (metrics ?? []).filter(
+    (m) => (m.value?.trim() ?? "") || (m.label?.trim() ?? ""),
+  );
+  if (!filled.length) return DEFAULT_ABOUT_METRICS;
+
+  return filled.slice(0, 4).map((m, i) => ({
+    value: m.value?.trim() ?? DEFAULT_ABOUT_METRICS[i]?.value ?? "",
+    label: m.label?.trim() ?? DEFAULT_ABOUT_METRICS[i]?.label ?? "",
+    icon: DEFAULT_ABOUT_METRICS[i]?.icon ?? Users,
+  }));
 }
 
 const sectionReveal = {

@@ -404,7 +404,6 @@ function mapContact(doc: LandingContactQueryResult | undefined): LandingContactR
     submitLabel: pickNonEmpty(doc.submitLabel),
     addressLine: pickNonEmpty(doc.addressLine),
     phoneDisplay: pickNonEmpty(doc.phoneDisplay),
-    service: pickNonEmpty(doc.service),
   };
 }
 

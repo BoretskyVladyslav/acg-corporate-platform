@@ -4,8 +4,8 @@ import { defineArrayMember, defineField, defineType } from "sanity";
 const HEADING_DEFAULT =
   "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.";
 
-const PRIMARY_CTA_DEFAULT = "ОТРИМАТИ ПЕРВИННУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО";
-const SECONDARY_CTA_DEFAULT = "ШВИДКА ВІДПОВІДЬ У TELEGRAM";
+const PRIMARY_CTA_DEFAULT = "ОТРИМАТИ ПЕРВИНУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО";
+const SECONDARY_CTA_DEFAULT = "КОНСУЛЬТАЦІЯ";
 
 const heroCardItemObject = defineType({
   name: "heroCardItem",
@@ -53,20 +53,22 @@ export const landingHeroSectionType = defineType({
       type: "array",
       of: [defineArrayMember({ type: heroCardItemObject.name })],
       description:
-        "Тільки текст; дії при кліку задаються в коді: 1-й клік — тарифи реєстрації ФОП, 2-й — секція послуг (бухгалтерія для ФОП).",
+        "Лише підзаголовок картки (subtitle) підмінюється з CMS. Заголовок (title) та якір прокрутки (#pricing) зафіксовані в коді. Порядок: 1 — Реєстрація ФОП, 2 — Бухгалтерія ФОП, 3 — Бухгалтерія ТОВ, 4 — Інші послуги.",
     }),
     defineField({
       name: "primaryCtaLabel",
-      title: "Текст основної кнопки",
+      title: "Текст основної кнопки (безкоштовна консультація)",
       type: "string",
-      description: "Наприклад: отримати консультацію.",
+      description:
+        "Кнопка відкриває модалку «Безкоштовна консультація». Якщо порожньо — використовується захардкоджений текст.",
       initialValue: PRIMARY_CTA_DEFAULT,
     }),
     defineField({
       name: "secondaryCtaLabel",
-      title: "Текст другої кнопки (Telegram)",
+      title: "Текст другої кнопки (платна консультація)",
       type: "string",
-      description: "Текст посилання на Telegram; URL задається в коді / env.",
+      description:
+        "Кнопка відкриває модалку «Платна консультація». Якщо порожньо — використовується захардкоджений текст.",
       initialValue: SECONDARY_CTA_DEFAULT,
     }),
     defineField({
