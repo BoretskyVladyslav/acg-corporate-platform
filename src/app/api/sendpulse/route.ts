@@ -75,14 +75,13 @@ function buildTelegramLeadText(input: {
 }): string {
   const name = escapeTelegramHtml(input.name);
   const phone = escapeTelegramHtml(input.phone);
-  const rawDisplay =
-    input.tierDisplayName?.trim() || input.tier?.trim() || "";
 
-  /** Вважаємо тариф «загальним», якщо він порожній або є одним із дефолтних значень. */
-  const GENERIC_LABELS = ["загальна консультація", "без тарифу", "consult", ""];
+  // Беремо tierDisplayName сирим — саме те, що прийшло з фронтенду.
+  // Не змішуємо з `tier`, щоб не підставляти технічні значення типу "Консультація".
+  const rawDisplay = input.tierDisplayName?.trim() ?? "";
+
+  const GENERIC_LABELS = ["загальна консультація", "без тарифу", ""];
   const isGeneric = GENERIC_LABELS.includes(rawDisplay.toLowerCase());
-
-  const displayName = escapeTelegramHtml(rawDisplay || "Загальна консультація");
 
   const lines = [
     "🟢 <b>НОВИЙ ЛІД (Лендінг ACG)</b>",
@@ -93,7 +92,7 @@ function buildTelegramLeadText(input: {
   if (isGeneric) {
     lines.push(`💼 <b>Запит:</b> Загальна консультація`);
   } else {
-    lines.push(`📊 <b>Обраний пакет:</b> ${displayName}`);
+    lines.push(`📊 <b>Обраний пакет:</b> ${escapeTelegramHtml(rawDisplay)}`);
     lines.push(`💼 <b>Запит:</b> Консультація по пакету`);
   }
 
