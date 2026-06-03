@@ -637,6 +637,9 @@ export default function Pricing({
             type="button"
             onClick={() => {
               prepareConsultationGeneral();
+              try {
+                sessionStorage.removeItem(ACG_SELECTED_PRICING_TIER_KEY);
+              } catch {}
               setConsultModalKey((k) => k + 1);
               setConsultModalOpen(true);
             }}

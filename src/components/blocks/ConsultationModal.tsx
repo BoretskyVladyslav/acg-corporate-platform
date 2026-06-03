@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useState,
 } from "react";
 
@@ -21,6 +22,7 @@ import {
   prepareConsultation,
 } from "@/src/lib/leadIntent";
 import { ACG_SELECTED_PRICING_TIER_KEY } from "@/src/lib/selectedPricingTier";
+import { ACG_TELEGRAM_LEADS_URL } from "@/src/lib/telegram";
 import {
   UA_PHONE_ERROR,
   UA_PHONE_HINT,
@@ -92,6 +94,41 @@ export default function ConsultationModal({
       description: descriptionProp?.trim() || fromIntent.description,
     };
   })();
+
+  const [tierName, setTierName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open && typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem(ACG_SELECTED_PRICING_TIER_KEY)?.trim();
+        setTierName(stored || null);
+      } catch {
+        setTierName(null);
+      }
+    } else if (!open) {
+      setTierName(null);
+    }
+  }, [open]);
+
+  const badgeText = tierName ? `Вибрана послуга: ${tierName}` : "Загальна консультація";
+  
+  const telegramStartParam = useMemo(() => {
+    if (!tierName) return "consult";
+    const tn = tierName.toLowerCase();
+    // ФОП 1/2/3 група — перевіряємо і фоп, і цифру, і групу,
+    // щоб уникнути хибного спрацювання на інших рядках.
+    if (/фоп/i.test(tn) && /1/.test(tn) && /груп/i.test(tn)) return "fop1";
+    if (/фоп/i.test(tn) && /2/.test(tn) && /груп/i.test(tn)) return "fop2";
+    if (/фоп/i.test(tn) && /3/.test(tn) && /груп/i.test(tn)) return "fop3";
+    // Загальна система оподаткування (ФОП або ТОВ)
+    if (/загальн/i.test(tn) && /систем/i.test(tn)) return "zagalna";
+    // ТОВ / юридична особа
+    if (/тов\b|юридичн/i.test(tn)) return "tov";
+    // Все інше (Консультація, Реєстрація ФОП, Інші послуги…)
+    return "consult";
+  }, [tierName]);
+
+  const telegramHref = `${ACG_TELEGRAM_LEADS_URL}?start=${telegramStartParam}`;
 
   const chooseConsultationType = useCallback(
     (type: "free_consultation" | "paid_consultation") => {
@@ -177,6 +214,7 @@ export default function ConsultationModal({
             name: name.trim(),
             phone: phoneE164,
             website: honeypot,
+            tierDisplayName: tierName ?? "Загальна консультація",
             ...(callTime.trim() ? { callTime: callTime.trim() } : {}),
             ...(!tierlessConsultation && tierFromPricing
               ? { tier: tierFromPricing }
@@ -255,10 +293,13 @@ export default function ConsultationModal({
                 ? { duration: 0 }
                 : { duration: 0.22, ease: [0.4, 0, 0.2, 1] }
             }
-            className="relative z-[1] flex max-h-[min(92dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-acg-border bg-acg-light shadow-2xl shadow-acg-blue/15 sm:max-h-[min(88vh,640px)] sm:rounded-2xl"
+            className="relative z-[1] flex w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-acg-border bg-acg-light shadow-2xl shadow-acg-blue/15 sm:rounded-2xl"
           >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-foreground/10 px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-foreground/10 px-5 py-3 sm:px-6 sm:py-3.5">
           <div>
+            <div className="mb-2 inline-flex items-center rounded-full bg-acg-blue/10 px-3 py-0.5 text-[0.8125rem] font-semibold tracking-wide text-acg-blue">
+              {badgeText}
+            </div>
             <p
               id={titleId}
               className="text-lg font-semibold tracking-tight text-acg-blue sm:text-xl"
@@ -271,7 +312,7 @@ export default function ConsultationModal({
             >
               {headerCopy.description}
             </p>
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => chooseConsultationType("free_consultation")}
@@ -337,7 +378,7 @@ export default function ConsultationModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6">
+        <div className="px-5 py-4 sm:px-6 sm:py-4">
           {isSuccess ? (
             <motion.div
               initial={isMdUp ? { opacity: 0, y: 12 } : { opacity: 0, y: 6 }}
@@ -365,7 +406,22 @@ export default function ConsultationModal({
               </button>
             </motion.div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="relative space-y-3.5">
+              <a
+                href={telegramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2AABEE] px-5 py-2.5 text-base font-semibold text-white shadow-md shadow-[#2AABEE]/20 transition hover:bg-[#2298D6]"
+              >
+                Перейти в Telegram-бот
+              </a>
+
+              <div className="relative flex items-center py-1">
+                 <div className="flex-grow border-t border-foreground/10"></div>
+                 <span className="shrink-0 px-4 text-xs uppercase text-foreground/40 font-medium tracking-wider">Або залиште контакти</span>
+                 <div className="flex-grow border-t border-foreground/10"></div>
+              </div>
+
               <div
                 className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden opacity-0"
                 aria-hidden
@@ -468,7 +524,7 @@ export default function ConsultationModal({
                   className={inputClass}
                 />
               </div>
-              <div className="pt-1">
+              <div>
                 <motion.button
                   type="submit"
                   disabled={isSubmitting}

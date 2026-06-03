@@ -15,6 +15,8 @@ type Body = {
   service?: string;
   /** Останній обраний тариф з блоку Pricing (sessionStorage). */
   tier?: string;
+  /** Людська назва тарифу/послуги для Telegram-сповіщення. */
+  tierDisplayName?: string;
   /** Якщо `general_consultation` — лід без тарифу та (за замовчуванням) без послуги з форми. */
   leadIntent?: string;
   /** Honeypot: must stay empty; bots often fill “website” fields. */
@@ -68,44 +70,41 @@ function buildTelegramLeadText(input: {
   callTime?: string;
   service?: string;
   tier?: string;
+  tierDisplayName?: string;
   leadIntent?: LeadIntentKind;
 }): string {
   const name = escapeTelegramHtml(input.name);
   const phone = escapeTelegramHtml(input.phone);
+  const rawDisplay =
+    input.tierDisplayName?.trim() || input.tier?.trim() || "";
+
+  /** Вважаємо тариф «загальним», якщо він порожній або є одним із дефолтних значень. */
+  const GENERIC_LABELS = ["загальна консультація", "без тарифу", "consult", ""];
+  const isGeneric = GENERIC_LABELS.includes(rawDisplay.toLowerCase());
+
+  const displayName = escapeTelegramHtml(rawDisplay || "Загальна консультація");
+
   const lines = [
     "🟢 <b>НОВИЙ ЛІД (Лендінг ACG)</b>",
     `👤 <b>Ім'я:</b> ${name}`,
     `📞 <b>Телефон:</b> ${phone}`,
   ];
+
+  if (isGeneric) {
+    lines.push(`💼 <b>Запит:</b> Загальна консультація`);
+  } else {
+    lines.push(`📊 <b>Обраний пакет:</b> ${displayName}`);
+    lines.push(`💼 <b>Запит:</b> Консультація по пакету`);
+  }
+
   if (input.callTime?.trim()) {
     lines.push(
       `🕐 <b>Зручний час:</b> ${escapeTelegramHtml(input.callTime.trim())}`,
     );
   }
-  if (input.leadIntent) {
-    lines.push(
-      `📋 <b>Консультація:</b> ${escapeTelegramHtml(leadIntentStatusLabel(input.leadIntent))}`,
-    );
-  }
-  if (
-    input.tier?.trim() &&
-    !isTierlessConsultationIntent(input.leadIntent)
-  ) {
-    lines.push(
-      `📦 <b>Тариф:</b> ${escapeTelegramHtml(input.tier.trim())}`,
-    );
-  }
   if (input.email?.trim()) {
     lines.push(
       `✉️ <b>Email:</b> ${escapeTelegramHtml(input.email.trim())}`,
-    );
-  }
-  if (
-    input.service?.trim() &&
-    !isTierlessConsultationIntent(input.leadIntent)
-  ) {
-    lines.push(
-      `🎯 <b>Послуга:</b> ${escapeTelegramHtml(input.service.trim())}`,
     );
   }
   return lines.join("\n");
@@ -441,6 +440,8 @@ export async function POST(req: Request) {
     typeof body.service === "string" ? body.service.trim() : undefined;
   const tier =
     typeof body.tier === "string" ? body.tier.trim() : undefined;
+  const tierDisplayName =
+    typeof body.tierDisplayName === "string" ? body.tierDisplayName.trim() : undefined;
   const leadIntentRaw =
     typeof body.leadIntent === "string" ? body.leadIntent.trim() : "";
   const leadIntent = parseLeadIntent(leadIntentRaw);
@@ -550,6 +551,7 @@ export async function POST(req: Request) {
         ...(callTime ? { callTime } : {}),
         ...(!tierlessConsultation && service ? { service } : {}),
         ...(!tierlessConsultation && tier ? { tier } : {}),
+        ...(tierDisplayName ? { tierDisplayName } : {}),
         ...(leadIntent ? { leadIntent } : {}),
       }),
     );

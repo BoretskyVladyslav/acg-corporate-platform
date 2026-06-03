@@ -628,7 +628,7 @@ export default function HeroClient({
                       title={btn.title || ""}
                       hint={btn.subtitle || ""}
                       price={btn.price || undefined}
-                      href={isTelegramLink ? ACG_TELEGRAM_LEADS_URL : undefined}
+                      href={isTelegramLink ? `${ACG_TELEGRAM_LEADS_URL}?start=consult` : undefined}
                       onClick={isTelegramLink ? undefined : () => openConsultationModal(actionType)}
                     />
                   );
