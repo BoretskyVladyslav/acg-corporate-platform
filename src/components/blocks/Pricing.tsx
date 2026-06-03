@@ -761,11 +761,11 @@ function PricingCheckoutPanel({
           </div>
         ) : null}
         {hasFeatureRows ? (
-          <motion.ul
+          <motion.ol
             variants={isMdUp ? featuresListVariants : featuresListVariantsMobile}
             initial="hidden"
             animate="visible"
-            className="mt-6 flex min-h-0 flex-1 flex-col"
+            className="mt-6 flex min-h-0 flex-1 flex-col [counter-reset:pricing-features]"
           >
             {mainFeatures.map((f, j) => {
               if (
@@ -778,6 +778,18 @@ function PricingCheckoutPanel({
                 return null;
               }
 
+              let isPrroSection = false;
+              for (let i = j; i >= 0; i--) {
+                const prev = mainFeatures[i];
+                if (prev.isHeader === true || prev.isSubheading === true) {
+                  const hdrTitle = prev.title?.trim().toUpperCase() || "";
+                  if (hdrTitle.includes("ОКРЕМИЙ ФУНКЦІОНАЛ") || hdrTitle.includes("ПРРО")) {
+                    isPrroSection = true;
+                  }
+                  break;
+                }
+              }
+
               if (f.isHeader === true) {
                 const headline = f.title?.trim() ?? "";
                 if (!headline) return null;
@@ -787,9 +799,9 @@ function PricingCheckoutPanel({
                     variants={
                       isMdUp ? featureItemVariants : featureItemVariantsMobile
                     }
-                    className="mt-6 mb-2 first:mt-0"
+                    className={`mt-6 mb-2 first:mt-0 ${isPrroSection ? "border-t border-acg-blue/10 pt-5" : ""}`}
                   >
-                    <p className="text-base font-bold leading-snug text-acg-blue sm:text-[1.0625rem]">
+                    <p className={`font-bold leading-snug sm:text-[1.0625rem] ${isPrroSection ? "text-[0.9375rem] text-slate-800" : "text-base text-acg-blue"}`}>
                       {headline}
                     </p>
                   </motion.li>
@@ -805,9 +817,9 @@ function PricingCheckoutPanel({
                     variants={
                       isMdUp ? featureItemVariants : featureItemVariantsMobile
                     }
-                    className="mt-5 mb-2 first:mt-0"
+                    className={`mt-5 mb-2 first:mt-0 ${isPrroSection ? "border-t border-acg-blue/10 pt-4" : ""}`}
                   >
-                    <p className="text-sm font-semibold leading-snug text-acg-blue sm:text-base">
+                    <p className={`font-semibold leading-snug sm:text-base ${isPrroSection ? "text-[0.9375rem] text-slate-700" : "text-sm text-acg-blue"}`}>
                       {headline}
                     </p>
                   </motion.li>
@@ -830,31 +842,38 @@ function PricingCheckoutPanel({
                   key={`${headline}-${j}`}
                   variants={isMdUp ? featureItemVariants : featureItemVariantsMobile}
                   className={
-                    compact ? pricingSubsectionItem.row : "flex gap-4 py-5 first:pt-0 lg:gap-5 lg:py-6"
+                    isPrroSection
+                      ? "flex gap-3 py-2 pl-3 relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:rounded-full before:bg-acg-blue/10"
+                      : compact ? pricingSubsectionItem.row : "flex gap-4 py-5 first:pt-0 lg:gap-5 lg:py-6"
                   }
                 >
-                  <FeatureIcon
-                    className={
-                      compact
-                        ? pricingSubsectionItem.icon
-                        : "mt-1 h-4 w-4 shrink-0 text-acg-blue"
-                    }
-                    aria-hidden
-                    strokeWidth={2.25}
-                  />
+                  {!isPrroSection && (
+                    <span 
+                      className={
+                        compact
+                          ? "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-acg-blue/10 text-[0.625rem] font-bold text-acg-blue before:content-[counter(pricing-features)] [counter-increment:pricing-features]"
+                          : "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-acg-blue/10 text-xs font-bold text-acg-blue before:content-[counter(pricing-features)] [counter-increment:pricing-features]"
+                      } 
+                      aria-hidden 
+                    />
+                  )}
                   <div
                     className={
-                      compact
-                        ? pricingSubsectionItem.stack
-                        : "min-w-0 flex-1 space-y-2.5"
+                      isPrroSection
+                        ? "min-w-0 flex-1 space-y-1.5"
+                        : compact
+                          ? pricingSubsectionItem.stack
+                          : "min-w-0 flex-1 space-y-2.5"
                     }
                   >
                     {headline ? (
                       <p
                         className={
-                          compact
-                            ? pricingSubsectionItem.title
-                            : "text-[0.9375rem] font-semibold leading-snug text-acg-blue sm:text-base"
+                          isPrroSection
+                            ? "text-[0.875rem] font-medium leading-snug text-slate-700"
+                            : compact
+                              ? pricingSubsectionItem.title
+                              : "text-[0.9375rem] font-semibold leading-snug text-acg-blue sm:text-base"
                         }
                       >
                         {headline}
@@ -863,26 +882,30 @@ function PricingCheckoutPanel({
                     {bullets.length ? (
                       <ul
                         className={
-                          compact ? pricingSubsectionItem.bulletList : "space-y-2"
+                          isPrroSection ? "space-y-1" : compact ? pricingSubsectionItem.bulletList : "space-y-2"
                         }
                       >
                         {bullets.map((line, idx) => (
                           <li
                             key={idx}
                             className={
-                              compact
-                                ? pricingSubsectionItem.bulletRow
-                                : "flex gap-2.5 text-sm font-light leading-relaxed text-foreground/72"
+                              isPrroSection
+                                ? "flex gap-2 text-[0.875rem] leading-relaxed text-slate-600"
+                                : compact
+                                  ? pricingSubsectionItem.bulletRow
+                                  : "flex gap-2.5 text-sm font-light leading-relaxed text-foreground/72"
                             }
                           >
-                            <span
-                              className={
-                                compact
-                                  ? pricingSubsectionItem.bulletMark
-                                  : "mt-2 h-px w-2.5 shrink-0 bg-foreground/20"
-                              }
-                              aria-hidden
-                            />
+                            {!isPrroSection && (
+                              <span
+                                className={
+                                  compact
+                                    ? pricingSubsectionItem.bulletMark
+                                    : "mt-2 h-px w-2.5 shrink-0 bg-foreground/20"
+                                }
+                                aria-hidden
+                              />
+                            )}
                             <span>{line}</span>
                           </li>
                         ))}
@@ -891,9 +914,11 @@ function PricingCheckoutPanel({
                     {showNote ? (
                       <p
                         className={
-                          compact
-                            ? pricingSubsectionItem.note
-                            : "mt-1 border-t border-foreground/[0.08] pt-3 text-[11px] font-normal uppercase tracking-[0.2em] text-foreground/42"
+                          isPrroSection
+                            ? "mt-0.5 pt-1 text-[11px] font-medium uppercase tracking-[0.1em] text-slate-500"
+                            : compact
+                              ? pricingSubsectionItem.note
+                              : "mt-1 border-t border-foreground/[0.08] pt-3 text-[11px] font-normal uppercase tracking-[0.2em] text-foreground/42"
                         }
                       >
                         {f.note}
@@ -903,7 +928,7 @@ function PricingCheckoutPanel({
                 </motion.li>
               );
             })}
-          </motion.ul>
+          </motion.ol>
         ) : null}
         {!hasFeatureRows && descLines.length > 0 ? (
           <motion.ul

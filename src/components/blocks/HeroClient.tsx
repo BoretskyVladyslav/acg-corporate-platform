@@ -51,7 +51,7 @@ export interface HeroProps {
 const HERO_TEAM_IMAGE_ALT = "Команда ACG Accounting";
 
 const HERO_FREE_CTA_DEFAULTS = {
-  title: "ОТРИМАТИ ПЕРВИНУ КОНСУЛЬТАЦІЮ БЕЗКОШТОВНО",
+  title: "Отримати первинну консультацію",
   hint: "ШВИДКА ВІДПОВІДЬ У TELEGRAM",
 } as const;
 
@@ -201,10 +201,10 @@ const contentVariantsMobile = {
 // ─── CSS-класи ───────────────────────────────────────────────────────────────
 
 const headlineAccentClass =
-  "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.06] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-[clamp(1.375rem,5.2vw,1.75rem)] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-6xl xl:text-7xl";
+  "bg-gradient-to-b from-acg-blue via-acg-blue to-acg-blue/85 bg-clip-text font-black uppercase leading-[1.06] tracking-tight text-transparent [background-clip:text] [-webkit-background-clip:text] text-[clamp(1.375rem,5.2vw,1.75rem)] sm:text-5xl sm:leading-[1.08] md:text-6xl lg:text-[3.25rem] lg:leading-[1.05] xl:text-[3.75rem]";
 
 const headlineSupportingClass =
-  "mt-3 max-w-3xl font-light leading-relaxed tracking-normal text-foreground/80 normal-case text-sm sm:mt-6 sm:text-base md:text-lg lg:mt-7 lg:text-xl";
+  "mt-3 max-w-3xl font-light leading-relaxed tracking-normal text-foreground/80 normal-case text-sm sm:mt-6 sm:text-base md:text-lg lg:mt-6 lg:text-[1.0625rem] xl:mt-7 xl:text-[1.125rem]";
 
 const grainPatternUrl =
   'url("data:image/svg+xml,' +
@@ -264,7 +264,7 @@ function HeroConsultationCta({
 // ─── Фото-бейджи ─────────────────────────────────────────────────────────────
 
 const heroPhotoCardClass =
-  "relative mx-auto w-full max-w-[min(100%,36rem)] aspect-square min-w-0";
+  "relative mx-auto w-full max-w-[min(100%,36rem)] aspect-square min-w-0 lg:max-w-[28rem] xl:max-w-[32rem]";
 
 const heroPhotoFrameClass =
   "relative h-full w-full overflow-hidden rounded-[2rem] bg-gradient-to-br from-white/90 via-acg-light/45 to-acg-blue/[0.05] shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/[0.06] md:rounded-3xl";
@@ -291,10 +291,10 @@ const heroStatBadges: HeroStatBadgeConfig[] = [
     content: (
       <>
         <p className="text-sm font-semibold tracking-tight text-acg-blue lg:text-base">
-          Досвід 10+
+          Досвід 15+
         </p>
         <p className="mt-1 text-xs font-medium text-foreground/80">
-          років у сфері
+          у сфері бухгалтерії
         </p>
       </>
     ),
@@ -382,7 +382,7 @@ function HeroStatBadge({
 // ─── Головний компонент ───────────────────────────────────────────────────────
 
 export default function HeroClient({
-  heading = "ВИ ЗАЙМАЄТЕСЬ БІЗНЕСОМ — МИ БУХГАЛТЕРІЄЮ. ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.",
+  heading = "ПОВНИЙ СУПРОВІД ФОП ТА ТОВ: ВІД ПЕРШОЇ РЕЄСТРАЦІЇ ДО СКЛАДНОГО ОБЛІКУ. ЛЕГАЛІЗУЄМО ВАШІ ДОХОДИ ТА ЗАХИСТИМО АКТИВИ ВІД ШТРАФІВ.",
   subheading = "",
   heroCards,
   mainButtons,
@@ -474,7 +474,7 @@ export default function HeroClient({
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden border-b border-foreground/10 bg-acg-light text-foreground"
+      className="relative overflow-hidden border-b border-foreground/10 bg-acg-light text-foreground lg:h-[100svh] lg:min-h-[700px] lg:flex lg:flex-col lg:justify-center"
     >
       <div
         className="pointer-events-none absolute inset-0 z-[0] bg-[radial-gradient(ellipse_55%_48%_at_100%_0%,color-mix(in_oklab,var(--color-acg-blue)_9%,transparent)_0%,transparent_62%)]"
@@ -496,12 +496,12 @@ export default function HeroClient({
         <div className="absolute bottom-[18%] right-[-6%] h-[min(420px,48vw)] w-[min(420px,48vw)] rounded-full bg-acg-red/[0.08] blur-[80px] will-change-transform md:animate-[hero-blob-3_26s_ease-in-out_8s_infinite]" />
       </div>
 
-      <div className="relative z-[2] mx-auto max-w-7xl px-4 pb-6 pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+0.75rem)] sm:px-6 sm:pb-10 sm:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1rem)] lg:px-6 lg:pb-12 lg:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1.25rem)] xl:gap-12 xl:pb-14 xl:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1.5rem)]">
+      <div className="relative z-[2] mx-auto w-full max-w-7xl px-4 pb-6 pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+0.75rem)] sm:px-6 sm:pb-10 sm:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+1rem)] lg:px-6 lg:pb-10 lg:pt-[calc(var(--header-offset)+env(safe-area-inset-top,0px)+2rem)] xl:gap-12 lg:flex lg:flex-col lg:justify-center lg:h-full lg:flex-1">
         <h1 id="hero-heading" className="sr-only">
           {heading}
         </h1>
 
-        <div className="relative isolate grid min-h-0 grid-cols-1 gap-8 max-md:flex max-md:min-h-0 max-md:flex-col max-md:gap-6 md:gap-10 lg:grid-cols-12 lg:items-center lg:gap-x-10 lg:gap-y-0 xl:gap-x-12">
+        <div className="relative isolate grid min-h-0 grid-cols-1 gap-8 max-md:flex max-md:min-h-0 max-md:flex-col max-md:gap-6 md:gap-10 lg:grid-cols-12 lg:items-stretch lg:gap-x-10 lg:gap-y-0 xl:gap-x-12 lg:flex-1 lg:min-h-0">
 
           {/* Ліва колонка — текст, навігація та CTA. */}
           <div className="relative z-20 col-span-1 flex w-full min-w-0 max-w-none flex-col justify-center px-0 pb-6 max-md:mx-auto max-md:max-w-lg max-md:items-center max-md:text-center max-md:pb-4 lg:col-span-7 lg:mx-0 lg:max-w-none lg:items-start lg:py-4 lg:pl-2 lg:pr-2 lg:text-left xl:pl-4 xl:pr-4">
@@ -509,7 +509,7 @@ export default function HeroClient({
               initial="hidden"
               animate="visible"
               variants={contentMotion}
-              className="flex max-w-4xl flex-col gap-3 pt-0 max-md:mx-auto max-md:items-center max-md:text-center sm:gap-4 md:gap-5"
+              className="flex max-w-4xl flex-col gap-3 pt-0 max-md:mx-auto max-md:items-center max-md:text-center sm:gap-4 md:gap-5 lg:gap-5 xl:gap-6"
             >
               {accentSecondary ? (
                 <>
@@ -549,7 +549,7 @@ export default function HeroClient({
             </motion.div>
 
             <motion.div
-              className="mt-4 flex w-full flex-col gap-3 max-md:mx-auto max-md:items-center max-md:text-center sm:gap-4 lg:mt-7"
+              className="mt-4 flex w-full flex-col gap-3 max-md:mx-auto max-md:items-center max-md:text-center sm:gap-4 lg:mt-8 xl:mt-10 lg:gap-5 xl:gap-6"
               initial="hidden"
               animate="visible"
               variants={contentMotion}
@@ -580,7 +580,7 @@ export default function HeroClient({
                           handleNavAnchorClick(event, card.href, card.pricingPreset)
                         }
                         variants={itemMotion}
-                        className={`${ctaShineClass} group flex flex-grow w-full sm:w-[calc(50%-6px)] xl:w-[calc(25%-9px)] min-h-[3.25rem] flex-row items-center gap-2.5 rounded-xl border border-acg-blue/15 bg-white/70 px-3.5 py-3 text-left shadow-sm ring-1 ring-white/40 backdrop-blur-[2px] transition hover:border-acg-blue/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/30 sm:min-h-[4.5rem] sm:flex-col sm:items-start sm:justify-center sm:gap-2 sm:px-3 sm:py-3.5 xl:min-h-[4.75rem]`}
+                        className={`${ctaShineClass} group flex flex-grow w-full sm:w-[calc(50%-6px)] xl:w-[calc(25%-9px)] min-h-[3.25rem] flex-row items-center gap-2.5 rounded-xl border border-acg-blue/15 bg-white/70 px-3.5 py-3 text-left shadow-sm ring-1 ring-white/40 backdrop-blur-[2px] transition hover:border-acg-blue/40 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acg-blue/30 sm:min-h-[4.5rem] sm:flex-col sm:items-start sm:justify-center sm:gap-2 sm:px-3 sm:py-3.5`}
                       >
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-acg-blue/10 text-acg-blue transition group-hover:bg-acg-blue/15 sm:size-10 sm:rounded-xl">
                           <Icon className="size-[1.15rem] sm:size-5" aria-hidden />

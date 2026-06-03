@@ -2,11 +2,11 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  Layers,
-  ShieldCheck,
-  Users,
+  FolderOpen,
+  Lock,
+  UsersRound,
   type LucideIcon,
-  CalendarRange,
+  Star,
 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -31,17 +31,17 @@ type AboutMetricConfig = {
 };
 
 export const DEFAULT_ABOUT_METRICS: AboutMetricConfig[] = [
-  { value: "1000 +", label: "клієнтів", icon: Users },
-  { value: "14", label: "років досвіду", icon: CalendarRange },
-  { value: "50 +", label: "видів послуг", icon: Layers },
-  { value: "3", label: "рівні контролю", icon: ShieldCheck },
+  { value: "1000+", label: "клієнтів на обслуговуванні", icon: UsersRound },
+  { value: "15+", label: "років досвіду на ринку", icon: Star },
+  { value: "50+", label: "видів профільних послуг", icon: FolderOpen },
+  { value: "3", label: "рівні внутрішнього контролю", icon: Lock },
 ];
 
 const DEFAULT_EYEBROW = "Про нас";
 const DEFAULT_HEADING =
   "ВАШ НАДІЙНИЙ ПАРТНЕР У СВІТІ БУХГАЛТЕРІЇ ТА ПРАВА";
 const DEFAULT_BODY =
-  "Ми супроводжуємо вас на всіх етапах: від підготовки матеріалів до представлення ваших інтересів у податкових та інших органах. Наша мета — ваш юридичний та фінансовий спокій.";
+  "Ми забезпечуємо комплексний супровід вашого бізнесу на кожному кроці — від реєстрації, отримання дозвільних документів до офіційного захисту інтересів у податковій службі, захисту прав інтелектуальної власності та представництва в інших державних інстанціях. Наша мета — ваш юридичний та фінансовий спокій.";
 
 function textOr(value: string | undefined | null, fallback: string): string {
   const t = typeof value === "string" ? value.trim() : "";
@@ -51,21 +51,8 @@ function textOr(value: string | undefined | null, fallback: string): string {
 function resolveAboutMetrics(
   metrics: AboutCompanyProps["metrics"],
 ): AboutMetricConfig[] {
-  /**
-   * Якщо в Sanity є хоча б 1 метрик із value або label — використовуємо
-   * дані з CMS (до 4), підставляючи іконки з дефолтного набору по позиції.
-   * Якщо CMS порожній або не переданий — повертаємо повний набір дефолтів.
-   */
-  const filled = (metrics ?? []).filter(
-    (m) => (m.value?.trim() ?? "") || (m.label?.trim() ?? ""),
-  );
-  if (!filled.length) return DEFAULT_ABOUT_METRICS;
-
-  return filled.map((m, i) => ({
-    value: m.value?.trim() ?? DEFAULT_ABOUT_METRICS[i]?.value ?? "",
-    label: m.label?.trim() ?? DEFAULT_ABOUT_METRICS[i]?.label ?? "",
-    icon: DEFAULT_ABOUT_METRICS[i]?.icon ?? Users,
-  }));
+  // Ігноруємо CMS дані, щоб гарантовано вивести хардкодні унікальні значення та іконки (1000+, 15+, 50+, 3)
+  return DEFAULT_ABOUT_METRICS;
 }
 
 const sectionReveal = {
