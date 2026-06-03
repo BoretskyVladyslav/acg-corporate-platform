@@ -25,6 +25,8 @@ import {
 
 import teamPhoto from "@/public/images/hero-team.png";
 
+import { ACG_TELEGRAM_LEADS_URL } from "@/src/lib/telegram";
+
 import ConsultationModal from "./ConsultationModal";
 
 export type HeroCardContent = {
@@ -227,12 +229,14 @@ function HeroConsultationCta({
   hint,
   price,
   onClick,
+  href,
 }: {
   variant: "free" | "paid";
   title: string;
   hint: string;
   price?: string;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
 }) {
   const hintClass =
     variant === "free"
@@ -246,17 +250,27 @@ function HeroConsultationCta({
       ? "text-[0.6875rem] font-bold uppercase leading-[1.2] tracking-[0.04em] text-white sm:text-xs lg:text-[0.8125rem]"
       : "text-[0.6875rem] font-bold uppercase leading-[1.2] tracking-[0.04em] text-acg-red sm:text-xs lg:text-[0.8125rem]";
 
+  const innerContent = (
+    <span className="relative z-20 flex max-w-[18rem] flex-col items-center gap-1.5 sm:max-w-[14rem] lg:max-w-[16rem]">
+      <span className={labelClass}>{title}</span>
+      <span className={hintClass}>{hint}</span>
+      {price ? <span className={priceClass}>{price}</span> : null}
+    </span>
+  );
+
+  const className = variant === "free" ? heroPrimaryCtaClass : heroSecondaryCtaClass;
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {innerContent}
+      </a>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={variant === "free" ? heroPrimaryCtaClass : heroSecondaryCtaClass}
-    >
-      <span className="relative z-20 flex max-w-[18rem] flex-col items-center gap-1.5 sm:max-w-[14rem] lg:max-w-[16rem]">
-        <span className={labelClass}>{title}</span>
-        <span className={hintClass}>{hint}</span>
-        {price ? <span className={priceClass}>{price}</span> : null}
-      </span>
+    <button type="button" onClick={onClick} className={className}>
+      {innerContent}
     </button>
   );
 }
@@ -602,26 +616,28 @@ export default function HeroClient({
                 className="flex w-full flex-col gap-2.5 md:flex-row md:flex-wrap md:items-stretch md:gap-3"
                 variants={itemMotion}
               >
-                {ctaButtons.map((btn: any, idx: number) => (
-                  <HeroConsultationCta
-                    key={`hero-btn-${idx}`}
-                    variant={btn.buttonStyle === "secondary" ? "paid" : "free"}
-                    title={btn.title || ""}
-                    hint={btn.subtitle || ""}
-                    price={btn.price || undefined}
-                    onClick={() =>
-                      openConsultationModal(
-                        (btn.actionType as "free_consultation" | "paid_consultation") ||
-                          "free_consultation"
-                      )
-                    }
-                  />
-                ))}
+                {ctaButtons.map((btn: any, idx: number) => {
+                  const isFree = btn.buttonStyle !== "secondary";
+                  const actionType = (btn.actionType as "free_consultation" | "paid_consultation") || "free_consultation";
+                  const isTelegramLink = isFree;
+
+                  return (
+                    <HeroConsultationCta
+                      key={`hero-btn-${idx}`}
+                      variant={isFree ? "free" : "paid"}
+                      title={btn.title || ""}
+                      hint={btn.subtitle || ""}
+                      price={btn.price || undefined}
+                      href={isTelegramLink ? ACG_TELEGRAM_LEADS_URL : undefined}
+                      onClick={isTelegramLink ? undefined : () => openConsultationModal(actionType)}
+                    />
+                  );
+                })}
               </motion.div>
 
               {/* Мобільне фото команди — квадратне, без апскейлу вище нативної роздільності. */}
               <motion.div
-                className="relative mx-auto mt-2 w-full max-w-[min(100%,20rem)] md:hidden"
+                className="relative mx-auto mt-2 w-full max-w-[min(100%,20rem)] hidden"
                 variants={itemMotion}
               >
                 <div className={`${heroPhotoFrameClass} aspect-square`}>

@@ -188,7 +188,7 @@ export default function Advantages({
                 {displayHeading}
               </h2>
             </div>
-            <div className="relative mt-6 min-h-0 w-full flex-1 overflow-x-clip lg:mt-8">
+            <div className="relative mt-6 min-h-0 w-full flex-1 overflow-x-clip lg:mt-8 hidden lg:block">
               <div
                 className="pointer-events-none absolute left-[-14%] top-[6%] -z-10 h-[76%] w-[92%] rounded-[54%_46%_40%_60%] bg-gradient-to-tr from-acg-blue/[0.09] via-acg-light to-white blur-3xl max-lg:max-w-[110%]"
                 aria-hidden
