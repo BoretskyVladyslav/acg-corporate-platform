@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Alex Consulting (ACG) — Corporate Accounting Platform
+
+> Live: [buh.acg-ua.com](https://buh.acg-ua.com/)
+
+<img width="1905" height="1086" alt="ACG Platform Preview" src="<img width="1901" height="1087" alt="image" src="https://github.com/user-attachments/assets/3c1956a3-5151-4159-85f9-425b388411ae" />
+" />
+
+## What it does
+A high-performance corporate accounting platform focused on automated business processes, instant lead generation, and flawless SEO indexing.
+
+## Tech Stack
+Next.js (App Router) · TypeScript · Sanity.io (Headless CMS) · Tailwind CSS · SendPulse API · Vercel
+
+## Key Engineering Decisions
+- Achieved a perfect 100/100 Core Web Vitals score across all metrics by utilizing Static Site Generation (SSG) and aggressive `next/image` optimization.
+- Architected a Headless CMS solution with Sanity.io, decoupling content management from the frontend to ensure maximum build performance.
+- Automated the CTA-to-notification pipeline, integrating the SendPulse API with Next.js API Routes to deliver instant Telegram alerts and reduce lead response time.
 
 ## Getting Started
-
-First, run the development server:
-
-```bash
+\`\`\`bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+\`\`\`
