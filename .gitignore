@@ -44,3 +44,17 @@ next-env.d.ts
 .playwright-mcp/
 
 .history/
+
+# AI Agents & Scratchpads
+.cursor/
+.cursorrules
+.anthropic/
+.aider/
+.aider*
+.gemini/
+.gemini*
+agent_logs/
+scratchpad*/
+*scratchpad*.md
+system_instruction*.md
+ai_task*
